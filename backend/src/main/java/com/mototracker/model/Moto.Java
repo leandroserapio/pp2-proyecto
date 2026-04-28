@@ -1,16 +1,9 @@
 package com.mototracker.model;
 
 import jakarta.persistence.*;
-import lombok.*;
-
-import java.util.List;
 
 @Entity
 @Table(name = "motos")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Moto {
 
     @Id
@@ -34,12 +27,72 @@ public class Moto {
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario;
 
-    @OneToMany(mappedBy = "moto", cascade = CascadeType.ALL)
-    private List<Gasto> gastos;
+    public Moto() {
+    }
 
-    @OneToMany(mappedBy = "moto", cascade = CascadeType.ALL)
-    private List<Mantenimiento> mantenimientos;
+    public Moto(Long idMoto, String marca, String modelo, Integer anio, String patente, Integer kilometrajeActual, Usuario usuario) {
+        this.idMoto = idMoto;
+        this.marca = marca;
+        this.modelo = modelo;
+        this.anio = anio;
+        this.patente = patente;
+        this.kilometrajeActual = kilometrajeActual;
+        this.usuario = usuario;
+    }
 
-    @OneToMany(mappedBy = "moto", cascade = CascadeType.ALL)
-    private List<Viaje> viajes;
+    public Long getIdMoto() {
+        return idMoto;
+    }
+
+    public void setIdMoto(Long idMoto) {
+        this.idMoto = idMoto;
+    }
+
+    public String getMarca() {
+        return marca;
+    }
+
+    public void setMarca(String marca) {
+        this.marca = marca;
+    }
+
+    public String getModelo() {
+        return modelo;
+    }
+
+    public void setModelo(String modelo) {
+        this.modelo = modelo;
+    }
+
+    public Integer getAnio() {
+        return anio;
+    }
+
+    public void setAnio(Integer anio) {
+        this.anio = anio;
+    }
+
+    public String getPatente() {
+        return patente;
+    }
+
+    public void setPatente(String patente) {
+        this.patente = patente;
+    }
+
+    public Integer getKilometrajeActual() {
+        return kilometrajeActual;
+    }
+
+    public void setKilometrajeActual(Integer kilometrajeActual) {
+        this.kilometrajeActual = kilometrajeActual;
+    }
+
+    public Usuario getUsuario() {
+        return usuario;
+    }
+
+    public void setUsuario(Usuario usuario) {
+        this.usuario = usuario;
+    }
 }
