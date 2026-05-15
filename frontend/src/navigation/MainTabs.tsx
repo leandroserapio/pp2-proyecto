@@ -11,42 +11,62 @@ import { ViajesTabScreen } from '../screens/tabs/ViajesTabScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+/** En Android el tab nativo (Material) falla con algunos estilos (ClassCast String→Boolean). */
+const androidTabScreenOptions = {
+  headerShown: false,
+  tabBarActiveTintColor: light.primary,
+  tabBarInactiveTintColor: light.tabInactive,
+  tabBarShowLabel: true,
+  tabBarStyle: {
+    backgroundColor: light.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: light.border,
+    elevation: 0,
+  },
+  tabBarLabelStyle: {
+    fontSize: 11,
+    fontFamily: fontFamily.medium,
+    fontWeight: '500' as const,
+  },
+} as const;
+
+const iosWebTabScreenOptions = {
+  headerShown: false,
+  tabBarActiveTintColor: '#FFFFFF',
+  tabBarInactiveTintColor: light.tabInactive,
+  tabBarActiveBackgroundColor: light.tabActivePill,
+  tabBarInactiveBackgroundColor: 'transparent',
+  tabBarShowLabel: true,
+  tabBarLabelPosition: 'below-icon' as const,
+  tabBarStyle: {
+    backgroundColor: light.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: light.border,
+    elevation: 0,
+    shadowOpacity: 0,
+    padding: 8,
+    paddingHorizontal: 8,
+    ...(Platform.OS === 'web' ? { boxShadow: 'none', height: 'auto' as const } : {}),
+  },
+  tabBarItemStyle: {
+    borderRadius: 16,
+    overflow: 'hidden' as const,
+  },
+  tabBarLabelStyle: {
+    fontSize: 11,
+    fontFamily: fontFamily.medium,
+    fontWeight: '500' as const,
+    marginTop: 4,
+  },
+  tabBarIconStyle: {
+    marginBottom: 2,
+  },
+} as const;
+
 export function MainTabs() {
   return (
     <Tab.Navigator
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: '#FFFFFF',
-        tabBarInactiveTintColor: light.tabInactive,
-        tabBarActiveBackgroundColor: light.tabActivePill,
-        tabBarInactiveBackgroundColor: 'transparent',
-        tabBarShowLabel: true,
-        tabBarLabelPosition: 'below-icon',
-        tabBarStyle: {
-          backgroundColor: light.surface,
-          borderTopWidth: StyleSheet.hairlineWidth,
-          borderTopColor: light.border,
-          elevation: 0,
-          shadowOpacity: 0,
-          padding: 8,
-          paddingHorizontal: 8,
-          height: 'auto',
-          ...(Platform.OS === 'web' ? { boxShadow: 'none' } : {}),
-        },
-        tabBarItemStyle: {
-          borderRadius: 16,
-          overflow: 'hidden',
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontFamily: fontFamily.medium,
-          fontWeight: '500',
-          marginTop: 4,
-        },
-        tabBarIconStyle: {
-          marginBottom: 2,
-        },
-      }}
+      screenOptions={Platform.OS === 'android' ? androidTabScreenOptions : iosWebTabScreenOptions}
     >
       <Tab.Screen
         name="Garage"
