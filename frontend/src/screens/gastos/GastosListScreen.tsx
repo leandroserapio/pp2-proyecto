@@ -1,10 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Modal,
+  Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -44,6 +47,10 @@ export function GastosListScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [filterMenuRect, setFilterMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(
+    null,
+  );
+  const filterSelectWrapRef = useRef<View>(null);
 
   const reload = useCallback(async () => {
     if (motos.length === 0) {
@@ -101,9 +108,23 @@ export function GastosListScreen() {
         <Text style={styles.totalAmount}>{formatArs(total)}</Text>
       </View>
 
-      <Pressable style={styles.filterRow} onPress={() => setFilterOpen(true)}>
+      <Pressable
+        ref={filterSelectWrapRef}
+        style={[styles.filterRow, filterOpen && styles.filterRowOpen]}
+        onPress={() => {
+          if (filterOpen) {
+            setFilterOpen(false);
+            setFilterMenuRect(null);
+            return;
+          }
+          filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
+            setFilterMenuRect({ x, y, width, height });
+            setFilterOpen(true);
+          });
+        }}
+      >
         <Text style={styles.filterText}>{filtroDisplay}</Text>
-        <Ionicons name="chevron-down" size={18} color={light.textMuted} />
+        <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
       </Pressable>
     </>
   );
@@ -185,7 +206,7 @@ export function GastosListScreen() {
             }}
             ListFooterComponent={
               <View style={styles.footerNote}>
-                <Ionicons name="time-outline" size={16} color={light.textMuted} />
+                <Ionicons name="time-outline" size={16} color={light.textMuted} style={styles.footerIcon} />
                 <Text style={styles.footerText}>Hasta acá llegaron los gastos</Text>
               </View>
             }
@@ -200,37 +221,79 @@ export function GastosListScreen() {
         </View>
       )}
 
-      <Modal visible={filterOpen} transparent animationType="fade" onRequestClose={() => setFilterOpen(false)}>
-        <View style={styles.modalRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setFilterOpen(false)} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Filtrar por moto</Text>
-            <Pressable
-              style={styles.modalRow}
-              onPress={() => {
-                setFiltro('todas');
-                setFilterOpen(false);
-              }}
+      <Modal
+        visible={filterOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setFilterOpen(false);
+          setFilterMenuRect(null);
+        }}
+      >
+        <View style={styles.filterMenuOverlay}>
+          <Pressable
+            style={styles.filterMenuBackdrop}
+            onPress={() => {
+              setFilterOpen(false);
+              setFilterMenuRect(null);
+            }}
+          />
+          {filterMenuRect ? (
+            <View
+              style={[
+                styles.filterMenuDropdown,
+                {
+                  left: filterMenuRect.x,
+                  top: filterMenuRect.y + filterMenuRect.height + 4,
+                  width: filterMenuRect.width,
+                  maxHeight: Math.max(
+                    160,
+                    Dimensions.get('window').height - (filterMenuRect.y + filterMenuRect.height) - 24,
+                  ),
+                },
+              ]}
             >
-              <Text style={styles.modalRowText}>Todas las motos</Text>
-              {filtro === 'todas' ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
-            </Pressable>
-            {motos.map((m) => (
-              <Pressable
-                key={m.idMoto}
-                style={styles.modalRow}
-                onPress={() => {
-                  if (m.idMoto != null) setFiltro(m.idMoto);
-                  setFilterOpen(false);
-                }}
+              <Text style={styles.filterMenuTitle}>Filtrar por moto</Text>
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                style={styles.filterMenuScroll}
+                bounces={false}
               >
-                <Text style={styles.modalRowText}>{motoLabel(m)}</Text>
-                {filtro !== 'todas' && filtro === m.idMoto ? (
-                  <Ionicons name="checkmark" color={light.primary} size={20} />
-                ) : null}
-              </Pressable>
-            ))}
-          </View>
+                <Pressable
+                  style={({ pressed }) => [styles.filterMenuRow, pressed && styles.filterMenuRowPressed]}
+                  onPress={() => {
+                    setFiltro('todas');
+                    setFilterOpen(false);
+                    setFilterMenuRect(null);
+                  }}
+                >
+                  <Text style={styles.filterMenuRowText}>Todas las motos</Text>
+                  {filtro === 'todas' ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                </Pressable>
+                {motos.map((m) => (
+                  <Pressable
+                    key={m.idMoto}
+                    style={({ pressed }) => [
+                      styles.filterMenuRow,
+                      styles.filterMenuRowBorder,
+                      pressed && styles.filterMenuRowPressed,
+                    ]}
+                    onPress={() => {
+                      if (m.idMoto != null) setFiltro(m.idMoto);
+                      setFilterOpen(false);
+                      setFilterMenuRect(null);
+                    }}
+                  >
+                    <Text style={styles.filterMenuRowText}>{motoLabel(m)}</Text>
+                    {filtro !== 'todas' && filtro === m.idMoto ? (
+                      <Ionicons name="checkmark" color={light.primary} size={20} />
+                    ) : null}
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
         </View>
       </Modal>
     </SafeAreaView>
@@ -326,6 +389,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
+  filterRowOpen: {
+    borderColor: light.primary,
+  },
   filterText: {
     fontSize: 15,
     fontFamily: fontFamily.medium,
@@ -390,9 +456,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 12,
   },
-  cardMain: { flex: 1 },
+  cardMain: { flex: 1, marginRight: 12 },
   cardTitle: {
     fontSize: 16,
     fontFamily: fontFamily.bold,
@@ -422,11 +487,11 @@ const styles = StyleSheet.create({
   footerNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     justifyContent: 'center',
     marginTop: 8,
     marginBottom: 16,
   },
+  footerIcon: { marginRight: 8 },
   footerText: {
     color: light.textMuted,
     fontSize: 13,
@@ -447,42 +512,58 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 4,
   },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: {
+  filterMenuOverlay: { flex: 1 },
+  filterMenuBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.35)',
+    backgroundColor: 'rgba(15,23,42,0.25)',
   },
-  modalSheet: {
+  filterMenuDropdown: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 32,
+    zIndex: 2,
     backgroundColor: light.surface,
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: light.border,
+    overflow: 'hidden',
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)' }
+      : {
+          elevation: 8,
+          shadowColor: '#0f172a',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+        }),
   },
-  modalTitle: {
-    fontSize: 16,
+  filterMenuTitle: {
+    fontSize: 13,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
-    color: light.navy,
-    padding: 10,
+    color: light.textMuted,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 6,
+    letterSpacing: 0.4,
   },
-  modalRow: {
+  filterMenuScroll: { flexGrow: 0 },
+  filterMenuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
-    paddingHorizontal: 10,
-    borderTopWidth: 1,
+    paddingHorizontal: 14,
+  },
+  filterMenuRowBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: light.border,
   },
-  modalRowText: {
+  filterMenuRowPressed: { backgroundColor: light.bg },
+  filterMenuRowText: {
     fontSize: 15,
     color: light.navy,
     fontFamily: fontFamily.medium,
     fontWeight: '500',
+    flex: 1,
+    marginRight: 8,
   },
 });

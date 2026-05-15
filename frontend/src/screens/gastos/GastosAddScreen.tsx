@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
+  Dimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -57,7 +58,11 @@ export function GastosAddScreen() {
   const [kilometraje, setKilometraje] = useState('');
   const [date, setDate] = useState(() => new Date());
   const [showDate, setShowDate] = useState(false);
-  const [motoModal, setMotoModal] = useState(false);
+  const [dateMenuRect, setDateMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const dateSelectWrapRef = useRef<View>(null);
+  const [motoMenuOpen, setMotoMenuOpen] = useState(false);
+  const [motoMenuRect, setMotoMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const motoSelectWrapRef = useRef<View>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -71,6 +76,14 @@ export function GastosAddScreen() {
   }, [route.params?.idMoto, defaultMotoId]);
 
   const selectedMoto = motos.find((m) => m.idMoto === idMoto);
+
+  const motoMenuMaxHeight = useMemo(() => {
+    if (!motoMenuRect) return 280;
+    return Math.min(
+      280,
+      Math.max(160, Dimensions.get('window').height - (motoMenuRect.y + motoMenuRect.height) - 24),
+    );
+  }, [motoMenuRect]);
 
   const onSave = async () => {
     if (!idMoto) {
@@ -121,20 +134,38 @@ export function GastosAddScreen() {
           <Text style={styles.label}>Monto</Text>
           <View style={styles.montoRow}>
             <Text style={styles.montoPrefix}>$</Text>
-            <TextInput
-              placeholder="0,00"
-              placeholderTextColor={light.textMuted}
-              keyboardType="decimal-pad"
-              value={montoStr}
-              onChangeText={setMontoStr}
-              style={styles.montoInput}
-            />
+            <View style={styles.montoInputWrap}>
+              <TextInput
+                placeholder="0,00"
+                placeholderTextColor={light.textMuted}
+                keyboardType="decimal-pad"
+                value={montoStr}
+                onChangeText={setMontoStr}
+                multiline={false}
+                numberOfLines={1}
+                style={styles.montoInput}
+              />
+            </View>
           </View>
 
           <Text style={styles.label}>Moto</Text>
-          <Pressable style={styles.select} onPress={() => setMotoModal(true)}>
+          <Pressable
+            ref={motoSelectWrapRef}
+            style={[styles.select, motoMenuOpen && styles.selectMenuOpen]}
+            onPress={() => {
+              if (motoMenuOpen) {
+                setMotoMenuOpen(false);
+                setMotoMenuRect(null);
+                return;
+              }
+              motoSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
+                setMotoMenuRect({ x, y, width, height });
+                setMotoMenuOpen(true);
+              });
+            }}
+          >
             <Text style={styles.selectText}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
-            <Ionicons name="chevron-down" size={18} color={light.textMuted} />
+            <Ionicons name={motoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
           </Pressable>
 
           <AppTextInput
@@ -156,50 +187,140 @@ export function GastosAddScreen() {
           />
 
           <Text style={styles.label}>Fecha</Text>
-          <Pressable style={styles.select} onPress={() => setShowDate(true)}>
+          <Pressable
+            ref={dateSelectWrapRef}
+            style={[styles.select, showDate && styles.selectMenuOpen]}
+            onPress={() => {
+              if (showDate) {
+                setShowDate(false);
+                setDateMenuRect(null);
+                return;
+              }
+              dateSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
+                setDateMenuRect({ x, y, width, height });
+                setShowDate(true);
+              });
+            }}
+          >
             <Text style={styles.selectText}>{formatDisplayDate(toIsoLocal(date))}</Text>
-            <Ionicons name="calendar-outline" size={18} color={light.textMuted} />
+            <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={light.textMuted} />
           </Pressable>
         </View>
-
-        {showDate ? (
-          <DateTimePicker
-            value={date}
-            mode="date"
-            display="default"
-            onChange={(ev, selected) => {
-              if (Platform.OS === 'android') setShowDate(false);
-              if (ev.type === 'dismissed' && Platform.OS === 'android') return;
-              if (selected) {
-                setDate(selected);
-                setShowDate(false);
-              }
-            }}
-          />
-        ) : null}
 
         <PrimaryButton title="Guardar" variant="blue" loading={saving} onPress={onSave} style={styles.save} />
       </ScrollView>
 
-      <Modal visible={motoModal} transparent animationType="fade" onRequestClose={() => setMotoModal(false)}>
-        <View style={styles.modalRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setMotoModal(false)} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Seleccionar moto</Text>
-            {motos.map((m) => (
+      <Modal
+        visible={motoMenuOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setMotoMenuOpen(false);
+          setMotoMenuRect(null);
+        }}
+      >
+        <View style={styles.motoMenuOverlay}>
+          <Pressable
+            style={styles.motoMenuBackdrop}
+            onPress={() => {
+              setMotoMenuOpen(false);
+              setMotoMenuRect(null);
+            }}
+          />
+          {motoMenuRect ? (
+            <View
+              style={[
+                styles.motoMenuDropdown,
+                {
+                  left: motoMenuRect.x,
+                  top: motoMenuRect.y + motoMenuRect.height + 4,
+                  width: motoMenuRect.width,
+                  maxHeight: motoMenuMaxHeight,
+                },
+              ]}
+            >
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                nestedScrollEnabled
+                style={[styles.motoMenuScroll, { maxHeight: motoMenuMaxHeight }]}
+                bounces={false}
+              >
+                {motos.map((m, i) => (
+                  <Pressable
+                    key={m.idMoto}
+                    style={({ pressed }) => [
+                      styles.motoMenuRow,
+                      i > 0 && styles.motoMenuRowBorder,
+                      pressed && styles.motoMenuRowPressed,
+                    ]}
+                    onPress={() => {
+                      if (m.idMoto != null) setIdMoto(m.idMoto);
+                      setMotoMenuOpen(false);
+                      setMotoMenuRect(null);
+                    }}
+                  >
+                    <Text style={styles.motoMenuRowText}>{motoLabel(m)}</Text>
+                    {idMoto === m.idMoto ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showDate}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowDate(false);
+          setDateMenuRect(null);
+        }}
+      >
+        <View style={styles.dateMenuOverlay}>
+          <Pressable
+            style={styles.dateMenuBackdrop}
+            onPress={() => {
+              setShowDate(false);
+              setDateMenuRect(null);
+            }}
+          />
+          {dateMenuRect ? (
+            <View
+              style={[
+                styles.dateMenuDropdown,
+                {
+                  left: dateMenuRect.x,
+                  top: dateMenuRect.y + dateMenuRect.height + 4,
+                  width: dateMenuRect.width,
+                  maxHeight: Math.max(
+                    200,
+                    Dimensions.get('window').height - (dateMenuRect.y + dateMenuRect.height) - 24,
+                  ),
+                },
+              ]}
+            >
+              <DateTimePicker
+                value={date}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : Platform.OS === 'android' ? 'calendar' : 'spinner'}
+                {...(Platform.OS === 'ios' ? { themeVariant: 'light' as const } : {})}
+                onChange={(_, selected) => {
+                  if (selected) setDate(selected);
+                }}
+              />
               <Pressable
-                key={m.idMoto}
-                style={styles.modalRow}
+                style={({ pressed }) => [styles.dateMenuDone, pressed && styles.dateMenuDonePressed]}
                 onPress={() => {
-                  if (m.idMoto != null) setIdMoto(m.idMoto);
-                  setMotoModal(false);
+                  setShowDate(false);
+                  setDateMenuRect(null);
                 }}
               >
-                <Text style={styles.modalRowText}>{motoLabel(m)}</Text>
-                {idMoto === m.idMoto ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                <Text style={styles.dateMenuDoneText}>Listo</Text>
               </Pressable>
-            ))}
-          </View>
+            </View>
+          ) : null}
         </View>
       </Modal>
     </KeyboardAvoidingView>
@@ -228,8 +349,8 @@ const styles = StyleSheet.create({
   montoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
     marginBottom: 14,
+    minHeight: 56,
   },
   montoPrefix: {
     fontSize: 22,
@@ -237,9 +358,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: light.textMuted,
     paddingBottom: 4,
+    marginRight: 8,
+  },
+  montoInputWrap: {
+    flex: 1,
+    minWidth: 0,
+    height: 56,
+    justifyContent: 'center',
   },
   montoInput: {
-    flex: 1,
+    width: '100%',
+    height: 56,
     fontSize: 24,
     fontFamily: fontFamily.semiBold,
     fontWeight: '600',
@@ -249,8 +378,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: light.border,
     paddingHorizontal: 14,
-    paddingVertical: 16,
-    minHeight: 56,
+    paddingVertical: Platform.OS === 'web' ? 0 : 14,
+    ...(Platform.OS === 'android' ? { textAlignVertical: 'center' as const } : {}),
   },
   inlineInput: {
     fontSize: 16,
@@ -276,6 +405,9 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     marginBottom: 14,
   },
+  selectMenuOpen: {
+    borderColor: light.primary,
+  },
   selectText: {
     fontSize: 16,
     color: light.navy,
@@ -283,42 +415,86 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   save: { marginTop: 8 },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: {
+  motoMenuOverlay: { flex: 1 },
+  motoMenuBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.35)',
+    backgroundColor: 'rgba(15,23,42,0.25)',
   },
-  modalSheet: {
+  motoMenuDropdown: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 32,
+    zIndex: 2,
     backgroundColor: light.surface,
-    borderRadius: 16,
-    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: light.border,
+    maxHeight: 280,
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)' }
+      : {
+          elevation: 8,
+          shadowColor: '#0f172a',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+        }),
   },
-  modalTitle: {
-    fontSize: 16,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.navy,
-    padding: 10,
-  },
-  modalRow: {
+  motoMenuScroll: { flexGrow: 0 },
+  motoMenuRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 14,
-    paddingHorizontal: 10,
-    borderTopWidth: 1,
+    paddingHorizontal: 14,
+  },
+  motoMenuRowBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: light.border,
   },
-  modalRowText: {
+  motoMenuRowPressed: { backgroundColor: light.bg },
+  motoMenuRowText: {
     fontSize: 15,
     color: light.navy,
     fontFamily: fontFamily.medium,
     fontWeight: '500',
+    flex: 1,
+    marginRight: 8,
+  },
+  dateMenuOverlay: { flex: 1 },
+  dateMenuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15,23,42,0.25)',
+  },
+  dateMenuDropdown: {
+    position: 'absolute',
+    zIndex: 2,
+    backgroundColor: light.surface,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: light.border,
+    overflow: 'hidden',
+    ...(Platform.OS === 'web'
+      ? { boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)' }
+      : {
+          elevation: 8,
+          shadowColor: '#0f172a',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.12,
+          shadowRadius: 12,
+        }),
+  },
+  dateMenuDone: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: light.border,
+    backgroundColor: light.surface,
+  },
+  dateMenuDonePressed: { backgroundColor: light.bg },
+  dateMenuDoneText: {
+    fontSize: 16,
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
+    color: light.primary,
   },
 });

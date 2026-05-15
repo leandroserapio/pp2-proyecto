@@ -156,7 +156,7 @@ export function GarageScreen() {
               <Text style={styles.kmValue}>{selectedMoto.kilometrajeActual ?? 0} km</Text>
             </View>
             <Pressable style={styles.kmBtn} onPress={() => setKmOpen(true)}>
-              <Ionicons name="add" size={18} color="#fff" />
+              <Ionicons name="add" size={18} color="#fff" style={styles.kmBtnIcon} />
               <Text style={styles.kmBtnText}>Sumar km</Text>
             </Pressable>
           </View>
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 14,
   },
-  avatarRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  avatarRow: { flexDirection: 'row', alignItems: 'center' },
   avatar: {
     width: 42,
     height: 42,
@@ -256,6 +256,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: light.border,
+    marginRight: 12,
   },
   avatarText: { fontWeight: '800', color: light.primaryDark, fontSize: 16 },
   brand: { fontSize: 18, fontWeight: '800', color: light.text },
@@ -269,8 +270,8 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     marginBottom: 14,
   },
-  motoCardHeader: { flexDirection: 'row', alignItems: 'baseline', gap: 8 },
-  motoCardTitle: { fontSize: 20, fontWeight: '900', color: light.text },
+  motoCardHeader: { flexDirection: 'row', alignItems: 'baseline' },
+  motoCardTitle: { fontSize: 20, fontWeight: '900', color: light.text, marginRight: 8 },
   motoCardAnio: { fontSize: 14, color: light.textMuted, fontWeight: '600' },
   motoCardInfo: { marginTop: 6, fontSize: 14, color: light.textMuted },
   kmRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 },
@@ -279,12 +280,12 @@ const styles = StyleSheet.create({
   kmBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
     backgroundColor: light.primary,
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: 10,
   },
+  kmBtnIcon: { marginRight: 6 },
   kmBtnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
   sectionHeader: {
     flexDirection: 'row',
@@ -312,8 +313,8 @@ const styles = StyleSheet.create({
     borderColor: light.border,
   },
   motoRowSelected: { borderColor: light.primary, backgroundColor: light.primarySoft },
-  motoRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: light.border },
+  motoRowLeft: { flexDirection: 'row', alignItems: 'center' },
+  dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: light.border, marginRight: 12 },
   dotActive: { backgroundColor: light.primary },
   motoRowTitle: { fontSize: 15, fontWeight: '700', color: light.text },
   motoRowSub: { fontSize: 13, color: light.textMuted, marginTop: 2 },

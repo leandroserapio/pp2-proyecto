@@ -237,9 +237,9 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '800', color: light.text },
   cardEstado: { fontSize: 13, fontWeight: '700' },
-  cardFooter: { flexDirection: 'row', gap: 16, marginTop: 8 },
-  cardDate: { fontSize: 13, color: light.textMuted },
-  cardKm: { fontSize: 13, color: light.textMuted },
+  cardFooter: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  cardDate: { fontSize: 13, color: light.textMuted, marginRight: 16 },
+  cardKm: { fontSize: 13, color: light.textMuted, marginRight: 16 },
   cardBudget: { fontSize: 13, color: light.textMuted },
   cardNotas: { marginTop: 8, fontSize: 13, color: light.textMuted, fontStyle: 'italic' },
   fab: {

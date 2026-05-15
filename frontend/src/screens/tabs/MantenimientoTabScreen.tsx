@@ -223,9 +223,9 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 16, fontWeight: '800', color: light.text },
   cardCosto: { fontSize: 15, fontWeight: '900', color: light.primary },
   cardDesc: { marginTop: 6, fontSize: 14, color: light.textMuted },
-  cardFooter: { flexDirection: 'row', gap: 16, marginTop: 8 },
-  cardDate: { fontSize: 13, color: light.textMuted },
-  cardKm: { fontSize: 13, color: light.textMuted },
+  cardFooter: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  cardDate: { fontSize: 13, color: light.textMuted, marginRight: 16 },
+  cardKm: { fontSize: 13, color: light.textMuted, marginRight: 16 },
   fab: {
     position: 'absolute',
     right: 22,
