@@ -1,5 +1,5 @@
-import Login from "./src/Login";
+import { AppNavigator } from './src/navigation/AppNavigator';
 
 export default function App() {
-  return <Login />;
+  return <AppNavigator />;
 }
