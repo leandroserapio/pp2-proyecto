@@ -8,6 +8,7 @@ import { GastosStackNavigator } from './GastosStackNavigator';
 import { GarageScreen } from '../screens/tabs/GarageScreen';
 import { MantenimientoTabScreen } from '../screens/tabs/MantenimientoTabScreen';
 import { ViajesTabScreen } from '../screens/tabs/ViajesTabScreen';
+import PerfilScreen from '../screens/tabs/PerfilScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -28,14 +29,14 @@ export function MainTabs() {
           borderTopColor: light.border,
           elevation: 0,
           shadowOpacity: 0,
-          padding: 8,
+          paddingTop: 8,
+          paddingBottom: 8,
           paddingHorizontal: 8,
-          height: 'auto',
+          height: 74,
           ...(Platform.OS === 'web' ? { boxShadow: 'none' } : {}),
         },
         tabBarItemStyle: {
           borderRadius: 16,
-          overflow: 'hidden',
         },
         tabBarLabelStyle: {
           fontSize: 11,
@@ -58,6 +59,7 @@ export function MainTabs() {
           ),
         }}
       />
+
       <Tab.Screen
         name="GastosStack"
         component={GastosStackNavigator}
@@ -68,6 +70,7 @@ export function MainTabs() {
           ),
         }}
       />
+
       <Tab.Screen
         name="Mantenimiento"
         component={MantenimientoTabScreen}
@@ -85,6 +88,16 @@ export function MainTabs() {
           title: 'Viajes',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="map-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Perfil"
+        component={PerfilScreen}
+        options={{
+          title: 'Perfil',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="person-outline" size={size} color={color} />
           ),
         }}
       />

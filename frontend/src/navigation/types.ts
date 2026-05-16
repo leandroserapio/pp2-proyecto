@@ -22,6 +22,7 @@ export type MainTabParamList = {
   GastosStack: undefined;
   Mantenimiento: undefined;
   Viajes: undefined;
+  Perfil: undefined;
 };
 
 export type RootStackParamList = {
