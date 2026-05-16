@@ -1,0 +1,227 @@
+import { Ionicons } from '@expo/vector-icons';
+import { useEffect, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { light } from '../../theme/mototrackerLight';
+import { fontFamily } from '../../theme/fonts';
+import { useAuth } from '../../context/AuthContext';
+import { listarMotosPorUsuario } from '../../api/motos';
+import { listarGastosPorMoto } from '../../api/gastos';
+import { listarMantenimientosPorMoto } from '../../api/mantenimientos';
+
+type ProfileSummary = {
+  motos: number;
+  mantenimientos: number;
+  totalGastos: number;
+};
+
+export default function PerfilScreen() {
+  const { user, logout } = useAuth();
+  const [summary, setSummary] = useState<ProfileSummary>({
+    motos: 0,
+    mantenimientos: 0,
+    totalGastos: 0,
+  });
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+
+  const displayName = user?.nombre || user?.email?.split('@')[0] || 'Usuario';
+  const displayEmail = user?.email || 'Sin email registrado';
+
+  const formattedTotalGastos = useMemo(
+    () =>
+      summary.totalGastos.toLocaleString('es-AR', {
+        style: 'currency',
+        currency: 'ARS',
+        maximumFractionDigits: 0,
+      }),
+    [summary.totalGastos],
+  );
+
+  useEffect(() => {
+    if (!user?.idUsuario) return;
+
+    let cancelled = false;
+    setLoadingSummary(true);
+    setSummaryError(null);
+
+    (async () => {
+      try {
+        const motos = await listarMotosPorUsuario(user.idUsuario);
+        const motoIds = motos.map((moto) => moto.idMoto).filter((id): id is number => id != null);
+
+        const [gastosPorMoto, mantenimientosPorMoto] = await Promise.all([
+          Promise.all(motoIds.map((idMoto) => listarGastosPorMoto(idMoto))),
+          Promise.all(motoIds.map((idMoto) => listarMantenimientosPorMoto(idMoto))),
+        ]);
+
+        const totalGastos = gastosPorMoto
+          .flat()
+          .reduce((total, gasto) => total + Number(gasto.monto || 0), 0);
+
+        if (!cancelled) {
+          setSummary({
+            motos: motos.length,
+            mantenimientos: mantenimientosPorMoto.flat().length,
+            totalGastos,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setSummaryError('No se pudo cargar el resumen.');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingSummary(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.idUsuario]);
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.header}>
+        <View style={styles.avatar}>
+          <Ionicons name="person-outline" size={42} color={light.primary} />
+        </View>
+
+        <Text style={styles.name}>{displayName}</Text>
+        <Text style={styles.email}>{displayEmail}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Resumen</Text>
+
+        {loadingSummary ? <Text style={styles.summaryState}>Cargando resumen...</Text> : null}
+        {summaryError ? <Text style={styles.errorText}>{summaryError}</Text> : null}
+        {!loadingSummary && !summaryError ? (
+          <>
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Motos registradas</Text>
+              <Text style={styles.statValue}>{summary.motos}</Text>
+            </View>
+
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Servicios cargados</Text>
+              <Text style={styles.statValue}>{summary.mantenimientos}</Text>
+            </View>
+
+            <View style={styles.statRow}>
+              <Text style={styles.statLabel}>Gastos registrados</Text>
+              <Text style={styles.statValue}>{formattedTotalGastos}</Text>
+            </View>
+          </>
+        ) : null}
+      </View>
+
+      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+        <Ionicons name="log-out-outline" size={20} color="#DC2626" />
+        <Text style={styles.logoutText}>Cerrar sesion</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: light.bg,
+  },
+  content: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  header: {
+    alignItems: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  avatar: {
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: light.primarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  name: {
+    fontSize: 22,
+    fontFamily: fontFamily.bold,
+    fontWeight: '700',
+    color: light.text,
+  },
+  email: {
+    marginTop: 4,
+    fontSize: 14,
+    fontFamily: fontFamily.regular,
+    color: light.textMuted,
+  },
+  card: {
+    backgroundColor: light.surface,
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: light.border,
+  },
+  cardTitle: {
+    fontSize: 16,
+    fontFamily: fontFamily.bold,
+    fontWeight: '700',
+    color: light.text,
+    marginBottom: 12,
+  },
+  summaryState: {
+    fontSize: 14,
+    fontFamily: fontFamily.regular,
+    color: light.textMuted,
+    paddingVertical: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    color: '#DC2626',
+    paddingVertical: 8,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: light.border,
+  },
+  statLabel: {
+    fontSize: 14,
+    fontFamily: fontFamily.regular,
+    color: light.textMuted,
+  },
+  statValue: {
+    fontSize: 14,
+    fontFamily: fontFamily.bold,
+    fontWeight: '700',
+    color: light.text,
+  },
+  logoutButton: {
+    marginTop: 4,
+    height: 52,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    backgroundColor: light.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  logoutText: {
+    fontSize: 15,
+    fontFamily: fontFamily.bold,
+    fontWeight: '700',
+    color: '#DC2626',
+  },
+});
