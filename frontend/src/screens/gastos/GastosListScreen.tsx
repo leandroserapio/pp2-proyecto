@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Dimensions,
   FlatList,
   Modal,
@@ -23,6 +24,8 @@ import type { GastoListNavItem, GastosStackParamList } from '../../navigation/ty
 import { useAuth } from '../../context/AuthContext';
 import { useMoto } from '../../context/MotoContext';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { eliminarGasto } from '../../api/gastos';
+import { ApiError } from '../../api/client';
 import { formatArs, formatDisplayDate } from '../../gastos/format';
 import { getGastoCategoryVisual, type GastoCategoryVisual } from '../../gastos/gastoCategory';
 import { loadGastosItems, sumMontos } from '../../gastos/gastosLoader';
@@ -190,6 +193,31 @@ export function GastosListScreen() {
                 <Pressable
                   style={styles.card}
                   onPress={() => navigation.navigate('GastosDetail', { item })}
+                  onLongPress={() => {
+                    Alert.alert(item.tipo, '¿Qué querés hacer?', [
+                      { text: 'Cancelar', style: 'cancel' },
+                      {
+                        text: 'Editar',
+                        onPress: () => {
+                          navigation.navigate('GastosEdit', { item });
+                        },
+                      },
+                      {
+                        text: 'Eliminar',
+                        style: 'destructive',
+                        onPress: async () => {
+                          if (!item.idGasto) return;
+                          try {
+                            await eliminarGasto(item.idGasto);
+                            await reload();
+                          } catch (e) {
+                            const msg = e instanceof ApiError ? e.message : 'No se pudo eliminar';
+                            Alert.alert('Error', msg);
+                          }
+                        },
+                      },
+                    ]);
+                  }}
                 >
                   <View style={styles.cardMain}>
                     <Text style={styles.cardTitle}>{item.tipo}</Text>

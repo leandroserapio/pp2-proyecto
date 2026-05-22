@@ -10,6 +10,7 @@ export type GastosStackParamList = {
   GastosHome: undefined;
   GastosAdd: { idMoto?: number } | undefined;
   GastosDetail: { item: GastoListNavItem };
+  GastosEdit: { item: GastoListNavItem };
 };
 
 export type GastoListNavItem = Gasto & {
@@ -32,3 +33,4 @@ export type RootStackParamList = {
 export type GastosHomeProps = NativeStackScreenProps<GastosStackParamList, 'GastosHome'>;
 export type GastosAddProps = NativeStackScreenProps<GastosStackParamList, 'GastosAdd'>;
 export type GastosDetailProps = NativeStackScreenProps<GastosStackParamList, 'GastosDetail'>;
+export type GastosEditProps = NativeStackScreenProps<GastosStackParamList, 'GastosEdit'>;

@@ -31,6 +31,12 @@ export function GastosDetailScreen() {
             Alert.alert('Gasto', '¿Qué querés hacer?', [
               { text: 'Cancelar', style: 'cancel' },
               {
+                text: 'Editar',
+                onPress: () => {
+                  navigation.navigate('GastosEdit', { item });
+                },
+              },
+              {
                 text: 'Eliminar',
                 style: 'destructive',
                 onPress: async () => {
@@ -52,7 +58,7 @@ export function GastosDetailScreen() {
         </Pressable>
       ),
     });
-  }, [navigation, item.idGasto]);
+  }, [navigation, item, item.idGasto]);
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
