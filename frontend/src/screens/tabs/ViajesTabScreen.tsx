@@ -15,6 +15,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useFocusEffect } from '@react-navigation/native';
 import { light } from '../../theme/mototrackerLight';
 import { useMoto } from '../../context/MotoContext';
+import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { crearViaje, eliminarViaje, listarViajesPorMoto } from '../../api/viajes';
@@ -137,6 +138,7 @@ export function ViajesTabScreen() {
   if (!selectedMoto) {
     return (
       <SafeAreaView style={styles.safe} edges={['top']}>
+        {!addOpen ? <AppHeader /> : null}
         <View style={styles.emptyWrap}>
           <Text style={styles.emptyTitle}>Sin moto seleccionada</Text>
           <Text style={styles.emptySub}>Seleccioná una moto desde Garage.</Text>
@@ -147,6 +149,8 @@ export function ViajesTabScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      {!addOpen ? <AppHeader /> : null}
+
       <View style={styles.header}>
         <Text style={styles.title}>Viajes</Text>
         <Text style={styles.subtitle}>{selectedMoto.marca} {selectedMoto.modelo}</Text>

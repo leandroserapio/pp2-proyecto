@@ -15,13 +15,14 @@ import { light } from '../../theme/mototrackerLight';
 import { useAuth } from '../../context/AuthContext';
 import { useMoto } from '../../context/MotoContext';
 import { crearMoto, sumarKilometros } from '../../api/motos';
+import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ApiError } from '../../api/client';
 import type { Moto } from '../../types/models';
 
 export function GarageScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const { motos, selectedMotoId, selectedMoto, loading, refreshMotos, setSelectedMotoId, eliminarMoto } = useMoto();
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -122,24 +123,11 @@ export function GarageScreen() {
     );
   };
 
-  const initial = user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M';
-
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.avatarRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
-          <View>
-            <Text style={styles.brand}>MotoTracker</Text>
-            <Text style={styles.welcome}>Hola, {user?.nombre ?? 'usuario'}</Text>
-          </View>
-        </View>
-        <Pressable onPress={logout} hitSlop={10}>
-          <Ionicons name="log-out-outline" size={24} color={light.textMuted} />
-        </Pressable>
-      </View>
+      {!addOpen && !kmOpen ? (
+        <AppHeader subtitle={`Hola, ${user?.nombre ?? 'usuario'}`} />
+      ) : null}
 
       {selectedMoto ? (
         <View style={styles.motoCard}>
@@ -238,29 +226,6 @@ export function GarageScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 4,
-    paddingBottom: 14,
-  },
-  avatarRow: { flexDirection: 'row', alignItems: 'center' },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: light.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: light.border,
-    marginRight: 12,
-  },
-  avatarText: { fontWeight: '800', color: light.primaryDark, fontSize: 16 },
-  brand: { fontSize: 18, fontWeight: '800', color: light.text },
-  welcome: { fontSize: 13, color: light.textMuted, marginTop: 2 },
   motoCard: {
     marginHorizontal: 18,
     backgroundColor: light.surface,

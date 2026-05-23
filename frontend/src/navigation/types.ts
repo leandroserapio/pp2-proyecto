@@ -1,5 +1,5 @@
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { Gasto } from '../types/models';
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import type { Gasto } from "../types/models";
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -22,13 +22,33 @@ export type MainTabParamList = {
   GastosStack: undefined;
   Mantenimiento: undefined;
   Viajes: undefined;
+  Cuenta: undefined;
+  Ajustes: undefined;
 };
+
 
 export type RootStackParamList = {
+
   Auth: undefined;
+
   Main: undefined;
+
+  Cuenta: undefined;
+
+  Ajustes: undefined;
+
 };
 
-export type GastosHomeProps = NativeStackScreenProps<GastosStackParamList, 'GastosHome'>;
-export type GastosAddProps = NativeStackScreenProps<GastosStackParamList, 'GastosAdd'>;
-export type GastosDetailProps = NativeStackScreenProps<GastosStackParamList, 'GastosDetail'>;
+
+export type GastosHomeProps = NativeStackScreenProps<
+  GastosStackParamList,
+  "GastosHome"
+>;
+export type GastosAddProps = NativeStackScreenProps<
+  GastosStackParamList,
+  "GastosAdd"
+>;
+export type GastosDetailProps = NativeStackScreenProps<
+  GastosStackParamList,
+  "GastosDetail"
+>;
