@@ -7,7 +7,7 @@ import type { MainTabParamList } from './types';
 import { GastosStackNavigator } from './GastosStackNavigator';
 import { GarageScreen } from '../screens/tabs/GarageScreen';
 import { MantenimientoTabScreen } from '../screens/tabs/MantenimientoTabScreen';
-import { ViajesTabScreen } from '../screens/tabs/ViajesTabScreen';
+import { ViajesStackNavigator } from './ViajesStackNavigator';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
@@ -99,8 +99,8 @@ export function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Viajes"
-        component={ViajesTabScreen}
+        name="ViajesStack"
+        component={ViajesStackNavigator}
         options={{
           title: 'Viajes',
           tabBarIcon: ({ color, size }) => (

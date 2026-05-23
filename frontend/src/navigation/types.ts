@@ -1,5 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import type { Gasto } from '../types/models';
+import type { Gasto, Viaje } from '../types/models';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -18,11 +18,23 @@ export type GastoListNavItem = Gasto & {
   motoLabel: string;
 };
 
+export type ViajesStackParamList = {
+  ViajesHome: undefined;
+  ViajesAdd: { idMoto?: number } | undefined;
+  ViajesDetail: { item: ViajeListNavItem };
+  ViajesEdit: { item: ViajeListNavItem };
+};
+
+export type ViajeListNavItem = Viaje & {
+  idMoto: number;
+  motoLabel: string;
+};
+
 export type MainTabParamList = {
   Garage: undefined;
   GastosStack: undefined;
   Mantenimiento: undefined;
-  Viajes: undefined;
+  ViajesStack: undefined;
   Perfil: undefined;
 };
 
@@ -35,3 +47,7 @@ export type GastosHomeProps = NativeStackScreenProps<GastosStackParamList, 'Gast
 export type GastosAddProps = NativeStackScreenProps<GastosStackParamList, 'GastosAdd'>;
 export type GastosDetailProps = NativeStackScreenProps<GastosStackParamList, 'GastosDetail'>;
 export type GastosEditProps = NativeStackScreenProps<GastosStackParamList, 'GastosEdit'>;
+export type ViajesHomeProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesHome'>;
+export type ViajesAddProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesAdd'>;
+export type ViajesDetailProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesDetail'>;
+export type ViajesEditProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesEdit'>;

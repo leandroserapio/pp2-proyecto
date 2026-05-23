@@ -1,6 +1,10 @@
 import type { Viaje } from '../types/models';
 import { apiRequest } from './client';
 
+export function listarViajes(): Promise<Viaje[]> {
+  return apiRequest<Viaje[]>('/api/viajes');
+}
+
 export function listarViajesPorMoto(idMoto: number): Promise<Viaje[]> {
   return apiRequest<Viaje[]>(`/api/viajes/moto/${idMoto}`);
 }
