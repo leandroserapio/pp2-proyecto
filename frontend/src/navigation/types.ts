@@ -31,16 +31,18 @@ export type ViajeListNavItem = Viaje & {
 };
 
 export type MainTabParamList = {
+  Inicio: undefined;
   Garage: undefined;
   GastosStack: undefined;
   Mantenimiento: undefined;
   ViajesStack: undefined;
-  Perfil: undefined;
 };
 
 export type RootStackParamList = {
   Auth: undefined;
   Main: undefined;
+  Cuenta: undefined;
+  Ajustes: undefined;
 };
 
 export type GastosHomeProps = NativeStackScreenProps<GastosStackParamList, 'GastosHome'>;

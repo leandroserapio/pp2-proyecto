@@ -15,13 +15,16 @@ import { light } from '../../theme/mototrackerLight';
 import { useAuth } from '../../context/AuthContext';
 import { useMoto } from '../../context/MotoContext';
 import { crearMoto, sumarKilometros } from '../../api/motos';
+import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ApiError } from '../../api/client';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import type { Moto } from '../../types/models';
 
 export function GarageScreen() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { theme } = useAppSettings();
   const { motos, selectedMotoId, selectedMoto, loading, refreshMotos, setSelectedMotoId, eliminarMoto } = useMoto();
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -122,37 +125,38 @@ export function GarageScreen() {
     );
   };
 
-  const initial = user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M';
-
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.avatarRow}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{initial}</Text>
-          </View>
-          <View>
-            <Text style={styles.brand}>MotoTracker</Text>
-            <Text style={styles.welcome}>Hola, {user?.nombre ?? 'usuario'}</Text>
-          </View>
-        </View>
-        <Pressable onPress={logout} hitSlop={10}>
-          <Ionicons name="log-out-outline" size={24} color={light.textMuted} />
-        </Pressable>
-      </View>
+    <SafeAreaView
+      style={[
+        styles.safe,
+        {
+          backgroundColor: theme.bg
+        }
+      ]}
+      edges={['top']}
+    >
+      {!addOpen && !kmOpen ? (
+        <AppHeader subtitle={`Hola, ${user?.nombre ?? 'usuario'}`} />
+      ) : null}
 
       {selectedMoto ? (
-        <View style={styles.motoCard}>
+        <View style={[
+          styles.motoCard,
+          {
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
+          }
+        ]}>
           <View style={styles.motoCardHeader}>
-            <Text style={styles.motoCardTitle}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
-            {selectedMoto.anio ? <Text style={styles.motoCardAnio}>{selectedMoto.anio}</Text> : null}
+            <Text style={[styles.motoCardTitle, { color: theme.text }]}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
+            {selectedMoto.anio ? <Text style={[styles.motoCardAnio, { color: theme.textMuted }]}>{selectedMoto.anio}</Text> : null}
           </View>
           {selectedMoto.patente ? (
-            <Text style={styles.motoCardInfo}>Patente: {selectedMoto.patente}</Text>
+            <Text style={[styles.motoCardInfo, { color: theme.textMuted }]}>Patente: {selectedMoto.patente}</Text>
           ) : null}
           <View style={styles.kmRow}>
             <View>
-              <Text style={styles.kmLabel}>KILOMETRAJE</Text>
+              <Text style={[styles.kmLabel, { color: theme.textMuted }]}>KILOMETRAJE</Text>
               <Text style={styles.kmValue}>{selectedMoto.kilometrajeActual ?? 0} km</Text>
             </View>
             <Pressable style={styles.kmBtn} onPress={() => setKmOpen(true)}>
@@ -164,7 +168,7 @@ export function GarageScreen() {
       ) : null}
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Mis motos</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Mis motos</Text>
         <Pressable style={styles.addBtn} onPress={() => setAddOpen(true)}>
           <Ionicons name="add-circle" size={26} color={light.primary} />
         </Pressable>
@@ -173,8 +177,8 @@ export function GarageScreen() {
       {motos.length === 0 && !loading ? (
         <View style={styles.emptyWrap}>
           <Ionicons name="bicycle-outline" size={64} color={light.border} />
-          <Text style={styles.emptyTitle}>No tenés motos registradas</Text>
-          <Text style={styles.emptySub}>Agregá tu primera moto para empezar a registrar gastos y más.</Text>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>No tenés motos registradas</Text>
+          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Agregá tu primera moto para empezar a registrar gastos y más.</Text>
           <PrimaryButton title="Agregar moto" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
         </View>
       ) : (
@@ -187,15 +191,22 @@ export function GarageScreen() {
             const isSelected = item.idMoto === selectedMotoId;
             return (
               <Pressable
-                style={[styles.motoRow, isSelected && styles.motoRowSelected]}
+                style={[
+                  styles.motoRow,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: isSelected ? theme.primary : theme.border,
+                  },
+                  isSelected && styles.motoRowSelected
+                ]}
                 onPress={() => item.idMoto != null && setSelectedMotoId(item.idMoto)}
                 onLongPress={() => confirmDelete(item)}
               >
                 <View style={styles.motoRowLeft}>
                   <View style={[styles.dot, isSelected && styles.dotActive]} />
                   <View>
-                    <Text style={styles.motoRowTitle}>{item.marca} {item.modelo}</Text>
-                    <Text style={styles.motoRowSub}>{item.kilometrajeActual ?? 0} km</Text>
+                    <Text style={[styles.motoRowTitle, { color: theme.text }]}>{item.marca} {item.modelo}</Text>
+                    <Text style={[styles.motoRowSub, { color: theme.textMuted }]}>{item.kilometrajeActual ?? 0} km</Text>
                   </View>
                 </View>
                 {isSelected ? <Ionicons name="checkmark-circle" size={22} color={light.primary} /> : null}
@@ -238,29 +249,6 @@ export function GarageScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 4,
-    paddingBottom: 14,
-  },
-  avatarRow: { flexDirection: 'row', alignItems: 'center' },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: light.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: light.border,
-    marginRight: 12,
-  },
-  avatarText: { fontWeight: '800', color: light.primaryDark, fontSize: 16 },
-  brand: { fontSize: 18, fontWeight: '800', color: light.text },
-  welcome: { fontSize: 13, color: light.textMuted, marginTop: 2 },
   motoCard: {
     marginHorizontal: 18,
     backgroundColor: light.surface,
