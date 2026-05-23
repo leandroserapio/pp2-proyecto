@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 
 import { useAuth } from '../context/AuthContext';
+import { useAppSettings } from '../context/AppSettingsContext';
 import { fontFamily } from '../theme/fonts';
 import { light } from '../theme/mototrackerLight';
 import { AppDrawerMenu } from './AppDrawerMenu';
@@ -24,11 +25,18 @@ export function AppHeader({
   title = 'MotoTracker',
 }: Props) {
   const { user } = useAuth();
+  const { theme } = useAppSettings();
   const [menuVisible, setMenuVisible] = useState(false);
 
   return (
     <>
-      <View style={styles.header}>
+      <View style={[
+        styles.header,
+        {
+          backgroundColor: theme.surface,
+          borderBottomColor: theme.border,
+        }
+      ]}>
         <Pressable
           accessibilityRole="button"
           hitSlop={10}
@@ -37,18 +45,28 @@ export function AppHeader({
           <Ionicons
             name="menu"
             size={30}
-            color={light.primary}
+            color={theme.primary}
           />
         </Pressable>
 
         <View style={styles.titleWrap}>
-          <Text style={styles.brand}>
+          <Text style={[
+            styles.brand,
+            {
+              color: theme.primary
+            }
+          ]}>
             {title}
           </Text>
 
           {subtitle ? (
             <Text
-              style={styles.subtitle}
+              style={[
+                styles.subtitle,
+                {
+                  color: theme.textMuted
+                }
+              ]}
               numberOfLines={1}
             >
               {subtitle}
@@ -56,8 +74,19 @@ export function AppHeader({
           ) : null}
         </View>
 
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
+        <View style={[
+          styles.avatar,
+          {
+            backgroundColor: theme.primarySoft,
+            borderColor: theme.border,
+          }
+        ]}>
+          <Text style={[
+            styles.avatarText,
+            {
+              color: theme.primaryDark
+            }
+          ]}>
             {user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M'}
           </Text>
         </View>

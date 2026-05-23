@@ -18,6 +18,7 @@ export type GastoListNavItem = Gasto & {
 };
 
 export type MainTabParamList = {
+  Inicio: undefined;
   Garage: undefined;
   GastosStack: undefined;
   Mantenimiento: undefined;

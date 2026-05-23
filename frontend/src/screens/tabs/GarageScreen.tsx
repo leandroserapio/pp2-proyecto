@@ -19,10 +19,12 @@ import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ApiError } from '../../api/client';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import type { Moto } from '../../types/models';
 
 export function GarageScreen() {
   const { user } = useAuth();
+  const { theme } = useAppSettings();
   const { motos, selectedMotoId, selectedMoto, loading, refreshMotos, setSelectedMotoId, eliminarMoto } = useMoto();
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
@@ -124,23 +126,37 @@ export function GarageScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView
+      style={[
+        styles.safe,
+        {
+          backgroundColor: theme.bg
+        }
+      ]}
+      edges={['top']}
+    >
       {!addOpen && !kmOpen ? (
         <AppHeader subtitle={`Hola, ${user?.nombre ?? 'usuario'}`} />
       ) : null}
 
       {selectedMoto ? (
-        <View style={styles.motoCard}>
+        <View style={[
+          styles.motoCard,
+          {
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
+          }
+        ]}>
           <View style={styles.motoCardHeader}>
-            <Text style={styles.motoCardTitle}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
-            {selectedMoto.anio ? <Text style={styles.motoCardAnio}>{selectedMoto.anio}</Text> : null}
+            <Text style={[styles.motoCardTitle, { color: theme.text }]}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
+            {selectedMoto.anio ? <Text style={[styles.motoCardAnio, { color: theme.textMuted }]}>{selectedMoto.anio}</Text> : null}
           </View>
           {selectedMoto.patente ? (
-            <Text style={styles.motoCardInfo}>Patente: {selectedMoto.patente}</Text>
+            <Text style={[styles.motoCardInfo, { color: theme.textMuted }]}>Patente: {selectedMoto.patente}</Text>
           ) : null}
           <View style={styles.kmRow}>
             <View>
-              <Text style={styles.kmLabel}>KILOMETRAJE</Text>
+              <Text style={[styles.kmLabel, { color: theme.textMuted }]}>KILOMETRAJE</Text>
               <Text style={styles.kmValue}>{selectedMoto.kilometrajeActual ?? 0} km</Text>
             </View>
             <Pressable style={styles.kmBtn} onPress={() => setKmOpen(true)}>
@@ -152,7 +168,7 @@ export function GarageScreen() {
       ) : null}
 
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>Mis motos</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Mis motos</Text>
         <Pressable style={styles.addBtn} onPress={() => setAddOpen(true)}>
           <Ionicons name="add-circle" size={26} color={light.primary} />
         </Pressable>
@@ -161,8 +177,8 @@ export function GarageScreen() {
       {motos.length === 0 && !loading ? (
         <View style={styles.emptyWrap}>
           <Ionicons name="bicycle-outline" size={64} color={light.border} />
-          <Text style={styles.emptyTitle}>No tenés motos registradas</Text>
-          <Text style={styles.emptySub}>Agregá tu primera moto para empezar a registrar gastos y más.</Text>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>No tenés motos registradas</Text>
+          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Agregá tu primera moto para empezar a registrar gastos y más.</Text>
           <PrimaryButton title="Agregar moto" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
         </View>
       ) : (
@@ -175,15 +191,22 @@ export function GarageScreen() {
             const isSelected = item.idMoto === selectedMotoId;
             return (
               <Pressable
-                style={[styles.motoRow, isSelected && styles.motoRowSelected]}
+                style={[
+                  styles.motoRow,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: isSelected ? theme.primary : theme.border,
+                  },
+                  isSelected && styles.motoRowSelected
+                ]}
                 onPress={() => item.idMoto != null && setSelectedMotoId(item.idMoto)}
                 onLongPress={() => confirmDelete(item)}
               >
                 <View style={styles.motoRowLeft}>
                   <View style={[styles.dot, isSelected && styles.dotActive]} />
                   <View>
-                    <Text style={styles.motoRowTitle}>{item.marca} {item.modelo}</Text>
-                    <Text style={styles.motoRowSub}>{item.kilometrajeActual ?? 0} km</Text>
+                    <Text style={[styles.motoRowTitle, { color: theme.text }]}>{item.marca} {item.modelo}</Text>
+                    <Text style={[styles.motoRowSub, { color: theme.textMuted }]}>{item.kilometrajeActual ?? 0} km</Text>
                   </View>
                 </View>
                 {isSelected ? <Ionicons name="checkmark-circle" size={22} color={light.primary} /> : null}

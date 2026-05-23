@@ -45,6 +45,7 @@ import type {
 } from '../../navigation/types';
 
 import { useMoto } from '../../context/MotoContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 
 import { PrimaryButton } from '../../components/PrimaryButton';
 
@@ -101,6 +102,7 @@ export function GastosListScreen() {
   const insets = useSafeAreaInsets();
 
   const { motos, loading: motosLoading } = useMoto();
+  const { theme } = useAppSettings();
 
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
 
@@ -261,7 +263,12 @@ export function GastosListScreen() {
   return (
 
     <SafeAreaView
-      style={styles.safe}
+      style={[
+        styles.safe,
+        {
+          backgroundColor: theme.bg
+        }
+      ]}
       edges={['top']}
     >
 

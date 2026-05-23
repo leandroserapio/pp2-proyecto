@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { light } from '../../theme/mototrackerLight';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
@@ -25,6 +26,7 @@ import type { Viaje } from '../../types/models';
 
 export function ViajesTabScreen() {
   const { selectedMoto, selectedMotoId } = useMoto();
+  const { theme } = useAppSettings();
   const insets = useSafeAreaInsets();
   const [items, setItems] = useState<Viaje[]>([]);
   const [loading, setLoading] = useState(false);
@@ -137,30 +139,30 @@ export function ViajesTabScreen() {
 
   if (!selectedMoto) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
+      <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
         {!addOpen ? <AppHeader /> : null}
         <View style={styles.emptyWrap}>
-          <Text style={styles.emptyTitle}>Sin moto seleccionada</Text>
-          <Text style={styles.emptySub}>Seleccioná una moto desde Garage.</Text>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin moto seleccionada</Text>
+          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Seleccioná una moto desde Garage.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       {!addOpen ? <AppHeader /> : null}
 
       <View style={styles.header}>
-        <Text style={styles.title}>Viajes</Text>
-        <Text style={styles.subtitle}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Viajes</Text>
+        <Text style={[styles.subtitle, { color: theme.textMuted }]}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
       </View>
 
       {items.length === 0 && !loading ? (
         <View style={styles.emptyWrap}>
           <Ionicons name="map-outline" size={64} color={light.border} />
-          <Text style={styles.emptyTitle}>Sin viajes programados</Text>
-          <Text style={styles.emptySub}>Planificá tus salidas indicando destino, km estimados y presupuesto.</Text>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin viajes programados</Text>
+          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Planificá tus salidas indicando destino, km estimados y presupuesto.</Text>
           <PrimaryButton title="Agregar viaje" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
         </View>
       ) : (
@@ -171,7 +173,7 @@ export function ViajesTabScreen() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
             renderItem={({ item }) => (
-              <Pressable style={styles.card} onLongPress={() => confirmDelete(item)}>
+              <Pressable style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} onLongPress={() => confirmDelete(item)}>
                 <View style={styles.cardHeader}>
                   <Text style={styles.cardTitle}>{item.destino}</Text>
                   <Text style={[styles.cardEstado, { color: estadoColor(item.estado) }]}>

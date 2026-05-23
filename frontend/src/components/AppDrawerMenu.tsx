@@ -1,46 +1,71 @@
 // src/components/AppDrawerMenu.tsx
 
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import {
   Alert,
   Modal,
   Pressable,
-  ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from 'react-native';
-import { CommonActions, useNavigation } from '@react-navigation/native';
 
 import { useAuth } from '../context/AuthContext';
-import { light } from '../theme/mototrackerLight';
+import { useAppSettings } from '../context/AppSettingsContext';
 import { fontFamily } from '../theme/fonts';
+import { light } from '../theme/mototrackerLight';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
 };
 
+type MenuRoute = 'Ajustes' | 'Cuenta' | 'Garage' | 'Inicio';
+
+const menuItems: Array<{
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  route: MenuRoute;
+  secondaryIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
+}> = [
+  {
+    icon: 'home-outline',
+    label: 'Inicio',
+    route: 'Inicio',
+  },
+  {
+    icon: 'add-circle-outline',
+    label: 'Registrar / seleccionar moto',
+    route: 'Garage',
+    secondaryIcon: 'motorbike',
+  },
+  {
+    icon: 'person-outline',
+    label: 'Cuenta',
+    route: 'Cuenta',
+  },
+  {
+    icon: 'settings-outline',
+    label: 'Ajustes',
+    route: 'Ajustes',
+  },
+];
+
 export function AppDrawerMenu({ visible, onClose }: Props) {
   const navigation = useNavigation<any>();
-  const { user, logout } = useAuth();
+  const { logout, user } = useAuth();
+  const { theme } = useAppSettings();
 
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
-
-  const initial = user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M';
-
-  function goTo(routeName: 'Ajustes' | 'Cuenta' | 'Garage') {
+  function goTo(routeName: MenuRoute) {
     onClose();
 
-    if (routeName === 'Garage') {
+    if (routeName === 'Inicio' || routeName === 'Garage') {
       navigation.dispatch(
         CommonActions.navigate({
           name: 'Main',
           params: {
-            screen: 'Garage',
+            screen: routeName,
           },
         }),
       );
@@ -53,7 +78,7 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
   function cerrarSesion() {
     Alert.alert(
       'Cerrar sesión',
-      '¿Seguro que querés cerrar sesión?',
+      'Estas seguro',
       [
         {
           text: 'Cancelar',
@@ -79,149 +104,98 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
       onRequestClose={onClose}
     >
       <View style={styles.overlay}>
-        <View style={[styles.menu, darkMode && styles.menuDark]}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <View style={styles.header}>
-              <Text style={[styles.title, darkMode && styles.textDark]}>
+        <View style={[
+          styles.menu,
+          {
+            backgroundColor: theme.surface,
+          }
+        ]}>
+          <View style={styles.header}>
+            <View>
+              <Text style={[
+                styles.title,
+                {
+                  color: theme.primary
+                }
+              ]}>
                 MotoTracker
               </Text>
-
-              <Pressable onPress={onClose}>
-                <Ionicons
-                  name="close"
-                  size={30}
-                  color={darkMode ? 'white' : 'black'}
-                />
-              </Pressable>
+              <Text style={[
+                styles.subtitle,
+                {
+                  color: theme.textMuted
+                }
+              ]}>
+                {user?.nombre ?? 'Usuario'}
+              </Text>
             </View>
 
             <Pressable
-              style={styles.item}
-              onPress={() => goTo('Garage')}
+              accessibilityRole="button"
+              hitSlop={10}
+              onPress={onClose}
             >
               <Ionicons
-                name="home"
-                size={24}
-                color={darkMode ? 'white' : light.primary}
+                name="close"
+                size={26}
+                color={theme.text}
               />
-              <Text style={[styles.itemText, darkMode && styles.textDark]}>
-                Inicio
-              </Text>
             </Pressable>
+          </View>
 
-            <Text style={[styles.sectionTitle, darkMode && styles.textDark]}>
-              Motos
-            </Text>
-
-            <Pressable
-              style={styles.subItem}
-              onPress={() => goTo('Garage')}
-            >
-              <Ionicons
-                name="add-circle-outline"
-                size={22}
-                color={light.primary}
-              />
-              <Text style={[styles.itemText, darkMode && styles.textDark]}>
-                Registrar moto
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.subItem}
-              onPress={() => goTo('Garage')}
-            >
-              <MaterialCommunityIcons
-                name="motorbike"
-                size={22}
-                color={light.primary}
-              />
-              <Text style={[styles.itemText, darkMode && styles.textDark]}>
-                Seleccionar moto
-              </Text>
-            </Pressable>
-
-            <Text style={[styles.sectionTitle, darkMode && styles.textDark]}>
-              Cuenta
-            </Text>
-
-            <View style={styles.accountContainer}>
-              <View style={styles.profileImage}>
-                <Text style={styles.profileInitial}>
-                  {initial}
-                </Text>
-              </View>
-
-              <Text style={[styles.accountText, darkMode && styles.textDark]}>
-                Nombre: {user?.nombre ?? 'Usuario'}
-              </Text>
-
-              <Text style={[styles.accountText, darkMode && styles.textDark]}>
-                Email: {user?.email ?? '-'}
-              </Text>
-
+          <View style={styles.items}>
+            {menuItems.map((item) => (
               <Pressable
-                style={styles.editButton}
-                onPress={() => goTo('Cuenta')}
+                key={item.route}
+                style={({ pressed }) => [
+                  styles.item,
+                  {
+                    backgroundColor: pressed ? theme.bg : 'transparent',
+                  }
+                ]}
+                onPress={() => goTo(item.route)}
               >
-                <Text style={styles.editButtonText}>
-                  Modificar cuenta
+                <View style={styles.itemIconWrap}>
+                  {item.secondaryIcon ? (
+                    <MaterialCommunityIcons
+                      name={item.secondaryIcon}
+                      size={22}
+                      color={theme.primary}
+                    />
+                  ) : (
+                    <Ionicons
+                      name={item.icon}
+                      size={22}
+                      color={theme.primary}
+                    />
+                  )}
+                </View>
+
+                <Text style={[
+                  styles.itemText,
+                  {
+                    color: theme.text
+                  }
+                ]}>
+                  {item.label}
                 </Text>
               </Pressable>
-            </View>
+            ))}
+          </View>
 
-            <Text style={[styles.sectionTitle, darkMode && styles.textDark]}>
-              Ajustes
+          <Pressable
+            style={styles.logoutButton}
+            onPress={cerrarSesion}
+          >
+            <Ionicons
+              name="log-out-outline"
+              size={22}
+              color="#fff"
+            />
+            <Text style={styles.logoutText}>
+              Cerrar sesión
             </Text>
-
-            <View style={styles.settingRow}>
-              <Text style={[styles.itemText, darkMode && styles.textDark]}>
-                Modo oscuro
-              </Text>
-              <Switch
-                value={darkMode}
-                onValueChange={setDarkMode}
-              />
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={[styles.itemText, darkMode && styles.textDark]}>
-                Notificaciones
-              </Text>
-              <Switch
-                value={notifications}
-                onValueChange={setNotifications}
-              />
-            </View>
-
-            <Pressable
-              style={styles.settingsButton}
-              onPress={() => goTo('Ajustes')}
-            >
-              <Ionicons
-                name="settings-outline"
-                size={22}
-                color={light.primary}
-              />
-              <Text style={[styles.itemText, darkMode && styles.textDark]}>
-                Ver ajustes
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.logoutButton}
-              onPress={cerrarSesion}
-            >
-              <Ionicons
-                name="log-out-outline"
-                size={24}
-                color="white"
-              />
-              <Text style={styles.logoutText}>
-                Cerrar sesión
-              </Text>
-            </Pressable>
-          </ScrollView>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -236,107 +210,56 @@ const styles = StyleSheet.create({
   menu: {
     width: '82%',
     height: '100%',
-    backgroundColor: 'white',
+    backgroundColor: light.surface,
     paddingTop: 60,
-    paddingHorizontal: 20,
-  },
-  menuDark: {
-    backgroundColor: '#121212',
+    paddingHorizontal: 18,
+    paddingBottom: 24,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 28,
   },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
     color: light.primary,
   },
-  sectionTitle: {
-    marginTop: 26,
-    marginBottom: 14,
-    fontSize: 18,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.navy,
+  subtitle: {
+    marginTop: 4,
+    fontSize: 13,
+    color: light.textMuted,
+    fontFamily: fontFamily.regular,
+  },
+  items: {
+    gap: 4,
   },
   item: {
+    minHeight: 50,
+    borderRadius: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 18,
+    paddingHorizontal: 10,
   },
-  subItem: {
-    flexDirection: 'row',
+  itemIconWrap: {
+    width: 34,
     alignItems: 'center',
-    gap: 14,
-    marginBottom: 16,
-    marginLeft: 10,
-  },
-  settingsButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginTop: 4,
+    marginRight: 10,
   },
   itemText: {
-    fontSize: 16,
-    color: light.navy,
-    fontFamily: fontFamily.medium,
-    fontWeight: '500',
-  },
-  accountContainer: {
-    marginTop: 8,
-  },
-  profileImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    marginBottom: 16,
-    backgroundColor: light.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: light.border,
-  },
-  profileInitial: {
-    color: light.primaryDark,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    fontSize: 30,
-  },
-  accountText: {
+    flex: 1,
     fontSize: 15,
-    color: light.navy,
-    marginBottom: 8,
-  },
-  editButton: {
-    backgroundColor: light.primary,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 14,
-    alignItems: 'center',
-  },
-  editButtonText: {
-    color: 'white',
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 18,
+    color: light.text,
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
   },
   logoutButton: {
+    minHeight: 50,
+    marginTop: 'auto',
+    borderRadius: 8,
     backgroundColor: '#D32F2F',
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginTop: 40,
-    marginBottom: 24,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
@@ -344,11 +267,8 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
-  },
-  textDark: {
-    color: 'white',
   },
 });

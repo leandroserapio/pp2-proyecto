@@ -46,6 +46,11 @@ import {
   MotoProvider
 } from '../context/MotoContext';
 
+import {
+  AppSettingsProvider,
+  useAppSettings
+} from '../context/AppSettingsContext';
+
 import type {
   AuthStackParamList,
   RootStackParamList
@@ -64,28 +69,6 @@ import { SettingsScreen } from '../screens/settings/SettingsScreen';
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
-
-const navTheme = {
-
-  ...DefaultTheme,
-
-  colors: {
-
-    ...DefaultTheme.colors,
-
-    background: light.bg,
-
-    card: light.surface,
-
-    text: light.text,
-
-    border: 'transparent',
-
-    primary: light.primary,
-
-  },
-
-};
 
 function AuthNavigator() {
 
@@ -252,22 +235,49 @@ export function AppNavigator() {
 
       <SafeAreaProvider>
 
-        <AuthProvider>
+        <AppSettingsProvider>
 
-          <NavigationContainer theme={navTheme}>
+          <AuthProvider>
 
-            <StatusBar style="dark" />
+            <AppNavigationContent />
 
-            <RootNavigator />
+          </AuthProvider>
 
-          </NavigationContainer>
-
-        </AuthProvider>
+        </AppSettingsProvider>
 
       </SafeAreaProvider>
 
     </GestureHandlerRootView>
 
+  );
+}
+
+function AppNavigationContent() {
+  const {
+    darkMode,
+    theme
+  } = useAppSettings();
+
+  const navTheme = {
+    ...DefaultTheme,
+    colors: {
+      ...DefaultTheme.colors,
+      background: theme.bg,
+      card: theme.surface,
+      text: theme.text,
+      border: 'transparent',
+      primary: theme.primary,
+    },
+  };
+
+  return (
+    <NavigationContainer theme={navTheme}>
+
+      <StatusBar style={darkMode ? 'light' : 'dark'} />
+
+      <RootNavigator />
+
+    </NavigationContainer>
   );
 }
 

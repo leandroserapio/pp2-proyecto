@@ -6,13 +6,15 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
 import { Platform, StyleSheet } from 'react-native';
 
-import { light } from '../theme/mototrackerLight';
-
 import { fontFamily } from '../theme/fonts';
+
+import { useAppSettings } from '../context/AppSettingsContext';
 
 import type { MainTabParamList } from './types';
 
 import { GastosStackNavigator } from './GastosStackNavigator';
+
+import { HomeScreen } from '../screens/tabs/HomeScreen';
 
 import { GarageScreen } from '../screens/tabs/GarageScreen';
 
@@ -22,82 +24,83 @@ import { ViajesTabScreen } from '../screens/tabs/ViajesTabScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
-const androidTabScreenOptions = {
-
-  headerShown: false,
-
-  tabBarActiveTintColor: light.primary,
-
-  tabBarInactiveTintColor: light.tabInactive,
-
-  tabBarShowLabel: true,
-
-  tabBarStyle: {
-    backgroundColor: light.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: light.border,
-    elevation: 0,
-  },
-
-  tabBarLabelStyle: {
-    fontSize: 11,
-    fontFamily: fontFamily.medium,
-    fontWeight: '500' as const,
-  },
-
-} as const;
-
-const iosWebTabScreenOptions = {
-
-  headerShown: false,
-
-  tabBarActiveTintColor: '#FFFFFF',
-
-  tabBarInactiveTintColor: light.tabInactive,
-
-  tabBarActiveBackgroundColor: light.tabActivePill,
-
-  tabBarInactiveBackgroundColor: 'transparent',
-
-  tabBarShowLabel: true,
-
-  tabBarLabelPosition: 'below-icon' as const,
-
-  tabBarStyle: {
-    backgroundColor: light.surface,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: light.border,
-    elevation: 0,
-    shadowOpacity: 0,
-    padding: 8,
-    paddingHorizontal: 8,
-    ...(Platform.OS === 'web'
-      ? {
-          boxShadow: 'none',
-          height: 'auto' as const
-        }
-      : {}),
-  },
-
-  tabBarItemStyle: {
-    borderRadius: 16,
-    overflow: 'hidden' as const,
-  },
-
-  tabBarLabelStyle: {
-    fontSize: 11,
-    fontFamily: fontFamily.medium,
-    fontWeight: '500' as const,
-    marginTop: 4,
-  },
-
-  tabBarIconStyle: {
-    marginBottom: 2,
-  },
-
-} as const;
-
 export function MainTabs() {
+  const { theme } = useAppSettings();
+
+  const androidTabScreenOptions = {
+
+    headerShown: false,
+
+    tabBarActiveTintColor: theme.primary,
+
+    tabBarInactiveTintColor: theme.tabInactive,
+
+    tabBarShowLabel: true,
+
+    tabBarStyle: {
+      backgroundColor: theme.surface,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
+      elevation: 0,
+    },
+
+    tabBarLabelStyle: {
+      fontSize: 11,
+      fontFamily: fontFamily.medium,
+      fontWeight: '500' as const,
+    },
+
+  } as const;
+
+  const iosWebTabScreenOptions = {
+
+    headerShown: false,
+
+    tabBarActiveTintColor: '#FFFFFF',
+
+    tabBarInactiveTintColor: theme.tabInactive,
+
+    tabBarActiveBackgroundColor: theme.tabActivePill,
+
+    tabBarInactiveBackgroundColor: 'transparent',
+
+    tabBarShowLabel: true,
+
+    tabBarLabelPosition: 'below-icon' as const,
+
+    tabBarStyle: {
+      backgroundColor: theme.surface,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: theme.border,
+      elevation: 0,
+      shadowOpacity: 0,
+      padding: 8,
+      paddingHorizontal: 8,
+      ...(Platform.OS === 'web'
+        ? {
+            boxShadow: 'none',
+            height: 'auto' as const
+          }
+        : {}),
+    },
+
+    tabBarItemStyle: {
+      borderRadius: 16,
+      overflow: 'hidden' as const,
+    },
+
+    tabBarLabelStyle: {
+      fontSize: 11,
+      fontFamily: fontFamily.medium,
+      fontWeight: '500' as const,
+      marginTop: 4,
+    },
+
+    tabBarIconStyle: {
+      marginBottom: 2,
+    },
+
+  } as const;
 
   return (
 
@@ -108,6 +111,25 @@ export function MainTabs() {
           : iosWebTabScreenOptions
       }
     >
+
+      {/* INICIO */}
+
+      <Tab.Screen
+        name="Inicio"
+        component={HomeScreen}
+        options={{
+          title: 'Inicio',
+          tabBarIcon: ({ color, size }) => (
+
+            <Ionicons
+              name="home-outline"
+              size={size}
+              color={color}
+            />
+
+          ),
+        }}
+      />
 
       {/* GARAGE */}
 

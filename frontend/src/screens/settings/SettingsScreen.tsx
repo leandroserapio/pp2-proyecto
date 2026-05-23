@@ -1,6 +1,5 @@
 // src/screens/settings/SettingsScreen.tsx
 
-import { useState } from 'react';
 import {
   StyleSheet,
   Switch,
@@ -10,44 +9,89 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '../../components/AppHeader';
-import { light } from '../../theme/mototrackerLight';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { fontFamily } from '../../theme/fonts';
+import { light } from '../../theme/mototrackerLight';
 
 export function SettingsScreen() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
+  const {
+    darkMode,
+    notifications,
+    reminders,
+    setDarkMode,
+    setNotifications,
+    setReminders,
+    theme,
+  } = useAppSettings();
 
   return (
     <SafeAreaView
-      style={styles.container}
+      style={[
+        styles.container,
+        {
+          backgroundColor: theme.bg
+        }
+      ]}
       edges={['top']}
     >
       <AppHeader title="Ajustes" />
 
       <View style={styles.content}>
-        <View style={styles.row}>
-          <Text style={styles.text}>
-            Modo oscuro
-          </Text>
+        <SettingRow
+          label="Modo oscuro"
+          value={darkMode}
+          onValueChange={setDarkMode}
+        />
 
-          <Switch
-            value={darkMode}
-            onValueChange={setDarkMode}
-          />
-        </View>
+        <SettingRow
+          label="Notificaciones"
+          value={notifications}
+          onValueChange={setNotifications}
+        />
 
-        <View style={styles.row}>
-          <Text style={styles.text}>
-            Notificaciones
-          </Text>
-
-          <Switch
-            value={notifications}
-            onValueChange={setNotifications}
-          />
-        </View>
+        <SettingRow
+          label="Recordatorios"
+          value={reminders}
+          onValueChange={setReminders}
+        />
       </View>
     </SafeAreaView>
+  );
+}
+
+function SettingRow({
+  label,
+  onValueChange,
+  value,
+}: {
+  label: string;
+  onValueChange: (value: boolean) => void;
+  value: boolean;
+}) {
+  const { theme } = useAppSettings();
+
+  return (
+    <View style={[
+      styles.row,
+      {
+        backgroundColor: theme.surface,
+        borderColor: theme.border,
+      }
+    ]}>
+      <Text style={[
+        styles.text,
+        {
+          color: theme.text
+        }
+      ]}>
+        {label}
+      </Text>
+
+      <Switch
+        value={value}
+        onValueChange={onValueChange}
+      />
+    </View>
   );
 }
 
@@ -63,8 +107,8 @@ const styles = StyleSheet.create({
   row: {
     backgroundColor: light.surface,
     padding: 18,
-    borderRadius: 12,
-    marginBottom: 16,
+    borderRadius: 8,
+    marginBottom: 14,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
