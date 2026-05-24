@@ -34,4 +34,3 @@ build/
 
 ### Local config (credentials) ###
 src/main/resources/application.properties
-src/main/resources/application.properties.example
