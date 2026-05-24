@@ -49,6 +49,7 @@ import { useMoto } from '../../context/MotoContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { AppHeader } from '../../components/AppHeader';
 import { eliminarGasto } from '../../api/gastos';
 import { ApiError } from '../../api/client';
 
@@ -67,8 +68,6 @@ import {
   motoLabel,
   sumMontos
 } from '../../gastos/gastosLoader';
-
-import { AppHeader } from '../../components/AppHeader';
 
 type Nav = NativeStackNavigationProp<GastosStackParamList>;
 
