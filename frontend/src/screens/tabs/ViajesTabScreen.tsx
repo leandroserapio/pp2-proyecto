@@ -19,25 +19,25 @@ import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
-import { crearMantenimiento, eliminarMantenimiento, listarMantenimientosPorMoto } from '../../api/mantenimientos';
+import { crearViaje, eliminarViaje, listarViajesPorMoto } from '../../api/viajes';
 import { ApiError } from '../../api/client';
 import { formatDisplayDate } from '../../gastos/format';
-import type { Mantenimiento } from '../../types/models';
+import type { Viaje } from '../../types/models';
 
-export function MantenimientoTabScreen() {
+export function ViajesTabScreen() {
   const { selectedMoto, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
   const insets = useSafeAreaInsets();
-  const [items, setItems] = useState<Mantenimiento[]>([]);
+  const [items, setItems] = useState<Viaje[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
-  const [tipo, setTipo] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [fecha, setFecha] = useState('');
-  const [km, setKm] = useState('');
-  const [costo, setCosto] = useState('');
+  const [destino, setDestino] = useState('');
+  const [fechaSalida, setFechaSalida] = useState('');
+  const [kmEst, setKmEst] = useState('');
+  const [presupuesto, setPresupuesto] = useState('');
+  const [notas, setNotas] = useState('');
   const [saving, setSaving] = useState(false);
 
   const reload = useCallback(async () => {
@@ -47,8 +47,8 @@ export function MantenimientoTabScreen() {
     }
     setLoading(true);
     try {
-      const list = await listarMantenimientosPorMoto(selectedMotoId);
-      list.sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)));
+      const list = await listarViajesPorMoto(selectedMotoId);
+      list.sort((a, b) => String(b.fechaSalida).localeCompare(String(a.fechaSalida)));
       setItems(list);
     } finally {
       setLoading(false);
@@ -73,27 +73,28 @@ export function MantenimientoTabScreen() {
   };
 
   const resetForm = () => {
-    setTipo('');
-    setDescripcion('');
-    setFecha('');
-    setKm('');
-    setCosto('');
+    setDestino('');
+    setFechaSalida('');
+    setKmEst('');
+    setPresupuesto('');
+    setNotas('');
   };
 
   const onSave = async () => {
     if (!selectedMotoId) return;
-    if (!tipo.trim()) {
-      Alert.alert('Datos incompletos', 'El tipo es obligatorio.');
+    if (!destino.trim()) {
+      Alert.alert('Datos incompletos', 'El destino es obligatorio.');
       return;
     }
     setSaving(true);
     try {
-      await crearMantenimiento(selectedMotoId, {
-        tipo: tipo.trim(),
-        descripcion: descripcion.trim() || null,
-        fecha: fecha.trim() || todayIso(),
-        kilometraje: km ? Number(km) : null,
-        costo: costo ? Number(costo.replace(',', '.')) : null,
+      await crearViaje(selectedMotoId, {
+        destino: destino.trim(),
+        fechaSalida: fechaSalida.trim() || todayIso(),
+        kilometrosEstimados: kmEst ? Number(kmEst) : null,
+        presupuestoEstimado: presupuesto ? Number(presupuesto.replace(',', '.')) : null,
+        notas: notas.trim() || null,
+        estado: 'Programado',
       });
       resetForm();
       setAddOpen(false);
@@ -106,16 +107,16 @@ export function MantenimientoTabScreen() {
     }
   };
 
-  const confirmDelete = (m: Mantenimiento) => {
-    Alert.alert('Eliminar', `¿Eliminar ${m.tipo}?`, [
+  const confirmDelete = (v: Viaje) => {
+    Alert.alert('Eliminar viaje', `¿Eliminar viaje a ${v.destino}?`, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Eliminar',
         style: 'destructive',
         onPress: async () => {
-          if (m.idMantenimiento != null) {
+          if (v.idViaje != null) {
             try {
-              await eliminarMantenimiento(m.idMantenimiento);
+              await eliminarViaje(v.idViaje);
               await reload();
             } catch (e) {
               const msg = e instanceof ApiError ? e.message : 'No se pudo eliminar';
@@ -125,6 +126,15 @@ export function MantenimientoTabScreen() {
         },
       },
     ]);
+  };
+
+  const estadoColor = (estado: string | null | undefined) => {
+    if (!estado) return light.textMuted;
+    const e = estado.toLowerCase();
+    if (e === 'programado') return light.primary;
+    if (e === 'completado' || e === 'realizado') return '#16a34a';
+    if (e === 'cancelado') return '#dc2626';
+    return light.textMuted;
   };
 
   if (!selectedMoto) {
@@ -144,35 +154,40 @@ export function MantenimientoTabScreen() {
       {!addOpen ? <AppHeader /> : null}
 
       <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>Mantenimiento</Text>
+        <Text style={[styles.title, { color: theme.text }]}>Viajes</Text>
         <Text style={[styles.subtitle, { color: theme.textMuted }]}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
       </View>
 
       {items.length === 0 && !loading ? (
         <View style={styles.emptyWrap}>
-          <Ionicons name="construct-outline" size={64} color={light.border} />
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin mantenimientos</Text>
-          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Registrá services, cambios de aceite, frenos y más.</Text>
-          <PrimaryButton title="Agregar" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
+          <Ionicons name="map-outline" size={64} color={light.border} />
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin viajes programados</Text>
+          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Planificá tus salidas indicando destino, km estimados y presupuesto.</Text>
+          <PrimaryButton title="Agregar viaje" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
         </View>
       ) : (
         <View style={styles.listWrap}>
           <FlatList
             data={items}
-            keyExtractor={(m) => String(m.idMantenimiento)}
+            keyExtractor={(v) => String(v.idViaje)}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
             renderItem={({ item }) => (
               <Pressable style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} onLongPress={() => confirmDelete(item)}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>{item.tipo}</Text>
-                  {item.costo ? <Text style={styles.cardCosto}>${Number(item.costo).toLocaleString('es-AR')}</Text> : null}
+                  <Text style={styles.cardTitle}>{item.destino}</Text>
+                  <Text style={[styles.cardEstado, { color: estadoColor(item.estado) }]}>
+                    {item.estado ?? 'Programado'}
+                  </Text>
                 </View>
-                {item.descripcion ? <Text style={styles.cardDesc}>{item.descripcion}</Text> : null}
                 <View style={styles.cardFooter}>
-                  <Text style={styles.cardDate}>{formatDisplayDate(item.fecha)}</Text>
-                  {item.kilometraje ? <Text style={styles.cardKm}>{item.kilometraje} km</Text> : null}
+                  <Text style={styles.cardDate}>{formatDisplayDate(item.fechaSalida)}</Text>
+                  {item.kilometrosEstimados ? <Text style={styles.cardKm}>{item.kilometrosEstimados} km</Text> : null}
+                  {item.presupuestoEstimado ? (
+                    <Text style={styles.cardBudget}>${Number(item.presupuestoEstimado).toLocaleString('es-AR')}</Text>
+                  ) : null}
                 </View>
+                {item.notas ? <Text style={styles.cardNotas}>{item.notas}</Text> : null}
               </Pressable>
             )}
           />
@@ -191,12 +206,12 @@ export function MantenimientoTabScreen() {
           <Pressable style={styles.modalBackdrop} onPress={() => setAddOpen(false)} />
           <View style={styles.modalSheet}>
             <ScrollView keyboardShouldPersistTaps="handled">
-              <Text style={styles.modalTitle}>Agregar mantenimiento</Text>
-              <AppTextInput label="Tipo *" variant="light" placeholder="Ej: Aceite, Service, Frenos" value={tipo} onChangeText={setTipo} />
-              <AppTextInput label="Descripción" variant="light" placeholder="Ej: Cambio de aceite 20W50" value={descripcion} onChangeText={setDescripcion} />
-              <AppTextInput label="Fecha (AAAA-MM-DD)" variant="light" placeholder={todayIso()} value={fecha} onChangeText={setFecha} />
-              <AppTextInput label="Kilometraje" variant="light" placeholder="Ej: 5000" keyboardType="number-pad" value={km} onChangeText={setKm} />
-              <AppTextInput label="Costo" variant="light" placeholder="Ej: 12000" keyboardType="decimal-pad" value={costo} onChangeText={setCosto} />
+              <Text style={styles.modalTitle}>Agregar viaje</Text>
+              <AppTextInput label="Destino *" variant="light" placeholder="Ej: Chascomús" value={destino} onChangeText={setDestino} />
+              <AppTextInput label="Fecha salida (AAAA-MM-DD)" variant="light" placeholder={todayIso()} value={fechaSalida} onChangeText={setFechaSalida} />
+              <AppTextInput label="Km estimados" variant="light" placeholder="Ej: 220" keyboardType="number-pad" value={kmEst} onChangeText={setKmEst} />
+              <AppTextInput label="Presupuesto estimado" variant="light" placeholder="Ej: 30000" keyboardType="decimal-pad" value={presupuesto} onChangeText={setPresupuesto} />
+              <AppTextInput label="Notas" variant="light" placeholder="Revisiones, paradas, etc." value={notas} onChangeText={setNotas} multiline />
               <PrimaryButton title="Guardar" variant="blue" loading={saving} onPress={onSave} style={styles.saveBtn} />
             </ScrollView>
           </View>
@@ -227,11 +242,12 @@ const styles = StyleSheet.create({
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 16, fontWeight: '800', color: light.text },
-  cardCosto: { fontSize: 15, fontWeight: '900', color: light.primary },
-  cardDesc: { marginTop: 6, fontSize: 14, color: light.textMuted },
+  cardEstado: { fontSize: 13, fontWeight: '700' },
   cardFooter: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
   cardDate: { fontSize: 13, color: light.textMuted, marginRight: 16 },
   cardKm: { fontSize: 13, color: light.textMuted, marginRight: 16 },
+  cardBudget: { fontSize: 13, color: light.textMuted },
+  cardNotas: { marginTop: 8, fontSize: 13, color: light.textMuted, fontStyle: 'italic' },
   fab: {
     position: 'absolute',
     right: 22,
