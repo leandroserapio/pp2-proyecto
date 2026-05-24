@@ -1,5 +1,7 @@
 package com.mototracker.controller;
 
+import com.mototracker.dto.ActualizarKilometrajeRequest;
+import com.mototracker.dto.ActualizarKilometrajeResponse;
 import com.mototracker.exception.BadRequestException;
 import com.mototracker.exception.ResourceNotFoundException;
 import com.mototracker.model.Moto;
@@ -9,10 +11,11 @@ import com.mototracker.repository.MantenimientoRepository;
 import com.mototracker.repository.MotoRepository;
 import com.mototracker.repository.UsuarioRepository;
 import com.mototracker.repository.ViajeRepository;
+
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/motos")
@@ -50,9 +53,14 @@ public class MotoController {
     }
 
     @PostMapping("/usuario/{idUsuario}")
-    public Moto crearMoto(@PathVariable Long idUsuario, @RequestBody Moto moto) {
+    public Moto crearMoto(
+            @PathVariable Long idUsuario,
+            @RequestBody Moto moto
+    ) {
+
         Usuario usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado."));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Usuario no encontrado."));
 
         validarMoto(moto);
 
@@ -62,13 +70,20 @@ public class MotoController {
             moto.setKilometrajeActual(0);
         }
 
+        moto.setFechaUltimaActualizacionKm(LocalDateTime.now());
+
         return motoRepository.save(moto);
     }
 
     @PutMapping("/{idMoto}")
-    public Moto editarMoto(@PathVariable Long idMoto, @RequestBody Moto motoActualizada) {
+    public Moto editarMoto(
+            @PathVariable Long idMoto,
+            @RequestBody Moto motoActualizada
+    ) {
+
         Moto moto = motoRepository.findById(idMoto)
-                .orElseThrow(() -> new ResourceNotFoundException("Moto no encontrada."));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Moto no encontrada."));
 
         validarMoto(motoActualizada);
 
@@ -78,46 +93,86 @@ public class MotoController {
         moto.setPatente(motoActualizada.getPatente());
 
         if (motoActualizada.getKilometrajeActual() != null) {
+
             if (motoActualizada.getKilometrajeActual() < 0) {
-                throw new BadRequestException("El kilometraje no puede ser negativo.");
+                throw new BadRequestException(
+                        "El kilometraje no puede ser negativo.");
             }
 
-            moto.setKilometrajeActual(motoActualizada.getKilometrajeActual());
+            moto.setKilometrajeActual(
+                    motoActualizada.getKilometrajeActual()
+            );
+
+            moto.setFechaUltimaActualizacionKm(LocalDateTime.now());
         }
 
         return motoRepository.save(moto);
     }
 
-    @PatchMapping("/{idMoto}/sumar-kilometros")
-    public Moto sumarKilometros(@PathVariable Long idMoto, @RequestBody Map<String, Integer> body) {
+    @PatchMapping("/{idMoto}/actualizar-kilometraje")
+    public ActualizarKilometrajeResponse actualizarKilometraje(
+            @PathVariable Long idMoto,
+            @RequestBody ActualizarKilometrajeRequest request
+    ) {
+
         Moto moto = motoRepository.findById(idMoto)
-                .orElseThrow(() -> new ResourceNotFoundException("Moto no encontrada."));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Moto no encontrada."));
 
-        Integer kilometros = body.get("kilometros");
+        Integer kilometrajeNuevo = request.getKilometrajeActual();
 
-        if (kilometros == null || kilometros <= 0) {
-            throw new BadRequestException("Los kilómetros deben ser mayores a 0.");
+        if (kilometrajeNuevo == null) {
+            throw new BadRequestException(
+                    "El kilometraje actual es obligatorio.");
         }
 
-        Integer kilometrajeActual = moto.getKilometrajeActual();
-
-        if (kilometrajeActual == null) {
-            kilometrajeActual = 0;
+        if (kilometrajeNuevo < 0) {
+            throw new BadRequestException(
+                    "El kilometraje no puede ser negativo.");
         }
 
-        moto.setKilometrajeActual(kilometrajeActual + kilometros);
+        Integer kilometrajeAnterior = moto.getKilometrajeActual();
 
-        return motoRepository.save(moto);
+        if (kilometrajeAnterior == null) {
+            kilometrajeAnterior = 0;
+        }
+
+        if (kilometrajeNuevo < kilometrajeAnterior) {
+            throw new BadRequestException(
+                    "El kilometraje no puede ser menor al actual.");
+        }
+
+        Integer kilometrosRecorridos =
+                kilometrajeNuevo - kilometrajeAnterior;
+
+        moto.setKilometrajeActual(kilometrajeNuevo);
+
+        moto.setFechaUltimaActualizacionKm(LocalDateTime.now());
+
+        Moto motoActualizada = motoRepository.save(moto);
+
+        return new ActualizarKilometrajeResponse(
+                "Kilometraje actualizado correctamente.",
+                kilometrosRecorridos,
+                motoActualizada
+        );
     }
 
     @DeleteMapping("/{idMoto}")
     public String eliminarMoto(@PathVariable Long idMoto) {
-        Moto moto = motoRepository.findById(idMoto)
-                .orElseThrow(() -> new ResourceNotFoundException("Moto no encontrada."));
 
-        gastoRepository.deleteAll(gastoRepository.findByMotoIdMoto(idMoto));
-        mantenimientoRepository.deleteAll(mantenimientoRepository.findByMotoIdMoto(idMoto));
-        viajeRepository.deleteAll(viajeRepository.findByMotoIdMoto(idMoto));
+        Moto moto = motoRepository.findById(idMoto)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Moto no encontrada."));
+
+        gastoRepository.deleteAll(
+                gastoRepository.findByMotoIdMoto(idMoto));
+
+        mantenimientoRepository.deleteAll(
+                mantenimientoRepository.findByMotoIdMoto(idMoto));
+
+        viajeRepository.deleteAll(
+                viajeRepository.findByMotoIdMoto(idMoto));
 
         motoRepository.delete(moto);
 
@@ -125,16 +180,28 @@ public class MotoController {
     }
 
     private void validarMoto(Moto moto) {
-        if (moto.getMarca() == null || moto.getMarca().isBlank()) {
-            throw new BadRequestException("La marca de la moto es obligatoria.");
+
+        if (moto.getMarca() == null ||
+                moto.getMarca().isBlank()) {
+
+            throw new BadRequestException(
+                    "La marca de la moto es obligatoria.");
         }
 
-        if (moto.getModelo() == null || moto.getModelo().isBlank()) {
-            throw new BadRequestException("El modelo de la moto es obligatorio.");
+        if (moto.getModelo() == null ||
+                moto.getModelo().isBlank()) {
+
+            throw new BadRequestException(
+                    "El modelo de la moto es obligatorio.");
         }
 
-        if (moto.getKilometrajeActual() != null && moto.getKilometrajeActual() < 0) {
-            throw new BadRequestException("El kilometraje no puede ser negativo.");
+        if (
+                moto.getKilometrajeActual() != null &&
+                        moto.getKilometrajeActual() < 0
+        ) {
+
+            throw new BadRequestException(
+                    "El kilometraje no puede ser negativo.");
         }
     }
 }

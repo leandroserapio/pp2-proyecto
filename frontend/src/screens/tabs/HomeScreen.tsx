@@ -1,7 +1,7 @@
 // src/screens/tabs/HomeScreen.tsx
 
-import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
   Alert,
   Pressable,
@@ -9,44 +9,62 @@ import {
   StyleSheet,
   Text,
   View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import { sumarKilometros } from '../../api/motos';
-import { ApiError } from '../../api/client';
-import { AppHeader } from '../../components/AppHeader';
-import { AppTextInput } from '../../components/AppTextInput';
-import { PrimaryButton } from '../../components/PrimaryButton';
-import { useAppSettings } from '../../context/AppSettingsContext';
-import { useMoto } from '../../context/MotoContext';
-import { fontFamily } from '../../theme/fonts';
-import { light } from '../../theme/mototrackerLight';
+import { actualizarKilometraje } from "../../api/motos";
+import { ApiError } from "../../api/client";
+import { AppHeader } from "../../components/AppHeader";
+import { AppTextInput } from "../../components/AppTextInput";
+import { PrimaryButton } from "../../components/PrimaryButton";
+import { useAppSettings } from "../../context/AppSettingsContext";
+import { useMoto } from "../../context/MotoContext";
+import { fontFamily } from "../../theme/fonts";
+import { light } from "../../theme/mototrackerLight";
 
 export function HomeScreen() {
   const { selectedMoto, selectedMotoId, refreshMotos } = useMoto();
   const { theme } = useAppSettings();
   const [kmOpen, setKmOpen] = useState(false);
-  const [kmAdd, setKmAdd] = useState('');
+  const [kmAdd, setKmAdd] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const onSumarKm = async () => {
+  const onActualizarKm = async () => {
     if (!selectedMotoId) return;
 
-    const n = Number(kmAdd);
-    if (!Number.isFinite(n) || n <= 0) {
-      Alert.alert('Valor inválido', 'Ingresá un número mayor a 0.');
+    const kilometrajeActual = Number(kmAdd);
+
+    if (!Number.isFinite(kilometrajeActual) || kilometrajeActual <= 0) {
+      Alert.alert("Valor inválido", "Ingresá un kilometraje válido.");
+
       return;
     }
 
     setSaving(true);
+
     try {
-      await sumarKilometros(selectedMotoId, n);
-      setKmAdd('');
+      const response = await actualizarKilometraje(
+        selectedMotoId,
+        kilometrajeActual,
+      );
+
+      setKmAdd("");
+
       setKmOpen(false);
+
       await refreshMotos();
+
+      Alert.alert(
+        "Kilometraje actualizado",
+        `Hiciste ${response.kilometrosRecorridos} km desde la última actualización.`,
+      );
     } catch (e) {
-      const msg = e instanceof ApiError ? e.message : 'No se pudieron sumar km';
-      Alert.alert('Error', msg);
+      const msg =
+        e instanceof ApiError
+          ? e.message
+          : "No se pudo actualizar el kilometraje";
+
+      Alert.alert("Error", msg);
     } finally {
       setSaving(false);
     }
@@ -57,38 +75,44 @@ export function HomeScreen() {
       style={[
         styles.safe,
         {
-          backgroundColor: theme.bg
-        }
+          backgroundColor: theme.bg,
+        },
       ]}
-      edges={['top']}
+      edges={["top"]}
     >
       {!kmOpen ? <AppHeader title="Inicio" /> : null}
 
       <ScrollView contentContainerStyle={styles.content}>
         {selectedMoto ? (
           <>
-            <View style={[
-              styles.heroCard,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-              }
-            ]}>
-              <Text style={[
-                styles.eyebrow,
+            <View
+              style={[
+                styles.heroCard,
                 {
-                  color: theme.textMuted
-                }
-              ]}>
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.eyebrow,
+                  {
+                    color: theme.textMuted,
+                  },
+                ]}
+              >
                 MOTO ACTIVA
               </Text>
 
-              <Text style={[
-                styles.motoTitle,
-                {
-                  color: theme.text
-                }
-              ]}>
+              <Text
+                style={[
+                  styles.motoTitle,
+                  {
+                    color: theme.text,
+                  },
+                ]}
+              >
                 {selectedMoto.marca} {selectedMoto.modelo}
               </Text>
 
@@ -99,18 +123,15 @@ export function HomeScreen() {
                 />
                 <InfoTile
                   label="Año"
-                  value={selectedMoto.anio ? String(selectedMoto.anio) : '-'}
+                  value={selectedMoto.anio ? String(selectedMoto.anio) : "-"}
                 />
-                <InfoTile
-                  label="Patente"
-                  value={selectedMoto.patente || '-'}
-                />
+                <InfoTile label="Patente" value={selectedMoto.patente || "-"} />
               </View>
 
               {kmOpen ? (
                 <View style={styles.kmForm}>
                   <AppTextInput
-                    label="Kilómetros recorridos"
+                    label="Kilómetros actuales"
                     variant="light"
                     placeholder="Ej: 50"
                     keyboardType="number-pad"
@@ -123,29 +144,31 @@ export function HomeScreen() {
                       style={[
                         styles.secondaryButton,
                         {
-                          borderColor: theme.border
-                        }
+                          borderColor: theme.border,
+                        },
                       ]}
                       onPress={() => {
-                        setKmAdd('');
+                        setKmAdd("");
                         setKmOpen(false);
                       }}
                     >
-                      <Text style={[
-                        styles.secondaryButtonText,
-                        {
-                          color: theme.text
-                        }
-                      ]}>
+                      <Text
+                        style={[
+                          styles.secondaryButtonText,
+                          {
+                            color: theme.text,
+                          },
+                        ]}
+                      >
                         Cancelar
                       </Text>
                     </Pressable>
 
                     <PrimaryButton
-                      title="Sumar"
+                      title="Actualizar"
                       variant="blue"
                       loading={saving}
-                      onPress={onSumarKm}
+                      onPress={onActualizarKm}
                       style={styles.primaryAction}
                     />
                   </View>
@@ -178,20 +201,24 @@ export function HomeScreen() {
               size={64}
               color={theme.textMuted}
             />
-            <Text style={[
-              styles.emptyTitle,
-              {
-                color: theme.text
-              }
-            ]}>
+            <Text
+              style={[
+                styles.emptyTitle,
+                {
+                  color: theme.text,
+                },
+              ]}
+            >
               No hay moto activa
             </Text>
-            <Text style={[
-              styles.emptySub,
-              {
-                color: theme.textMuted
-              }
-            ]}>
+            <Text
+              style={[
+                styles.emptySub,
+                {
+                  color: theme.textMuted,
+                },
+              ]}
+            >
               Registrá o seleccioná una moto desde Garage para ver el panel.
             </Text>
           </View>
@@ -201,37 +228,37 @@ export function HomeScreen() {
   );
 }
 
-function InfoTile({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function InfoTile({ label, value }: { label: string; value: string }) {
   const { theme } = useAppSettings();
 
   return (
-    <View style={[
-      styles.infoTile,
-      {
-        backgroundColor: theme.bg,
-        borderColor: theme.border,
-      }
-    ]}>
-      <Text style={[
-        styles.infoLabel,
+    <View
+      style={[
+        styles.infoTile,
         {
-          color: theme.textMuted
-        }
-      ]}>
+          backgroundColor: theme.bg,
+          borderColor: theme.border,
+        },
+      ]}
+    >
+      <Text
+        style={[
+          styles.infoLabel,
+          {
+            color: theme.textMuted,
+          },
+        ]}
+      >
         {label}
       </Text>
-      <Text style={[
-        styles.infoValue,
-        {
-          color: theme.text
-        }
-      ]}>
+      <Text
+        style={[
+          styles.infoValue,
+          {
+            color: theme.text,
+          },
+        ]}
+      >
         {value}
       </Text>
     </View>
@@ -248,24 +275,24 @@ function StatusChip({
   const { theme } = useAppSettings();
 
   return (
-    <View style={[
-      styles.statusChip,
-      {
-        backgroundColor: theme.surface,
-        borderColor: theme.border,
-      }
-    ]}>
-      <Ionicons
-        name={icon}
-        size={18}
-        color={theme.primary}
-      />
-      <Text style={[
-        styles.statusText,
+    <View
+      style={[
+        styles.statusChip,
         {
-          color: theme.text
-        }
-      ]}>
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+        },
+      ]}
+    >
+      <Ionicons name={icon} size={18} color={theme.primary} />
+      <Text
+        style={[
+          styles.statusText,
+          {
+            color: theme.text,
+          },
+        ]}
+      >
         {label}
       </Text>
     </View>
@@ -291,14 +318,14 @@ const styles = StyleSheet.create({
   eyebrow: {
     color: light.textMuted,
     fontFamily: fontFamily.semiBold,
-    fontWeight: '600',
+    fontWeight: "600",
     fontSize: 11,
   },
   motoTitle: {
     marginTop: 8,
     color: light.text,
     fontFamily: fontFamily.bold,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 28,
   },
   infoGrid: {
@@ -318,7 +345,7 @@ const styles = StyleSheet.create({
     marginTop: 6,
     color: light.text,
     fontFamily: fontFamily.bold,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 18,
   },
   cta: {
@@ -328,7 +355,7 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   formActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   secondaryButton: {
@@ -336,12 +363,12 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: 8,
     borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   secondaryButtonText: {
     fontFamily: fontFamily.semiBold,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   primaryAction: {
     flex: 1,
@@ -352,8 +379,8 @@ const styles = StyleSheet.create({
   },
   statusChip: {
     minHeight: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 10,
     borderRadius: 8,
     borderWidth: 1,
@@ -362,24 +389,24 @@ const styles = StyleSheet.create({
   statusText: {
     color: light.text,
     fontFamily: fontFamily.medium,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   empty: {
     minHeight: 360,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 24,
   },
   emptyTitle: {
     marginTop: 16,
     fontFamily: fontFamily.bold,
-    fontWeight: '700',
+    fontWeight: "700",
     fontSize: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptySub: {
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
     lineHeight: 22,
   },
 });

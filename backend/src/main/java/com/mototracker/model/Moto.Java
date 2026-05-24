@@ -2,6 +2,8 @@ package com.mototracker.model;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "motos")
 public class Moto {
@@ -23,6 +25,8 @@ public class Moto {
 
     private Integer kilometrajeActual;
 
+    private LocalDateTime fechaUltimaActualizacionKm;
+
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario;
@@ -30,13 +34,23 @@ public class Moto {
     public Moto() {
     }
 
-    public Moto(Long idMoto, String marca, String modelo, Integer anio, String patente, Integer kilometrajeActual, Usuario usuario) {
+    public Moto(
+            Long idMoto,
+            String marca,
+            String modelo,
+            Integer anio,
+            String patente,
+            Integer kilometrajeActual,
+            LocalDateTime fechaUltimaActualizacionKm,
+            Usuario usuario
+    ) {
         this.idMoto = idMoto;
         this.marca = marca;
         this.modelo = modelo;
         this.anio = anio;
         this.patente = patente;
         this.kilometrajeActual = kilometrajeActual;
+        this.fechaUltimaActualizacionKm = fechaUltimaActualizacionKm;
         this.usuario = usuario;
     }
 
@@ -86,6 +100,14 @@ public class Moto {
 
     public void setKilometrajeActual(Integer kilometrajeActual) {
         this.kilometrajeActual = kilometrajeActual;
+    }
+
+    public LocalDateTime getFechaUltimaActualizacionKm() {
+        return fechaUltimaActualizacionKm;
+    }
+
+    public void setFechaUltimaActualizacionKm(LocalDateTime fechaUltimaActualizacionKm) {
+        this.fechaUltimaActualizacionKm = fechaUltimaActualizacionKm;
     }
 
     public Usuario getUsuario() {
