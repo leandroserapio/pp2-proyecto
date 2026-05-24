@@ -72,7 +72,6 @@ export function MainTabs() {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: theme.border,
       elevation: 0,
-      shadowOpacity: 0,
       padding: 8,
       paddingHorizontal: 8,
       ...(Platform.OS === 'web'

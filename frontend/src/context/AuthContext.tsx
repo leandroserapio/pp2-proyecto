@@ -2,7 +2,7 @@ import type { PropsWithChildren } from 'react';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { LoginRequest, LoginResponse, UsuarioInput } from '../types/models';
-import { login as apiLogin, registrarUsuario } from '../api/usuarios';
+import { login as apiLogin, obtenerUsuario, registrarUsuario } from '../api/usuarios';
 
 const STORAGE_SESSION = '@mototracker/session';
 
@@ -28,10 +28,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
       try {
         const raw = await AsyncStorage.getItem(STORAGE_SESSION);
         if (raw && !cancelled) {
-          setUser(JSON.parse(raw) as SessionUser);
+          const stored = JSON.parse(raw) as SessionUser;
+          const fresh = await obtenerUsuario(stored.idUsuario);
+          if (!cancelled) {
+            setUser(fresh);
+            await AsyncStorage.setItem(STORAGE_SESSION, JSON.stringify(fresh));
+          }
         }
       } catch {
-        // ignorar lectura corrupta
+        await AsyncStorage.removeItem(STORAGE_SESSION);
+        await AsyncStorage.removeItem('@mototracker/selectedMotoId');
+        if (!cancelled) setUser(null);
       } finally {
         if (!cancelled) setBootstrapping(false);
       }

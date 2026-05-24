@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { light } from '../../theme/mototrackerLight';
 import { useAuth } from '../../context/AuthContext';
 import { AppTextInput } from '../../components/AppTextInput';
@@ -11,6 +11,13 @@ export function RegisterScreen() {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [preguntaSecreta, setPreguntaSecreta] = useState('');
+  const [respuestaSecreta, setRespuestaSecreta] = useState('');
+  const [marcaMoto, setMarcaMoto] = useState('');
+  const [modeloMoto, setModeloMoto] = useState('');
+  const [anioMoto, setAnioMoto] = useState('');
+  const [patenteMoto, setPatenteMoto] = useState('');
+  const [kilometrajeMoto, setKilometrajeMoto] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +25,18 @@ export function RegisterScreen() {
     setError(null);
     setLoading(true);
     try {
-      await register({ nombre: nombre.trim(), email: email.trim(), password });
+      await register({
+        nombre: nombre.trim(),
+        email: email.trim(),
+        password,
+        preguntaSecreta: preguntaSecreta.trim(),
+        respuestaSecreta: respuestaSecreta.trim(),
+        marcaMoto: marcaMoto.trim(),
+        modeloMoto: modeloMoto.trim(),
+        anioMoto: anioMoto ? Number(anioMoto) : null,
+        patenteMoto: patenteMoto.trim() || null,
+        kilometrajeActualMoto: kilometrajeMoto ? Number(kilometrajeMoto) : 0,
+      });
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'No se pudo registrar';
       setError(msg);
@@ -32,27 +50,62 @@ export function RegisterScreen() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.card}>
-        <Text style={styles.title}>Crear cuenta</Text>
-        {error ? <Text style={styles.err}>{error}</Text> : null}
-        <AppTextInput label="Nombre" variant="light" value={nombre} onChangeText={setNombre} />
-        <AppTextInput
-          label="Email"
-          variant="light"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <AppTextInput label="Contraseña" variant="light" secureTextEntry value={password} onChangeText={setPassword} />
-        <PrimaryButton title="Registrarme" variant="blue" loading={loading} onPress={onSubmit} />
-      </View>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.card}>
+          <Text style={styles.title}>Crear cuenta</Text>
+          {error ? <Text style={styles.err}>{error}</Text> : null}
+
+          <Text style={styles.sectionTitle}>Tus datos</Text>
+          <AppTextInput label="Nombre" variant="light" value={nombre} onChangeText={setNombre} />
+          <AppTextInput
+            label="Email"
+            variant="light"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <AppTextInput label="Contrasena" variant="light" secureTextEntry value={password} onChangeText={setPassword} />
+
+          <Text style={styles.sectionTitle}>Recuperacion</Text>
+          <AppTextInput
+            label="Pregunta secreta"
+            variant="light"
+            placeholder="Ej: Nombre de tu primera mascota"
+            value={preguntaSecreta}
+            onChangeText={setPreguntaSecreta}
+          />
+          <AppTextInput
+            label="Respuesta secreta"
+            variant="light"
+            secureTextEntry
+            value={respuestaSecreta}
+            onChangeText={setRespuestaSecreta}
+          />
+
+          <Text style={styles.sectionTitle}>Tu primera moto</Text>
+          <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marcaMoto} onChangeText={setMarcaMoto} />
+          <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modeloMoto} onChangeText={setModeloMoto} />
+          <AppTextInput label="Anio" variant="light" keyboardType="number-pad" value={anioMoto} onChangeText={setAnioMoto} />
+          <AppTextInput label="Patente" variant="light" autoCapitalize="characters" value={patenteMoto} onChangeText={setPatenteMoto} />
+          <AppTextInput
+            label="Kilometraje actual"
+            variant="light"
+            keyboardType="number-pad"
+            value={kilometrajeMoto}
+            onChangeText={setKilometrajeMoto}
+          />
+
+          <PrimaryButton title="Registrarme" variant="blue" loading={loading} onPress={onSubmit} style={styles.btn} />
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: light.bg, padding: 22, justifyContent: 'center' },
+  root: { flex: 1, backgroundColor: light.bg },
+  scroll: { padding: 22, paddingBottom: 38 },
   card: {
     backgroundColor: light.surface,
     borderRadius: 16,
@@ -61,5 +114,7 @@ const styles = StyleSheet.create({
     borderColor: light.border,
   },
   title: { fontSize: 22, fontWeight: '800', color: light.text, marginBottom: 12 },
+  sectionTitle: { marginTop: 10, marginBottom: 10, fontSize: 13, fontWeight: '800', color: light.primary },
   err: { color: '#B91C1C', marginBottom: 10 },
+  btn: { marginTop: 6 },
 });

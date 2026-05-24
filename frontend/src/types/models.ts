@@ -13,6 +13,13 @@ export interface UsuarioInput {
   nombre: string;
   email: string;
   password: string;
+  preguntaSecreta: string;
+  respuestaSecreta: string;
+  marcaMoto: string;
+  modeloMoto: string;
+  anioMoto?: number | null;
+  patenteMoto?: string | null;
+  kilometrajeActualMoto?: number | null;
 }
 
 /** Respuesta del backend al registrar (puede incluir password; no la usamos en UI). */
@@ -21,6 +28,7 @@ export interface Usuario {
   nombre: string;
   email: string;
   password?: string;
+  preguntaSecreta?: string;
 }
 
 export interface Moto {

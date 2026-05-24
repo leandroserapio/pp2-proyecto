@@ -32,6 +32,8 @@ import { mergeViajeNotas } from '../../viajes/viajeNotas';
 import { VIAJE_ESTADOS } from '../../viajes/viajeEstado';
 import { formatDisplayDate } from '../../viajes/format';
 import { parseIsoDate, toIsoLocal, VIAJE_BANNER_URI } from '../../viajes/viajeFormUtils';
+import { estimateRoute, RouteEstimateError } from '../../viajes/routeEstimation';
+import { estimateFuelBudget, parsePositiveNumber } from '../../viajes/fuelCost';
 
 type Nav = NativeStackNavigationProp<ViajesStackParamList, 'ViajesAdd'>;
 type R = RouteProp<ViajesStackParamList, 'ViajesAdd'>;
@@ -52,11 +54,16 @@ export function ViajesAddScreen() {
   const [estado, setEstado] = useState<string>('Programado');
   const [idMoto, setIdMoto] = useState<number | null>(null);
   const [salida, setSalida] = useState('');
+  const [destino, setDestino] = useState('');
   const [kmEst, setKmEst] = useState('');
+  const [tiempoEstimado, setTiempoEstimado] = useState('');
+  const [consumoLitros100, setConsumoLitros100] = useState('28');
+  const [precioNafta, setPrecioNafta] = useState('');
   const [presupuestoStr, setPresupuestoStr] = useState('');
   const [notas, setNotas] = useState('');
   const [date, setDate] = useState(() => new Date());
   const [saving, setSaving] = useState(false);
+  const [estimatingRoute, setEstimatingRoute] = useState(false);
 
   const [estadoMenuOpen, setEstadoMenuOpen] = useState(false);
   const [estadoMenuRect, setEstadoMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(
@@ -88,8 +95,8 @@ export function ViajesAddScreen() {
       Alert.alert('Falta la moto', 'Seleccioná una moto para el viaje.');
       return;
     }
-    if (!titulo.trim()) {
-      Alert.alert('Datos incompletos', 'El título del viaje es obligatorio.');
+    if (!titulo.trim() && !destino.trim()) {
+      Alert.alert('Datos incompletos', 'El titulo o destino del viaje es obligatorio.');
       return;
     }
     const presupuesto = parseAmountInput(presupuestoStr);
@@ -102,11 +109,11 @@ export function ViajesAddScreen() {
     setSaving(true);
     try {
       await crearViaje(idMoto, {
-        destino: titulo.trim(),
+        destino: destino.trim() || titulo.trim(),
         fechaSalida: toIsoLocal(date),
         kilometrosEstimados: km,
         presupuestoEstimado: presupuesto,
-        notas: mergeViajeNotas(salida, notas),
+        notas: mergeViajeNotas(salida, notas, tiempoEstimado, consumoLitros100, precioNafta),
         estado,
       });
       navigation.goBack();
@@ -116,6 +123,51 @@ export function ViajesAddScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const calculateRouteEstimate = async () => {
+    if (!salida.trim() || !destino.trim()) {
+      Alert.alert('Ruta incompleta', 'Carga ubicacion de salida y destino.');
+      return;
+    }
+
+    setEstimatingRoute(true);
+    try {
+      const kilometersPerLiter = parsePositiveNumber(consumoLitros100);
+      if (kilometersPerLiter == null) {
+        Alert.alert('Rendimiento inválido', 'Ingresá cuántos kilómetros hace la moto por litro.');
+        return;
+      }
+
+      const estimate = await estimateRoute(salida, destino, kilometersPerLiter);
+      setKmEst(String(estimate.kilometers));
+      setTiempoEstimado(estimate.durationLabel);
+      if (estimate.pricePerLiter != null) setPrecioNafta(String(estimate.pricePerLiter));
+      if (estimate.estimatedCost != null) setPresupuestoStr(String(estimate.estimatedCost));
+      Alert.alert(
+        'Ruta estimada',
+        estimate.estimatedCost != null
+          ? `${estimate.kilometers} km - ${estimate.durationLabel}\n${
+              estimate.fuelType && estimate.pricePerLiter != null ? `${estimate.fuelType}: $${estimate.pricePerLiter}/L\n` : ''
+            }Costo estimado: $${estimate.estimatedCost}`
+          : `${estimate.kilometers} km - ${estimate.durationLabel}`,
+      );
+    } catch (e) {
+      const msg = e instanceof RouteEstimateError ? e.message : 'No se pudo estimar la ruta.';
+      Alert.alert('Ruta no disponible', msg);
+    } finally {
+      setEstimatingRoute(false);
+    }
+  };
+
+  const estimateFuelCost = () => {
+    const km = Number(kmEst.replace(',', '.'));
+    const budget = estimateFuelBudget(km, consumoLitros100, precioNafta);
+    if (budget == null) {
+      Alert.alert('Estimacion', 'Completa kilometros, KM/L y precio por litro.');
+      return;
+    }
+    setPresupuestoStr(String(budget));
   };
 
   return (
@@ -193,6 +245,27 @@ export function ViajesAddScreen() {
               style={styles.iconInput}
             />
           </View>
+          <Text style={styles.fieldEyebrowInCard}>DESTINO</Text>
+          <View style={styles.inputWithIcon}>
+            <Ionicons name="flag-outline" size={20} color={light.textMuted} style={styles.inputIcon} />
+            <TextInput
+              placeholder="Ej: Villa Carlos Paz"
+              placeholderTextColor={light.textMuted}
+              value={destino}
+              onChangeText={(value) => {
+                setDestino(value);
+                if (!titulo) setTitulo(value);
+              }}
+              style={styles.iconInput}
+            />
+          </View>
+          <PrimaryButton
+            title="Calcular ruta gratis"
+            variant="blue"
+            loading={estimatingRoute}
+            onPress={calculateRouteEstimate}
+            style={styles.mapsButton}
+          />
         </View>
 
         <View style={styles.card}>
@@ -205,6 +278,15 @@ export function ViajesAddScreen() {
             keyboardType="number-pad"
             value={kmEst}
             onChangeText={setKmEst}
+            style={styles.inlineInput}
+          />
+
+          <Text style={styles.fieldEyebrowInCard}>TIEMPO ESTIMADO</Text>
+          <TextInput
+            placeholder="Ej: 1 h 25 min"
+            placeholderTextColor={light.textMuted}
+            value={tiempoEstimado}
+            onChangeText={setTiempoEstimado}
             style={styles.inlineInput}
           />
 
@@ -239,6 +321,37 @@ export function ViajesAddScreen() {
               onChangeText={setPresupuestoStr}
               style={[styles.iconInput, styles.currencyInput]}
             />
+          </View>
+
+          <View style={styles.estimateGrid}>
+            <View style={styles.estimateCol}>
+              <Text style={styles.fieldEyebrowInCard}>KM/L</Text>
+              <TextInput
+                placeholder="Ej: 28"
+                placeholderTextColor={light.textMuted}
+                keyboardType="decimal-pad"
+                value={consumoLitros100}
+                onChangeText={setConsumoLitros100}
+                style={styles.inlineInput}
+              />
+            </View>
+            <View style={styles.estimateCol}>
+              <Text style={styles.fieldEyebrowInCard}>$/LITRO</Text>
+              <TextInput
+                placeholder="Ej: 1200"
+                placeholderTextColor={light.textMuted}
+                keyboardType="decimal-pad"
+                value={precioNafta}
+                onChangeText={setPrecioNafta}
+                style={styles.inlineInput}
+              />
+            </View>
+          </View>
+          <View style={styles.estimateActions}>
+            <Pressable style={styles.secondaryAction} onPress={estimateFuelCost}>
+              <Ionicons name="calculator-outline" size={18} color={light.primary} />
+              <Text style={styles.secondaryActionText}>Calcular costo</Text>
+            </Pressable>
           </View>
 
           <Text style={styles.fieldEyebrowInCard}>NOTAS</Text>
@@ -517,6 +630,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notesInput: { minHeight: 96 },
+  mapsButton: { marginTop: 10 },
+  estimateGrid: { flexDirection: 'row', gap: 10 },
+  estimateCol: { flex: 1 },
+  estimateActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  secondaryAction: {
+    minHeight: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: light.border,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: light.surface,
+  },
+  secondaryActionText: {
+    color: light.primary,
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
+  },
   footer: {
     paddingHorizontal: 18,
     paddingTop: 12,

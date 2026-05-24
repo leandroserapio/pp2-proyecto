@@ -37,7 +37,7 @@ const menuItems: Array<{
   },
   {
     icon: 'add-circle-outline',
-    label: 'Registrar / seleccionar moto',
+    label: 'Garage',
     route: 'Garage',
     secondaryIcon: 'motorbike',
   },
@@ -67,6 +67,7 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
           name: 'Main',
           params: {
             screen: routeName,
+            params: routeName === 'Garage' ? { openAdd: false } : undefined,
           },
         }),
       );

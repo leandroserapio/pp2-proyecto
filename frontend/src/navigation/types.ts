@@ -32,7 +32,7 @@ export type ViajeListNavItem = Viaje & {
 
 export type MainTabParamList = {
   Inicio: undefined;
-  Garage: undefined;
+  Garage: { openAdd?: boolean } | undefined;
   GastosStack: undefined;
   Mantenimiento: undefined;
   ViajesStack: undefined;

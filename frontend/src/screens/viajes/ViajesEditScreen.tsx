@@ -32,6 +32,8 @@ import { mergeViajeNotas, splitViajeNotas } from '../../viajes/viajeNotas';
 import { VIAJE_ESTADOS, normalizeViajeEstado } from '../../viajes/viajeEstado';
 import { formatDisplayDate } from '../../viajes/format';
 import { parseIsoDate, toIsoLocal, VIAJE_BANNER_URI } from '../../viajes/viajeFormUtils';
+import { estimateRoute, RouteEstimateError } from '../../viajes/routeEstimation';
+import { estimateFuelBudget, parsePositiveNumber } from '../../viajes/fuelCost';
 
 type Nav = NativeStackNavigationProp<ViajesStackParamList, 'ViajesEdit'>;
 type R = RouteProp<ViajesStackParamList, 'ViajesEdit'>;
@@ -43,12 +45,21 @@ export function ViajesEditScreen() {
   const { motos } = useMoto();
   const { item } = route.params;
 
-  const { salida: existingSalida, notas: existingNotas } = splitViajeNotas(item.notas ?? '');
+  const {
+    salida: existingSalida,
+    tiempoEstimado: existingTiempo,
+    consumoLitros100: existingConsumo,
+    precioNafta: existingPrecio,
+    notas: existingNotas,
+  } = splitViajeNotas(item.notas ?? '');
 
   const [titulo, setTitulo] = useState(item.destino ?? '');
   const [estado, setEstado] = useState(normalizeViajeEstado(item.estado));
   const [idMoto] = useState(item.idMoto);
   const [salida, setSalida] = useState(existingSalida);
+  const [tiempoEstimado, setTiempoEstimado] = useState(existingTiempo);
+  const [consumoLitros100, setConsumoLitros100] = useState(existingConsumo || '28');
+  const [precioNafta, setPrecioNafta] = useState(existingPrecio);
   const [kmEst, setKmEst] = useState(
     item.kilometrosEstimados != null ? String(item.kilometrosEstimados) : '',
   );
@@ -58,6 +69,7 @@ export function ViajesEditScreen() {
   const [notas, setNotas] = useState(existingNotas);
   const [date, setDate] = useState(() => parseIsoDate(item.fechaSalida));
   const [saving, setSaving] = useState(false);
+  const [estimatingRoute, setEstimatingRoute] = useState(false);
 
   const [estadoMenuOpen, setEstadoMenuOpen] = useState(false);
   const [estadoMenuRect, setEstadoMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(
@@ -104,7 +116,7 @@ export function ViajesEditScreen() {
         fechaSalida: toIsoLocal(date),
         kilometrosEstimados: km,
         presupuestoEstimado: presupuesto,
-        notas: mergeViajeNotas(salida, notas),
+        notas: mergeViajeNotas(salida, notas, tiempoEstimado, consumoLitros100, precioNafta),
         estado,
       });
       navigation.goBack();
@@ -114,6 +126,51 @@ export function ViajesEditScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const calculateRouteEstimate = async () => {
+    if (!salida.trim() || !titulo.trim()) {
+      Alert.alert('Ruta incompleta', 'Carga ubicacion de salida y destino.');
+      return;
+    }
+
+    setEstimatingRoute(true);
+    try {
+      const kilometersPerLiter = parsePositiveNumber(consumoLitros100);
+      if (kilometersPerLiter == null) {
+        Alert.alert('Rendimiento inválido', 'Ingresá cuántos kilómetros hace la moto por litro.');
+        return;
+      }
+
+      const estimate = await estimateRoute(salida, titulo, kilometersPerLiter);
+      setKmEst(String(estimate.kilometers));
+      setTiempoEstimado(estimate.durationLabel);
+      if (estimate.pricePerLiter != null) setPrecioNafta(String(estimate.pricePerLiter));
+      if (estimate.estimatedCost != null) setPresupuestoStr(String(estimate.estimatedCost));
+      Alert.alert(
+        'Ruta estimada',
+        estimate.estimatedCost != null
+          ? `${estimate.kilometers} km - ${estimate.durationLabel}\n${
+              estimate.fuelType && estimate.pricePerLiter != null ? `${estimate.fuelType}: $${estimate.pricePerLiter}/L\n` : ''
+            }Costo estimado: $${estimate.estimatedCost}`
+          : `${estimate.kilometers} km - ${estimate.durationLabel}`,
+      );
+    } catch (e) {
+      const msg = e instanceof RouteEstimateError ? e.message : 'No se pudo estimar la ruta.';
+      Alert.alert('Ruta no disponible', msg);
+    } finally {
+      setEstimatingRoute(false);
+    }
+  };
+
+  const estimateFuelCost = () => {
+    const km = Number(kmEst.replace(',', '.'));
+    const budget = estimateFuelBudget(km, consumoLitros100, precioNafta);
+    if (budget == null) {
+      Alert.alert('Estimacion', 'Completa kilometros, KM/L y precio por litro.');
+      return;
+    }
+    setPresupuestoStr(String(budget));
   };
 
   return (
@@ -176,6 +233,13 @@ export function ViajesEditScreen() {
               style={styles.iconInput}
             />
           </View>
+          <PrimaryButton
+            title="Calcular ruta gratis"
+            variant="blue"
+            loading={estimatingRoute}
+            onPress={calculateRouteEstimate}
+            style={styles.mapsButton}
+          />
         </View>
 
         <View style={styles.card}>
@@ -188,6 +252,15 @@ export function ViajesEditScreen() {
             keyboardType="number-pad"
             value={kmEst}
             onChangeText={setKmEst}
+            style={styles.inlineInput}
+          />
+
+          <Text style={styles.fieldEyebrowInCard}>TIEMPO ESTIMADO</Text>
+          <TextInput
+            placeholder="Ej: 1 h 25 min"
+            placeholderTextColor={light.textMuted}
+            value={tiempoEstimado}
+            onChangeText={setTiempoEstimado}
             style={styles.inlineInput}
           />
 
@@ -222,6 +295,37 @@ export function ViajesEditScreen() {
               onChangeText={setPresupuestoStr}
               style={[styles.iconInput, styles.currencyInput]}
             />
+          </View>
+
+          <View style={styles.estimateGrid}>
+            <View style={styles.estimateCol}>
+              <Text style={styles.fieldEyebrowInCard}>KM/L</Text>
+              <TextInput
+                placeholder="Ej: 28"
+                placeholderTextColor={light.textMuted}
+                keyboardType="decimal-pad"
+                value={consumoLitros100}
+                onChangeText={setConsumoLitros100}
+                style={styles.inlineInput}
+              />
+            </View>
+            <View style={styles.estimateCol}>
+              <Text style={styles.fieldEyebrowInCard}>$/LITRO</Text>
+              <TextInput
+                placeholder="Ej: 1200"
+                placeholderTextColor={light.textMuted}
+                keyboardType="decimal-pad"
+                value={precioNafta}
+                onChangeText={setPrecioNafta}
+                style={styles.inlineInput}
+              />
+            </View>
+          </View>
+          <View style={styles.estimateActions}>
+            <Pressable style={styles.secondaryAction} onPress={estimateFuelCost}>
+              <Ionicons name="calculator-outline" size={18} color={light.primary} />
+              <Text style={styles.secondaryActionText}>Calcular costo</Text>
+            </Pressable>
           </View>
 
           <Text style={styles.fieldEyebrowInCard}>NOTAS</Text>
@@ -482,6 +586,26 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   notesInput: { minHeight: 96 },
+  mapsButton: { marginTop: 10 },
+  estimateGrid: { flexDirection: 'row', gap: 10 },
+  estimateCol: { flex: 1 },
+  estimateActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
+  secondaryAction: {
+    minHeight: 42,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: light.border,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: light.surface,
+  },
+  secondaryActionText: {
+    color: light.primary,
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
+  },
   footer: {
     paddingHorizontal: 18,
     paddingTop: 12,

@@ -20,7 +20,7 @@ export function ViajesDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const { item } = route.params;
-  const { salida, notas } = splitViajeNotas(item.notas ?? '');
+  const { salida, tiempoEstimado, consumoLitros100, precioNafta, notas } = splitViajeNotas(item.notas ?? '');
   const badge = getViajeEstadoBadge(item.estado);
   const estadoLabel = normalizeViajeEstado(item.estado);
 
@@ -118,6 +118,22 @@ export function ViajesDetailScreen() {
             <View style={styles.gridValueRow}>
               <Ionicons name="time-outline" size={16} color={light.primary} />
               <Text style={styles.gridValue}>{estadoLabel}</Text>
+            </View>
+          </View>
+          <View style={styles.gridItem}>
+            <Text style={styles.gridLabel}>Tiempo estimado</Text>
+            <View style={styles.gridValueRow}>
+              <Ionicons name="timer-outline" size={16} color={light.textMuted} />
+              <Text style={styles.gridValue}>{tiempoEstimado || '-'}</Text>
+            </View>
+          </View>
+          <View style={styles.gridItem}>
+            <Text style={styles.gridLabel}>Combustible</Text>
+            <View style={styles.gridValueRow}>
+              <MaterialCommunityIcons name="gas-station-outline" size={16} color={light.textMuted} />
+              <Text style={styles.gridValue}>
+                {consumoLitros100 || precioNafta ? `${consumoLitros100 || '-'} km/L - $${precioNafta || '-'}/L` : '-'}
+              </Text>
             </View>
           </View>
         </View>
