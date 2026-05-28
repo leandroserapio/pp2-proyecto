@@ -9,6 +9,7 @@ import { fontFamily } from '../../theme/fonts';
 import type { ViajesStackParamList } from '../../navigation/types';
 import { eliminarViaje } from '../../api/viajes';
 import { ApiError } from '../../api/client';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { splitViajeNotas } from '../../viajes/viajeNotas';
 import { formatArs, formatDisplayDate, formatKmViaje } from '../../viajes/format';
 import { getViajeEstadoBadge, normalizeViajeEstado } from '../../viajes/viajeEstado';
@@ -19,6 +20,7 @@ type R = RouteProp<ViajesStackParamList, 'ViajesDetail'>;
 export function ViajesDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
+  const { theme } = useAppSettings();
   const { item } = route.params;
   const { salida, tiempoEstimado, consumoLitros100, precioNafta, notas } = splitViajeNotas(item.notas ?? '');
   const badge = getViajeEstadoBadge(item.estado);
@@ -54,84 +56,84 @@ export function ViajesDetailScreen() {
           }}
           hitSlop={12}
         >
-          <Ionicons name="ellipsis-vertical" size={20} color={light.primary} />
+          <Ionicons name="ellipsis-vertical" size={20} color={theme.primary} />
         </Pressable>
       ),
     });
-  }, [navigation, item, item.idViaje]);
+  }, [navigation, item, item.idViaje, theme.primary]);
 
   return (
-    <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <View style={styles.card}>
+    <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={styles.content}>
+      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={styles.section}>
-          <View style={[styles.iconBox, styles.iconBoxGreen]}>
-            <MaterialCommunityIcons name="pine-tree" size={22} color="#16a34a" />
+          <View style={[styles.iconBox, { backgroundColor: theme.successSoft }]}>
+            <MaterialCommunityIcons name="pine-tree" size={22} color={theme.success} />
           </View>
           <View style={styles.sectionBody}>
-            <Text style={styles.tripTitle}>{item.destino}</Text>
+            <Text style={[styles.tripTitle, { color: theme.text }]}>{item.destino}</Text>
             <View style={[styles.badge, { backgroundColor: badge.backgroundColor }]}>
               <Text style={[styles.badgeText, { color: badge.textColor }]}>{badge.label}</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         <View style={styles.section}>
-          <View style={[styles.iconBox, styles.iconBoxBlue]}>
-            <MaterialCommunityIcons name="motorbike" size={22} color={light.primary} />
+          <View style={[styles.iconBox, { backgroundColor: theme.primarySoft }]}>
+            <MaterialCommunityIcons name="motorbike" size={22} color={theme.primary} />
           </View>
           <View style={styles.sectionBody}>
-            <Text style={styles.fieldLabel}>Vehículo</Text>
-            <Text style={styles.fieldValue}>{item.motoLabel}</Text>
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Vehículo</Text>
+            <Text style={[styles.fieldValue, { color: theme.text }]}>{item.motoLabel}</Text>
           </View>
         </View>
 
-        <View style={styles.divider} />
+        <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
         <View style={styles.grid}>
           <View style={styles.gridItem}>
-            <Text style={styles.gridLabel}>Fecha de salida</Text>
+            <Text style={[styles.gridLabel, { color: theme.textMuted }]}>Fecha de salida</Text>
             <View style={styles.gridValueRow}>
-              <Ionicons name="calendar-outline" size={16} color={light.textMuted} />
-              <Text style={styles.gridValue}>{formatDisplayDate(item.fechaSalida)}</Text>
+              <Ionicons name="calendar-outline" size={16} color={theme.textMuted} />
+              <Text style={[styles.gridValue, { color: theme.text }]}>{formatDisplayDate(item.fechaSalida)}</Text>
             </View>
           </View>
           <View style={styles.gridItem}>
-            <Text style={styles.gridLabel}>Km estimados</Text>
+            <Text style={[styles.gridLabel, { color: theme.textMuted }]}>Km estimados</Text>
             <View style={styles.gridValueRow}>
-              <MaterialCommunityIcons name="map-marker-path" size={16} color={light.textMuted} />
-              <Text style={styles.gridValue}>{formatKmViaje(item.kilometrosEstimados ?? null)}</Text>
+              <MaterialCommunityIcons name="map-marker-path" size={16} color={theme.textMuted} />
+              <Text style={[styles.gridValue, { color: theme.text }]}>{formatKmViaje(item.kilometrosEstimados ?? null)}</Text>
             </View>
           </View>
           <View style={styles.gridItem}>
-            <Text style={styles.gridLabel}>Presupuesto</Text>
+            <Text style={[styles.gridLabel, { color: theme.textMuted }]}>Presupuesto</Text>
             <View style={styles.gridValueRow}>
-              <Ionicons name="cash-outline" size={16} color={light.textMuted} />
-              <Text style={styles.gridValue}>
+              <Ionicons name="cash-outline" size={16} color={theme.textMuted} />
+              <Text style={[styles.gridValue, { color: theme.text }]}>
                 {item.presupuestoEstimado != null ? formatArs(item.presupuestoEstimado) : '—'}
               </Text>
             </View>
           </View>
           <View style={styles.gridItem}>
-            <Text style={styles.gridLabel}>Estado</Text>
+            <Text style={[styles.gridLabel, { color: theme.textMuted }]}>Estado</Text>
             <View style={styles.gridValueRow}>
-              <Ionicons name="time-outline" size={16} color={light.primary} />
-              <Text style={styles.gridValue}>{estadoLabel}</Text>
+              <Ionicons name="time-outline" size={16} color={theme.primary} />
+              <Text style={[styles.gridValue, { color: theme.text }]}>{estadoLabel}</Text>
             </View>
           </View>
           <View style={styles.gridItem}>
-            <Text style={styles.gridLabel}>Tiempo estimado</Text>
+            <Text style={[styles.gridLabel, { color: theme.textMuted }]}>Tiempo estimado</Text>
             <View style={styles.gridValueRow}>
-              <Ionicons name="timer-outline" size={16} color={light.textMuted} />
-              <Text style={styles.gridValue}>{tiempoEstimado || '-'}</Text>
+              <Ionicons name="timer-outline" size={16} color={theme.textMuted} />
+              <Text style={[styles.gridValue, { color: theme.text }]}>{tiempoEstimado || '-'}</Text>
             </View>
           </View>
           <View style={styles.gridItem}>
-            <Text style={styles.gridLabel}>Combustible</Text>
+            <Text style={[styles.gridLabel, { color: theme.textMuted }]}>Combustible</Text>
             <View style={styles.gridValueRow}>
-              <MaterialCommunityIcons name="gas-station-outline" size={16} color={light.textMuted} />
-              <Text style={styles.gridValue}>
+              <MaterialCommunityIcons name="gas-station-outline" size={16} color={theme.textMuted} />
+              <Text style={[styles.gridValue, { color: theme.text }]}>
                 {consumoLitros100 || precioNafta ? `${consumoLitros100 || '-'} km/L - $${precioNafta || '-'}/L` : '-'}
               </Text>
             </View>
@@ -140,14 +142,14 @@ export function ViajesDetailScreen() {
 
         {salida ? (
           <>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
             <View style={styles.section}>
-              <View style={[styles.iconBox, styles.iconBoxBlue]}>
-                <Ionicons name="location-outline" size={20} color={light.primary} />
+              <View style={[styles.iconBox, { backgroundColor: theme.primarySoft }]}>
+                <Ionicons name="location-outline" size={20} color={theme.primary} />
               </View>
               <View style={styles.sectionBody}>
-                <Text style={styles.fieldLabel}>Salida</Text>
-                <Text style={styles.fieldValue}>{salida}</Text>
+                <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Salida</Text>
+                <Text style={[styles.fieldValue, { color: theme.text }]}>{salida}</Text>
               </View>
             </View>
           </>
@@ -155,10 +157,10 @@ export function ViajesDetailScreen() {
 
         {notas ? (
           <>
-            <View style={styles.divider} />
-            <Text style={styles.fieldLabel}>Notas</Text>
-            <View style={styles.notesBox}>
-              <Text style={styles.notesText}>"{notas}"</Text>
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+            <Text style={[styles.fieldLabel, { color: theme.textMuted }]}>Notas</Text>
+            <View style={[styles.notesBox, { backgroundColor: theme.primarySoft }]}>
+              <Text style={[styles.notesText, { color: theme.text }]}>"{notas}"</Text>
             </View>
           </>
         ) : null}
@@ -186,7 +188,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 14,
   },
-  iconBoxGreen: { backgroundColor: '#DCFCE7' },
+  iconBoxGreen: { backgroundColor: light.successSoft },
   iconBoxBlue: { backgroundColor: light.primarySoft },
   sectionBody: { flex: 1 },
   tripTitle: {

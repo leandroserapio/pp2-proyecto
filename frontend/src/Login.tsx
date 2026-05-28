@@ -7,6 +7,8 @@ import {
   StyleSheet,
   Alert,
 } from "react-native";
+import { light } from "./theme/mototrackerLight";
+import { fontFamily } from "./theme/fonts";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -38,7 +40,7 @@ export default function Login() {
         <TextInput
           style={styles.input}
           placeholder="Tu email"
-          placeholderTextColor="#6B7280"
+          placeholderTextColor={light.textMuted}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -48,7 +50,7 @@ export default function Login() {
         <TextInput
           style={styles.input}
           placeholder="Tu contraseña"
-          placeholderTextColor="#6B7280"
+          placeholderTextColor={light.textMuted}
           secureTextEntry
           value={password}
           onChangeText={setPassword}
@@ -90,12 +92,12 @@ export default function Login() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: light.bg,
     justifyContent: "center",
     padding: 20,
   },
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: light.surface,
     borderRadius: 8,
     padding: 22,
   },
@@ -103,7 +105,7 @@ const styles = StyleSheet.create({
     width: 54,
     height: 54,
     borderRadius: 27,
-    backgroundColor: "#E8F0FF",
+    backgroundColor: light.primarySoft,
     alignSelf: "center",
     justifyContent: "center",
     alignItems: "center",
@@ -116,47 +118,53 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 18,
     fontWeight: "700",
-    color: "#1F2937",
+    fontFamily: fontFamily.bold,
+    color: light.text,
     marginBottom: 24,
   },
   title: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    fontFamily: fontFamily.bold,
+    color: light.text,
     marginBottom: 6,
   },
   subtitle: {
     fontSize: 13,
-    color: "#6B7280",
+    fontFamily: fontFamily.regular,
+    color: light.textMuted,
     marginBottom: 18,
   },
   input: {
     height: 44,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: light.border,
     borderRadius: 6,
     paddingHorizontal: 12,
     fontSize: 14,
-    color: "#111827",
+    color: light.text,
     marginBottom: 12,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: light.surface,
+    fontFamily: fontFamily.regular,
   },
   forgotText: {
     fontSize: 12,
-    color: "#0B55D9",
+    fontFamily: fontFamily.semiBold,
+    color: light.primary,
     textAlign: "right",
     marginBottom: 14,
   },
   button: {
     height: 46,
-    backgroundColor: "#1557D6",
+    backgroundColor: light.primary,
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 22,
   },
   buttonText: {
-    color: "#FFFFFF",
+    color: light.onPrimary,
+    fontFamily: fontFamily.bold,
     fontSize: 14,
     fontWeight: "700",
   },
@@ -168,39 +176,43 @@ const styles = StyleSheet.create({
   separator: {
     flex: 1,
     height: 1,
-    backgroundColor: "#E5E7EB",
+    backgroundColor: light.border,
   },
   separatorText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: light.textMuted,
+    fontFamily: fontFamily.regular,
     marginHorizontal: 10,
   },
   googleButton: {
     height: 44,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: light.border,
     borderRadius: 6,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: light.surface,
   },
   googleText: {
     fontSize: 14,
-    color: "#374151",
+    color: light.text,
+    fontFamily: fontFamily.semiBold,
     fontWeight: "600",
   },
   googleLetter: {
-    color: "#EA4335",
+    color: light.danger,
     fontWeight: "700",
   },
   registerText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: light.textMuted,
+    fontFamily: fontFamily.regular,
     textAlign: "center",
   },
   registerLink: {
-    color: "#0B55D9",
+    color: light.primary,
+    fontFamily: fontFamily.bold,
     fontWeight: "700",
   },
 });

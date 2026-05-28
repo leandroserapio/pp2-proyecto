@@ -1,4 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { light } from './theme/mototrackerLight';
+import { fontFamily } from './theme/fonts';
 
 export default function Home() {
   return (
@@ -25,35 +27,40 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         padding: 24,
+        backgroundColor: light.bg,
     },
     motoContainer: {
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: '#ccc',
+        borderColor: light.border,
         borderStyle: 'dashed',
         borderRadius: 12,
         padding: 32,
     },
     title: {
         fontSize: 20,
+        fontFamily: fontFamily.bold,
         fontWeight: 'bold',
         marginBottom: 8,
         textAlign: 'center',
+        color: light.text,
     },
     subtitle: {
         fontSize: 14,
+        fontFamily: fontFamily.regular,
         textAlign: 'center',
         marginBottom: 24,
-        color: '#666',
+        color: light.textMuted,
     },
     button: {
-        backgroundColor: '#2563EB',
+        backgroundColor: light.primary,
         paddingVertical: 12,
         paddingHorizontal: 32,
         borderRadius: 8,
     },
     buttonText: {
-        color: 'white',
+        color: light.onPrimary,
+        fontFamily: fontFamily.bold,
         fontWeight: 'bold',
         fontSize: 16,
     },

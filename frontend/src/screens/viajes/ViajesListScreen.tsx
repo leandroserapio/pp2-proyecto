@@ -22,6 +22,7 @@ import { fontFamily } from '../../theme/fonts';
 import type { ViajeListNavItem, ViajesStackParamList } from '../../navigation/types';
 import { useAuth } from '../../context/AuthContext';
 import { useMoto } from '../../context/MotoContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { eliminarViaje } from '../../api/viajes';
 import { ApiError } from '../../api/client';
@@ -36,6 +37,7 @@ export function ViajesListScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const { motos, loading: motosLoading } = useMoto();
+  const { theme } = useAppSettings();
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
   const [items, setItems] = useState<ViajeListNavItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -86,16 +88,23 @@ export function ViajesListScreen() {
 
   const empty = !loading && !motosLoading && items.length === 0;
   const initial = user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M';
+  const dropdownBottomGap = 96 + insets.bottom;
 
   const topBlock = (
     <>
       <View style={styles.sectionHead}>
-        <Text style={styles.pageTitle}>Viajes</Text>
+        <Text style={[styles.pageTitle, { color: theme.text }]}>Viajes</Text>
       </View>
-      <Text style={styles.filterLabel}>Filtrar por moto</Text>
+      <Text style={[styles.filterLabel, { color: theme.textMuted }]}>Filtrar por moto</Text>
       <Pressable
         ref={filterSelectWrapRef}
-        style={[styles.filterRow, filterOpen && styles.filterRowOpen]}
+        style={[
+          styles.filterRow,
+          {
+            backgroundColor: theme.surface,
+            borderColor: filterOpen ? theme.primary : theme.border,
+          },
+        ]}
         onPress={() => {
           if (filterOpen) {
             setFilterOpen(false);
@@ -108,34 +117,34 @@ export function ViajesListScreen() {
           });
         }}
       >
-        <Text style={styles.filterText}>{filtroDisplay}</Text>
-        <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
+        <Text style={[styles.filterText, { color: theme.text }]}>{filtroDisplay}</Text>
+        <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
       </Pressable>
     </>
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{initial}</Text>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <View style={[styles.avatar, { backgroundColor: theme.bg, borderColor: theme.border }]}>
+          <Text style={[styles.avatarText, { color: theme.primary }]}>{initial}</Text>
         </View>
-        <Text style={styles.brand}>MotoTracker</Text>
+        <Text style={[styles.brand, { color: theme.primary }]}>MotoTracker</Text>
       </View>
 
       {motosLoading || loading ? (
         <View style={styles.flexCenter}>
           {topBlock}
           <View style={styles.centerGrow}>
-            <ActivityIndicator color={light.primary} />
+            <ActivityIndicator color={theme.primary} />
           </View>
         </View>
       ) : motos.length === 0 ? (
         <View style={styles.flexCenter}>
           {topBlock}
           <View style={styles.centerGrow}>
-            <Text style={styles.emptyTitle}>Necesitás una moto</Text>
-            <Text style={styles.emptySub}>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>Necesitás una moto</Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
               Registrá al menos una moto desde Garage para planificar viajes.
             </Text>
           </View>
@@ -143,12 +152,12 @@ export function ViajesListScreen() {
       ) : empty ? (
         <View style={styles.flexCenter}>
           {topBlock}
-          <View style={styles.emptyCard}>
-            <View style={styles.emptyIconCircle}>
-              <MaterialCommunityIcons name="map-marker-path" size={40} color={light.textMuted} />
+          <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
+              <MaterialCommunityIcons name="map-marker-path" size={40} color={theme.textMuted} />
             </View>
-            <Text style={styles.emptyTitle}>No hay viajes registrados</Text>
-            <Text style={styles.emptySub}>Planificá tu primer viaje</Text>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>No hay viajes registrados</Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Planificá tu primer viaje</Text>
             <PrimaryButton
               title="Agregar Viaje"
               variant="blue"
@@ -170,7 +179,7 @@ export function ViajesListScreen() {
               const badge = getViajeEstadoBadge(item.estado);
               return (
                 <Pressable
-                  style={styles.card}
+                  style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
                   onPress={() => navigation.navigate('ViajesDetail', { item })}
                   onLongPress={() => {
                     Alert.alert(item.destino, '¿Qué querés hacer?', [
@@ -197,46 +206,46 @@ export function ViajesListScreen() {
                   }}
                 >
                   <View style={styles.cardTitleRow}>
-                    <Text style={styles.cardTitle} numberOfLines={2}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
                       {item.destino}
                     </Text>
                     <View style={[styles.badge, { backgroundColor: badge.backgroundColor }]}>
                       <Text style={[styles.badgeText, { color: badge.textColor }]}>{badge.label}</Text>
                     </View>
                   </View>
-                  <Text style={styles.cardDate}>{formatViajeListDate(item.fechaSalida)}</Text>
-                  <View style={styles.cardDivider} />
+                  <Text style={[styles.cardDate, { color: theme.textMuted }]}>{formatViajeListDate(item.fechaSalida)}</Text>
+                  <View style={[styles.cardDivider, { backgroundColor: theme.border }]} />
                   <View style={styles.cardStats}>
                     <View style={styles.statsGrid}>
                       <View style={styles.statCol}>
-                        <Text style={styles.statLabel}>DISTANCIA</Text>
+                        <Text style={[styles.statLabel, { color: theme.textMuted }]}>DISTANCIA</Text>
                         <Text style={styles.statKm}>{formatKmViaje(item.kilometrosEstimados ?? null)}</Text>
                       </View>
                       <View style={styles.statCol}>
-                        <Text style={styles.statLabel}>PRESUPUESTO</Text>
-                        <Text style={styles.statBudget}>
+                        <Text style={[styles.statLabel, { color: theme.textMuted }]}>PRESUPUESTO</Text>
+                        <Text style={[styles.statBudget, { color: theme.text }]}>
                           {item.presupuestoEstimado != null ? formatArs(item.presupuestoEstimado) : '—'}
                         </Text>
                       </View>
                     </View>
-                    <Ionicons name="chevron-forward" size={20} color={light.textMuted} />
+                    <Ionicons name="chevron-forward" size={20} color={theme.textMuted} />
                   </View>
                 </Pressable>
               );
             }}
             ListFooterComponent={
               <View style={styles.footerNote}>
-                <Ionicons name="map-outline" size={16} color={light.textMuted} style={styles.footerIcon} />
-                <Text style={styles.footerText}>Hasta acá llegaron los viajes</Text>
+                <Ionicons name="map-outline" size={16} color={theme.textMuted} style={styles.footerIcon} />
+                <Text style={[styles.footerText, { color: theme.textMuted }]}>Hasta acá llegaron los viajes</Text>
               </View>
             }
           />
           <Pressable
             accessibilityRole="button"
-            style={[styles.fab, { bottom: 24 + insets.bottom }]}
+            style={[styles.fab, { bottom: 24 + insets.bottom, backgroundColor: theme.primary }]}
             onPress={() => navigation.navigate('ViajesAdd', {})}
           >
-            <Ionicons name="add" size={30} color="#fff" />
+            <Ionicons name="add" size={30} color={theme.onPrimary} />
           </Pressable>
         </View>
       )}
@@ -252,7 +261,7 @@ export function ViajesListScreen() {
       >
         <View style={styles.filterMenuOverlay}>
           <Pressable
-            style={styles.filterMenuBackdrop}
+            style={[styles.filterMenuBackdrop, { backgroundColor: theme.overlaySoft }]}
             onPress={() => {
               setFilterOpen(false);
               setFilterMenuRect(null);
@@ -263,17 +272,23 @@ export function ViajesListScreen() {
               style={[
                 styles.filterMenuDropdown,
                 {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+                {
                   left: filterMenuRect.x,
                   top: filterMenuRect.y + filterMenuRect.height + 4,
                   width: filterMenuRect.width,
                   maxHeight: Math.max(
                     160,
-                    Dimensions.get('window').height - (filterMenuRect.y + filterMenuRect.height) - 24,
+                    Dimensions.get('window').height
+                      - (filterMenuRect.y + filterMenuRect.height)
+                      - dropdownBottomGap,
                   ),
                 },
               ]}
             >
-              <Text style={styles.filterMenuTitle}>Filtrar por moto</Text>
+              <Text style={[styles.filterMenuTitle, { color: theme.textMuted }]}>Filtrar por moto</Text>
               <ScrollView
                 keyboardShouldPersistTaps="handled"
                 nestedScrollEnabled
@@ -281,15 +296,15 @@ export function ViajesListScreen() {
                 bounces={false}
               >
                 <Pressable
-                  style={({ pressed }) => [styles.filterMenuRow, pressed && styles.filterMenuRowPressed]}
+                  style={({ pressed }) => [styles.filterMenuRow, pressed && { backgroundColor: theme.bg }]}
                   onPress={() => {
                     setFiltro('todas');
                     setFilterOpen(false);
                     setFilterMenuRect(null);
                   }}
                 >
-                  <Text style={styles.filterMenuRowText}>Todas las motos</Text>
-                  {filtro === 'todas' ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                  <Text style={[styles.filterMenuRowText, { color: theme.text }]}>Todas las motos</Text>
+                  {filtro === 'todas' ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
                 </Pressable>
                 {motos.map((m) => (
                   <Pressable
@@ -297,7 +312,8 @@ export function ViajesListScreen() {
                     style={({ pressed }) => [
                       styles.filterMenuRow,
                       styles.filterMenuRowBorder,
-                      pressed && styles.filterMenuRowPressed,
+                      { borderTopColor: theme.border },
+                      pressed && { backgroundColor: theme.bg },
                     ]}
                     onPress={() => {
                       if (m.idMoto != null) setFiltro(m.idMoto);
@@ -305,9 +321,9 @@ export function ViajesListScreen() {
                       setFilterMenuRect(null);
                     }}
                   >
-                    <Text style={styles.filterMenuRowText}>{motoLabel(m)}</Text>
+                    <Text style={[styles.filterMenuRowText, { color: theme.text }]}>{motoLabel(m)}</Text>
                     {filtro !== 'todas' && filtro === m.idMoto ? (
-                      <Ionicons name="checkmark" color={light.primary} size={20} />
+                      <Ionicons name="checkmark" color={theme.primary} size={20} />
                     ) : null}
                   </Pressable>
                 ))}
@@ -400,8 +416,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 18,
     marginTop: 8,
     marginBottom: 24,
-    backgroundColor: '#EEF0F4',
+    backgroundColor: light.surfaceMuted,
     borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 28,
@@ -411,7 +428,7 @@ const styles = StyleSheet.create({
     width: 112,
     height: 112,
     borderRadius: 56,
-    backgroundColor: '#EEF0F4',
+    backgroundColor: light.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -535,7 +552,7 @@ const styles = StyleSheet.create({
     backgroundColor: light.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: light.navy,
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
@@ -544,7 +561,7 @@ const styles = StyleSheet.create({
   filterMenuOverlay: { flex: 1 },
   filterMenuBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.25)',
+    backgroundColor: light.overlaySoft,
   },
   filterMenuDropdown: {
     position: 'absolute',
@@ -555,10 +572,10 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     overflow: 'hidden',
     ...(Platform.OS === 'web'
-      ? { boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)' }
+      ? { boxShadow: `0 8px 24px ${light.shadowMedium}` }
       : {
           elevation: 8,
-          shadowColor: '#0f172a',
+          shadowColor: light.navy,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,

@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { light } from '../../theme/mototrackerLight';
+import { fontFamily } from '../../theme/fonts';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
@@ -129,12 +130,12 @@ export function ViajesTabScreen() {
   };
 
   const estadoColor = (estado: string | null | undefined) => {
-    if (!estado) return light.textMuted;
+    if (!estado) return theme.textMuted;
     const e = estado.toLowerCase();
-    if (e === 'programado') return light.primary;
-    if (e === 'completado' || e === 'realizado') return '#16a34a';
-    if (e === 'cancelado') return '#dc2626';
-    return light.textMuted;
+    if (e === 'programado') return theme.primary;
+    if (e === 'completado' || e === 'realizado') return theme.success;
+    if (e === 'cancelado') return theme.danger;
+    return theme.textMuted;
   };
 
   if (!selectedMoto) {
@@ -160,7 +161,7 @@ export function ViajesTabScreen() {
 
       {items.length === 0 && !loading ? (
         <View style={styles.emptyWrap}>
-          <Ionicons name="map-outline" size={64} color={light.border} />
+          <Ionicons name="map-outline" size={64} color={theme.border} />
           <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin viajes programados</Text>
           <Text style={[styles.emptySub, { color: theme.textMuted }]}>Planificá tus salidas indicando destino, km estimados y presupuesto.</Text>
           <PrimaryButton title="Agregar viaje" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
@@ -175,38 +176,38 @@ export function ViajesTabScreen() {
             renderItem={({ item }) => (
               <Pressable style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} onLongPress={() => confirmDelete(item)}>
                 <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>{item.destino}</Text>
+                  <Text style={[styles.cardTitle, { color: theme.text }]}>{item.destino}</Text>
                   <Text style={[styles.cardEstado, { color: estadoColor(item.estado) }]}>
                     {item.estado ?? 'Programado'}
                   </Text>
                 </View>
                 <View style={styles.cardFooter}>
-                  <Text style={styles.cardDate}>{formatDisplayDate(item.fechaSalida)}</Text>
-                  {item.kilometrosEstimados ? <Text style={styles.cardKm}>{item.kilometrosEstimados} km</Text> : null}
+                  <Text style={[styles.cardDate, { color: theme.textMuted }]}>{formatDisplayDate(item.fechaSalida)}</Text>
+                  {item.kilometrosEstimados ? <Text style={[styles.cardKm, { color: theme.textMuted }]}>{item.kilometrosEstimados} km</Text> : null}
                   {item.presupuestoEstimado ? (
-                    <Text style={styles.cardBudget}>${Number(item.presupuestoEstimado).toLocaleString('es-AR')}</Text>
+                    <Text style={[styles.cardBudget, { color: theme.textMuted }]}>${Number(item.presupuestoEstimado).toLocaleString('es-AR')}</Text>
                   ) : null}
                 </View>
-                {item.notas ? <Text style={styles.cardNotas}>{item.notas}</Text> : null}
+                {item.notas ? <Text style={[styles.cardNotas, { color: theme.textMuted }]}>{item.notas}</Text> : null}
               </Pressable>
             )}
           />
           <Pressable
             accessibilityRole="button"
-            style={[styles.fab, { bottom: 24 + insets.bottom }]}
+            style={[styles.fab, { bottom: 24 + insets.bottom, backgroundColor: theme.primary }]}
             onPress={() => setAddOpen(true)}
           >
-            <Ionicons name="add" size={30} color="#fff" />
+            <Ionicons name="add" size={30} color={theme.onPrimary} />
           </Pressable>
         </View>
       )}
 
       <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
         <View style={styles.modalRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setAddOpen(false)} />
-          <View style={styles.modalSheet}>
+          <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => setAddOpen(false)} />
+          <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <ScrollView keyboardShouldPersistTaps="handled">
-              <Text style={styles.modalTitle}>Agregar viaje</Text>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>Agregar viaje</Text>
               <AppTextInput label="Destino *" variant="light" placeholder="Ej: Chascomús" value={destino} onChangeText={setDestino} />
               <AppTextInput label="Fecha salida (AAAA-MM-DD)" variant="light" placeholder={todayIso()} value={fechaSalida} onChangeText={setFechaSalida} />
               <AppTextInput label="Km estimados" variant="light" placeholder="Ej: 220" keyboardType="number-pad" value={kmEst} onChangeText={setKmEst} />
@@ -224,11 +225,11 @@ export function ViajesTabScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
   header: { paddingHorizontal: 18, paddingBottom: 10 },
-  title: { fontSize: 24, fontWeight: '800', color: light.text },
-  subtitle: { fontSize: 14, color: light.textMuted, marginTop: 4 },
+  title: { fontSize: 24, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
+  subtitle: { fontSize: 14, fontFamily: fontFamily.regular, color: light.textMuted, marginTop: 4 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
-  emptyTitle: { marginTop: 14, fontSize: 18, fontWeight: '800', color: light.text, textAlign: 'center' },
-  emptySub: { marginTop: 8, color: light.textMuted, textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
+  emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
   listWrap: { flex: 1 },
   card: {
@@ -241,13 +242,13 @@ const styles = StyleSheet.create({
     borderColor: light.border,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: light.text },
-  cardEstado: { fontSize: 13, fontWeight: '700' },
+  cardTitle: { fontSize: 16, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
+  cardEstado: { fontSize: 13, fontFamily: fontFamily.bold, fontWeight: '700' },
   cardFooter: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
-  cardDate: { fontSize: 13, color: light.textMuted, marginRight: 16 },
-  cardKm: { fontSize: 13, color: light.textMuted, marginRight: 16 },
-  cardBudget: { fontSize: 13, color: light.textMuted },
-  cardNotas: { marginTop: 8, fontSize: 13, color: light.textMuted, fontStyle: 'italic' },
+  cardDate: { fontSize: 13, fontFamily: fontFamily.regular, color: light.textMuted, marginRight: 16 },
+  cardKm: { fontSize: 13, fontFamily: fontFamily.regular, color: light.textMuted, marginRight: 16 },
+  cardBudget: { fontSize: 13, fontFamily: fontFamily.regular, color: light.textMuted },
+  cardNotas: { marginTop: 8, fontSize: 13, fontFamily: fontFamily.regular, color: light.textMuted, fontStyle: 'italic' },
   fab: {
     position: 'absolute',
     right: 22,
@@ -258,13 +259,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: light.navy,
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.35)' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
   modalSheet: {
     backgroundColor: light.surface,
     borderTopLeftRadius: 20,
@@ -274,6 +275,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: light.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: light.text, marginBottom: 14 },
+  modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
   saveBtn: { marginTop: 4 },
 });

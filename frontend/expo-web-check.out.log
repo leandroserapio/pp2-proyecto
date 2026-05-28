@@ -1,0 +1,9 @@
+
+> frontend@1.0.0 web
+> expo start --web --port 8082 --host localhost
+
+Starting project at C:\Users\gener\Proyectos\pp2-proyecto\frontend
+Starting Metro Bundler
+
+Waiting on http://localhost:8082
+Logs for your project will appear below.

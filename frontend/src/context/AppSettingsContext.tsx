@@ -12,14 +12,15 @@ export const dark = {
   ...light,
   bg: '#111827',
   surface: '#1F2937',
-  primarySoft: '#1E3A8A',
+  surfaceMuted: '#273244',
+  primarySoft: '#0B2F75',
   primaryDark: '#DBEAFE',
   navy: '#F9FAFB',
   text: '#F9FAFB',
   textMuted: '#CBD5E1',
   border: '#374151',
   tabInactive: '#CBD5E1',
-  tabActivePill: '#2563EB',
+  tabActivePill: '#004AC6',
   shadow: 'rgba(0, 0, 0, 0.24)',
 };
 

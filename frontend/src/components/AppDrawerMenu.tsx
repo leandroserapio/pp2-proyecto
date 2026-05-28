@@ -22,7 +22,7 @@ type Props = {
   onClose: () => void;
 };
 
-type MenuRoute = 'Ajustes' | 'Cuenta' | 'Garage' | 'Inicio';
+type MenuRoute = 'Ajustes' | 'Garage' | 'Inicio';
 
 const menuItems: Array<{
   icon: keyof typeof Ionicons.glyphMap;
@@ -40,11 +40,6 @@ const menuItems: Array<{
     label: 'Garage',
     route: 'Garage',
     secondaryIcon: 'motorbike',
-  },
-  {
-    icon: 'person-outline',
-    label: 'Cuenta',
-    route: 'Cuenta',
   },
   {
     icon: 'settings-outline',
@@ -122,7 +117,7 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.overlay}>
+      <View style={[styles.overlay, { backgroundColor: theme.overlayStrong }]}>
         <View style={[
           styles.menu,
           {
@@ -203,15 +198,15 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
           </View>
 
           <Pressable
-            style={styles.logoutButton}
+            style={[styles.logoutButton, { backgroundColor: theme.danger }]}
             onPress={cerrarSesion}
           >
             <Ionicons
               name="log-out-outline"
               size={22}
-              color="#fff"
+              color={theme.onPrimary}
             />
-            <Text style={styles.logoutText}>
+            <Text style={[styles.logoutText, { color: theme.onPrimary }]}>
               Cerrar sesión
             </Text>
           </Pressable>
@@ -224,7 +219,7 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: light.overlayStrong,
   },
   menu: {
     width: '82%',
@@ -278,14 +273,14 @@ const styles = StyleSheet.create({
     minHeight: 50,
     marginTop: 'auto',
     borderRadius: 8,
-    backgroundColor: '#D32F2F',
+    backgroundColor: light.danger,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 10,
   },
   logoutText: {
-    color: 'white',
+    color: light.onPrimary,
     fontSize: 15,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
