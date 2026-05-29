@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { light } from '../theme/mototrackerLight';
 import { fontFamily } from '../theme/fonts';
+import { useAppSettings } from '../context/AppSettingsContext';
 import type { ViajesStackParamList } from './types';
 import { ViajesAddScreen } from '../screens/viajes/ViajesAddScreen';
 import { ViajesDetailScreen } from '../screens/viajes/ViajesDetailScreen';
@@ -9,26 +9,24 @@ import { ViajesListScreen } from '../screens/viajes/ViajesListScreen';
 
 const Stack = createNativeStackNavigator<ViajesStackParamList>();
 
-const headerSurface = {
-  backgroundColor: light.surface,
-  borderBottomWidth: 1,
-  borderBottomColor: light.border,
-};
-
 export function ViajesStackNavigator() {
+  const { theme } = useAppSettings();
+
   return (
     <Stack.Navigator
       screenOptions={{
         headerShadowVisible: false,
-        headerStyle: headerSurface,
-        headerTintColor: light.primary,
+        headerStyle: {
+          backgroundColor: theme.surface,
+        },
+        headerTintColor: theme.primary,
         headerTitleStyle: {
           fontFamily: fontFamily.bold,
           fontWeight: '700',
           fontSize: 17,
-          color: light.primary,
+          color: theme.primary,
         },
-        contentStyle: { backgroundColor: light.bg },
+        contentStyle: { backgroundColor: theme.bg },
       }}
     >
       <Stack.Screen name="ViajesHome" component={ViajesListScreen} options={{ headerShown: false }} />

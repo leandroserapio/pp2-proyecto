@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import { useAuth } from '../../context/AuthContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { listarMotosPorUsuario } from '../../api/motos';
 import { listarGastosPorMoto } from '../../api/gastos';
 import { listarMantenimientosPorMoto } from '../../api/mantenimientos';
@@ -16,6 +17,7 @@ type ProfileSummary = {
 
 export default function PerfilScreen() {
   const { user, logout } = useAuth();
+  const { theme } = useAppSettings();
   const [summary, setSummary] = useState<ProfileSummary>({
     motos: 0,
     mantenimientos: 0,
@@ -82,44 +84,44 @@ export default function PerfilScreen() {
   }, [user?.idUsuario]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={[styles.container, { backgroundColor: theme.bg }]} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <View style={styles.avatar}>
-          <Ionicons name="person-outline" size={42} color={light.primary} />
+        <View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>
+          <Ionicons name="person-outline" size={42} color={theme.primary} />
         </View>
 
-        <Text style={styles.name}>{displayName}</Text>
-        <Text style={styles.email}>{displayEmail}</Text>
+        <Text style={[styles.name, { color: theme.text }]}>{displayName}</Text>
+        <Text style={[styles.email, { color: theme.textMuted }]}>{displayEmail}</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Resumen</Text>
+      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <Text style={[styles.cardTitle, { color: theme.text }]}>Resumen</Text>
 
-        {loadingSummary ? <Text style={styles.summaryState}>Cargando resumen...</Text> : null}
-        {summaryError ? <Text style={styles.errorText}>{summaryError}</Text> : null}
+        {loadingSummary ? <Text style={[styles.summaryState, { color: theme.textMuted }]}>Cargando resumen...</Text> : null}
+        {summaryError ? <Text style={[styles.errorText, { color: theme.danger }]}>{summaryError}</Text> : null}
         {!loadingSummary && !summaryError ? (
           <>
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Motos registradas</Text>
-              <Text style={styles.statValue}>{summary.motos}</Text>
+            <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
+              <Text style={[styles.statLabel, { color: theme.textMuted }]}>Motos registradas</Text>
+              <Text style={[styles.statValue, { color: theme.text }]}>{summary.motos}</Text>
             </View>
 
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Servicios cargados</Text>
-              <Text style={styles.statValue}>{summary.mantenimientos}</Text>
+            <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
+              <Text style={[styles.statLabel, { color: theme.textMuted }]}>Servicios cargados</Text>
+              <Text style={[styles.statValue, { color: theme.text }]}>{summary.mantenimientos}</Text>
             </View>
 
-            <View style={styles.statRow}>
-              <Text style={styles.statLabel}>Gastos registrados</Text>
-              <Text style={styles.statValue}>{formattedTotalGastos}</Text>
+            <View style={[styles.statRow, { borderBottomColor: theme.border }]}>
+              <Text style={[styles.statLabel, { color: theme.textMuted }]}>Gastos registrados</Text>
+              <Text style={[styles.statValue, { color: theme.text }]}>{formattedTotalGastos}</Text>
             </View>
           </>
         ) : null}
       </View>
 
-      <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-        <Ionicons name="log-out-outline" size={20} color="#DC2626" />
-        <Text style={styles.logoutText}>Cerrar sesion</Text>
+      <TouchableOpacity style={[styles.logoutButton, { backgroundColor: theme.surface, borderColor: theme.dangerSoft }]} onPress={logout}>
+        <Ionicons name="log-out-outline" size={20} color={theme.danger} />
+        <Text style={[styles.logoutText, { color: theme.danger }]}>Cerrar sesion</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -185,7 +187,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: fontFamily.medium,
     fontWeight: '500',
-    color: '#DC2626',
+    color: light.danger,
     paddingVertical: 8,
   },
   statRow: {
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#FCA5A5',
+    borderColor: light.dangerSoft,
     backgroundColor: light.surface,
     flexDirection: 'row',
     alignItems: 'center',
@@ -222,6 +224,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
-    color: '#DC2626',
+    color: light.danger,
   },
 });

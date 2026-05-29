@@ -17,15 +17,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { light } from '../../theme/mototrackerLight';
+import { fontFamily } from '../../theme/fonts';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
-import { fontFamily } from '../../theme/fonts';
+import {
+  crearMantenimiento,
+  editarMantenimiento,
+  eliminarMantenimiento,
+  listarMantenimientosPorMoto,
+} from '../../api/mantenimientos';
 import { motoLabel } from '../../gastos/gastosLoader';
-import { editarMantenimiento } from '../../api/mantenimientos';
-import { crearMantenimiento, eliminarMantenimiento, listarMantenimientosPorMoto } from '../../api/mantenimientos';
 import { ApiError } from '../../api/client';
 import { formatDisplayDate } from '../../gastos/format';
 import type { Mantenimiento } from '../../types/models';
@@ -42,6 +46,8 @@ export function MantenimientoTabScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<Mantenimiento | null>(null);
+  const [actionsItem, setActionsItem] = useState<Mantenimiento | null>(null);
 
   const [tipo, setTipo] = useState('');
   const [descripcion, setDescripcion] = useState('');
@@ -192,7 +198,7 @@ const confirmDelete = async (m: Mantenimiento) => {
         {!addOpen ? <AppHeader /> : null}
         <View style={styles.emptyWrap}>
           <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin moto seleccionada</Text>
-          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Seleccioná una moto desde Garage.</Text>
+          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Selecciona una moto desde Garage.</Text>
         </View>
       </SafeAreaView>
     );
@@ -223,10 +229,10 @@ const confirmDelete = async (m: Mantenimiento) => {
 
       {items.length === 0 && !loading ? (
         <View style={styles.emptyWrap}>
-          <Ionicons name="construct-outline" size={64} color={light.border} />
+          <Ionicons name="construct-outline" size={64} color={theme.border} />
           <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin mantenimientos</Text>
-          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Registrá services, cambios de aceite, frenos y más.</Text>
-          <PrimaryButton title="Agregar" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
+          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Registra services, cambios de aceite, frenos y mas.</Text>
+          <PrimaryButton title="Agregar" variant="blue" onPress={() => { resetForm(); setAddOpen(true); }} style={styles.emptyBtn} />
         </View>
       ) : (
         <View style={styles.listWrap}>
@@ -265,10 +271,10 @@ const confirmDelete = async (m: Mantenimiento) => {
           />
           <Pressable
             accessibilityRole="button"
-            style={[styles.fab, { bottom: 24 + insets.bottom }]}
-            onPress={() => setAddOpen(true)}
+            style={[styles.fab, { bottom: 24 + insets.bottom, backgroundColor: theme.primary }]}
+            onPress={() => { resetForm(); setAddOpen(true); }}
           >
-            <Ionicons name="add" size={30} color="#fff" />
+            <Ionicons name="add" size={30} color={theme.onPrimary} />
           </Pressable>
         </View>
       )}
@@ -429,8 +435,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 24, fontFamily: fontFamily.bold, fontWeight: '800', color: light.text, marginTop: 12 },
   subtitle: { fontSize: 14, color: light.textMuted, marginTop: 4 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
-  emptyTitle: { marginTop: 14, fontSize: 18, fontWeight: '800', color: light.text, textAlign: 'center' },
-  emptySub: { marginTop: 8, color: light.textMuted, textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
+  emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
   listWrap: { flex: 1 },
   card: {
@@ -461,13 +467,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     elevation: 4,
-    shadowColor: '#000',
+    shadowColor: light.navy,
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.35)' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
   modalSheet: {
     backgroundColor: light.surface,
     borderTopLeftRadius: 20,

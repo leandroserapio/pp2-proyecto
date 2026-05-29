@@ -1,6 +1,5 @@
 import type { TextInputProps } from 'react-native';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors } from '../theme/colors';
 import { fontFamily } from '../theme/fonts';
 import { useAppSettings } from '../context/AppSettingsContext';
 
@@ -9,14 +8,14 @@ type Props = TextInputProps & {
   variant?: 'dark' | 'light';
 };
 
-export function AppTextInput({ label, style, variant = 'dark', ...rest }: Props) {
+export function AppTextInput({ label, style, variant = 'light', ...rest }: Props) {
   const { theme } = useAppSettings();
   const isLight = variant === 'light';
-  const labelColor = isLight ? theme.textMuted : colors.textMuted;
-  const ph = isLight ? theme.textMuted : colors.textMuted;
-  const bg = isLight ? theme.surface : colors.surface;
-  const border = isLight ? theme.border : colors.border;
-  const fg = isLight ? theme.text : colors.text;
+  const labelColor = theme.textMuted;
+  const ph = theme.textMuted;
+  const bg = isLight ? theme.surface : theme.bg;
+  const border = theme.border;
+  const fg = theme.text;
   return (
     <View style={styles.wrap}>
       {label ? <Text style={[styles.label, { color: labelColor }]}>{label}</Text> : null}

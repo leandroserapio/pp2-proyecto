@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { light } from '../../theme/mototrackerLight';
+import { fontFamily } from '../../theme/fonts';
 import { useAuth } from '../../context/AuthContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ApiError } from '../../api/client';
 
 export function RegisterScreen() {
   const { register } = useAuth();
+  const { theme } = useAppSettings();
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,15 +50,15 @@ export function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={[styles.root, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.card}>
-          <Text style={styles.title}>Crear cuenta</Text>
-          {error ? <Text style={styles.err}>{error}</Text> : null}
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.title, { color: theme.text }]}>Crear cuenta</Text>
+          {error ? <Text style={[styles.err, { color: theme.danger }]}>{error}</Text> : null}
 
-          <Text style={styles.sectionTitle}>Tus datos</Text>
+          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Tus datos</Text>
           <AppTextInput label="Nombre" variant="light" value={nombre} onChangeText={setNombre} />
           <AppTextInput
             label="Email"
@@ -67,7 +70,7 @@ export function RegisterScreen() {
           />
           <AppTextInput label="Contrasena" variant="light" secureTextEntry value={password} onChangeText={setPassword} />
 
-          <Text style={styles.sectionTitle}>Recuperacion</Text>
+          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Recuperacion</Text>
           <AppTextInput
             label="Pregunta secreta"
             variant="light"
@@ -83,7 +86,7 @@ export function RegisterScreen() {
             onChangeText={setRespuestaSecreta}
           />
 
-          <Text style={styles.sectionTitle}>Tu primera moto</Text>
+          <Text style={[styles.sectionTitle, { color: theme.primary }]}>Tu primera moto</Text>
           <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marcaMoto} onChangeText={setMarcaMoto} />
           <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modeloMoto} onChangeText={setModeloMoto} />
           <AppTextInput label="Anio" variant="light" keyboardType="number-pad" value={anioMoto} onChangeText={setAnioMoto} />
@@ -113,8 +116,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: light.border,
   },
-  title: { fontSize: 22, fontWeight: '800', color: light.text, marginBottom: 12 },
-  sectionTitle: { marginTop: 10, marginBottom: 10, fontSize: 13, fontWeight: '800', color: light.primary },
-  err: { color: '#B91C1C', marginBottom: 10 },
+  title: { fontSize: 22, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 12 },
+  sectionTitle: { marginTop: 10, marginBottom: 10, fontSize: 13, fontFamily: fontFamily.bold, fontWeight: '700', color: light.primary },
+  err: { color: light.danger, marginBottom: 10, fontFamily: fontFamily.regular },
   btn: { marginTop: 6 },
 });

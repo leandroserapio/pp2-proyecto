@@ -6,6 +6,7 @@ import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import type { AuthStackParamList } from '../../navigation/types';
 import { useAuth } from '../../context/AuthContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ApiError } from '../../api/client';
@@ -16,6 +17,7 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 export function LoginScreen() {
   const navigation = useNavigation<Nav>();
   const { login } = useAuth();
+  const { theme } = useAppSettings();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -79,13 +81,13 @@ export function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={[styles.root, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <View style={styles.card}>
-        <Text style={styles.title}>MotoTracker</Text>
-        <Text style={styles.sub}>Ingresá a tu cuenta</Text>
-        {error ? <Text style={styles.err}>{error}</Text> : null}
+      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+        <Text style={[styles.title, { color: theme.primary }]}>MotoTracker</Text>
+        <Text style={[styles.sub, { color: theme.textMuted }]}>Ingresá a tu cuenta</Text>
+        {error ? <Text style={[styles.err, { color: theme.danger }]}>{error}</Text> : null}
         <AppTextInput
           label="Email"
           variant="light"
@@ -111,18 +113,18 @@ export function LoginScreen() {
           }}
           style={styles.linkWrap}
         >
-          <Text style={styles.link}>Olvide mi contrasena</Text>
+          <Text style={[styles.link, { color: theme.primary }]}>Olvide mi contrasena</Text>
         </Pressable>
         <Pressable onPress={() => navigation.navigate('Register')} style={styles.linkWrap}>
-          <Text style={styles.link}>Crear cuenta</Text>
+          <Text style={[styles.link, { color: theme.primary }]}>Crear cuenta</Text>
         </Pressable>
       </View>
 
       <Modal visible={recoverOpen} transparent animationType="slide" onRequestClose={() => setRecoverOpen(false)}>
         <View style={styles.modalRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setRecoverOpen(false)} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Recuperar contrasena</Text>
+          <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => setRecoverOpen(false)} />
+          <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Recuperar contrasena</Text>
             <AppTextInput
               label="Email"
               variant="light"
@@ -136,7 +138,7 @@ export function LoginScreen() {
             />
             {secretQuestion ? (
               <>
-                <Text style={styles.questionLabel}>{secretQuestion}</Text>
+                <Text style={[styles.questionLabel, { color: theme.text }]}>{secretQuestion}</Text>
                 <AppTextInput label="Respuesta" variant="light" secureTextEntry value={secretAnswer} onChangeText={setSecretAnswer} />
                 <AppTextInput label="Nueva contrasena" variant="light" secureTextEntry value={newPassword} onChangeText={setNewPassword} />
                 <PrimaryButton title="Actualizar contrasena" variant="blue" loading={recoverLoading} onPress={resetPassword} />
@@ -175,7 +177,7 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
   },
   err: {
-    color: '#B91C1C',
+    color: light.danger,
     marginBottom: 10,
     textAlign: 'center',
     fontFamily: fontFamily.regular,
@@ -184,7 +186,7 @@ const styles = StyleSheet.create({
   linkWrap: { marginTop: 16, alignItems: 'center' },
   link: { color: light.primary, fontWeight: '700', fontFamily: fontFamily.bold },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.35)' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
   modalSheet: {
     backgroundColor: light.surface,
     borderTopLeftRadius: 20,
@@ -193,6 +195,6 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     padding: 20,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: light.text, marginBottom: 14 },
-  questionLabel: { color: light.navy, fontWeight: '700', marginBottom: 12, lineHeight: 20 },
+  modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
+  questionLabel: { color: light.navy, fontFamily: fontFamily.bold, fontWeight: '700', marginBottom: 12, lineHeight: 20 },
 });

@@ -115,7 +115,7 @@ export function AccountScreen() {
               style={styles.editLink}
               onPress={() => setEditing((prev) => !prev)}
             >
-              <Text style={styles.editLinkText}>
+              <Text style={[styles.editLinkText, { color: theme.primary }]}>
                 {editing ? 'Cancelar' : 'Editar'}
               </Text>
             </Pressable>
@@ -317,6 +317,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingHorizontal: 12,
     color: light.text,
+    fontFamily: fontFamily.regular,
   },
   saveButton: {
     marginTop: 4,

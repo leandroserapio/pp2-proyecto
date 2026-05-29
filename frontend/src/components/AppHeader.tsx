@@ -1,6 +1,7 @@
 // src/components/AppHeader.tsx
 
 import { Ionicons } from '@expo/vector-icons';
+import { CommonActions, useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import {
   Pressable,
@@ -26,7 +27,12 @@ export function AppHeader({
 }: Props) {
   const { user } = useAuth();
   const { theme } = useAppSettings();
+  const navigation = useNavigation<any>();
   const [menuVisible, setMenuVisible] = useState(false);
+
+  const goToAccount = () => {
+    navigation.dispatch(CommonActions.navigate('Cuenta'));
+  };
 
   return (
     <>
@@ -74,13 +80,18 @@ export function AppHeader({
           ) : null}
         </View>
 
-        <View style={[
-          styles.avatar,
-          {
-            backgroundColor: theme.primarySoft,
-            borderColor: theme.border,
-          }
-        ]}>
+        <Pressable
+          accessibilityRole="button"
+          hitSlop={10}
+          onPress={goToAccount}
+          style={[
+            styles.avatar,
+            {
+              backgroundColor: theme.primarySoft,
+              borderColor: theme.border,
+            }
+          ]}
+        >
           <Text style={[
             styles.avatarText,
             {
@@ -89,7 +100,7 @@ export function AppHeader({
           ]}>
             {user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M'}
           </Text>
-        </View>
+        </Pressable>
       </View>
 
       <AppDrawerMenu

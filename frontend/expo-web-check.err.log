@@ -1,0 +1,4 @@
+The following packages should be updated for best compatibility with the installed expo version:
+  expo@55.0.24 - expected version: ~55.0.26
+  expo-font@55.0.7 - expected version: ~55.0.8
+Your project may not work correctly until you install the expected versions of the packages.
