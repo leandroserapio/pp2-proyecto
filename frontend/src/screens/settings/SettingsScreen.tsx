@@ -50,7 +50,7 @@ export function SettingsScreen() {
         />
 
         <SettingRow
-          label="Recordatorios"
+          label="Recordatorio de kilometraje"
           value={reminders}
           onValueChange={setReminders}
         />

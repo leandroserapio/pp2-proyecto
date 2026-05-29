@@ -9,6 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -29,6 +30,8 @@ type Nav = NativeStackNavigationProp<AuthStackParamList>;
 export function LoginScreen() {
   const navigation = useNavigation<Nav>();
   const { login } = useAuth();
+  const { height, width } = useWindowDimensions();
+  const compact = height < 720 || width < 380;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -124,16 +127,35 @@ export function LoginScreen() {
       style={styles.root}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.shell}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          compact && styles.scrollCompact,
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View
+          style={[
+            styles.shell,
+            compact && styles.shellCompact,
+          ]}
+        >
           <View style={styles.logo}>
             <Ionicons name="bicycle-outline" size={27} color="#FFFFFF" />
           </View>
 
           <Text style={styles.brand}>MotoTracker</Text>
-          <Text style={styles.subtitle}>Gestion profesional de tu moto</Text>
+          <Text style={[
+            styles.subtitle,
+            compact && styles.subtitleCompact,
+          ]}>
+            Gestion profesional de tu moto
+          </Text>
 
-          <View style={styles.form}>
+          <View style={[
+            styles.form,
+            compact && styles.formCompact,
+          ]}>
             <Text style={styles.formTitle}>Ingresar</Text>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -256,7 +278,13 @@ const styles = StyleSheet.create({
   scroll: {
     flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
+  },
+  scrollCompact: {
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
   },
   shell: {
     width: '100%',
@@ -265,6 +293,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 25,
     paddingVertical: 55,
+  },
+  shellCompact: {
+    paddingHorizontal: 16,
+    paddingVertical: 24,
   },
   logo: {
     width: 55,
@@ -292,12 +324,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 35,
   },
+  subtitleCompact: {
+    marginBottom: 22,
+  },
   form: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#D9E0EA',
     borderRadius: 10,
     padding: 25,
+  },
+  formCompact: {
+    padding: 18,
   },
   formTitle: {
     fontSize: 16,
@@ -393,6 +431,7 @@ const styles = StyleSheet.create({
   registerRow: {
     marginTop: 18,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,

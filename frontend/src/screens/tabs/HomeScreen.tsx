@@ -19,15 +19,67 @@ import { AppTextInput } from "../../components/AppTextInput";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { useAppSettings } from "../../context/AppSettingsContext";
 import { useMoto } from "../../context/MotoContext";
+import { obtenerNotificacionesProgramadas } from "../../services/notificationsService";
 import { fontFamily } from "../../theme/fonts";
 import { light } from "../../theme/mototrackerLight";
 
 export function HomeScreen() {
   const { selectedMoto, selectedMotoId, refreshMotos } = useMoto();
-  const { theme } = useAppSettings();
+  const {
+    notifications,
+    reminders: kilometerReminderEnabled,
+    theme,
+  } = useAppSettings();
   const [kmOpen, setKmOpen] = useState(false);
   const [kmAdd, setKmAdd] = useState("");
   const [saving, setSaving] = useState(false);
+  const [remindersOpen, setRemindersOpen] = useState(false);
+  const [remindersLoading, setRemindersLoading] = useState(false);
+  const [reminders, setReminders] = useState<string[]>([]);
+  const [remindersMessage, setRemindersMessage] = useState<string | null>(null);
+
+  const mostrarRecordatoriosActivos = async () => {
+    setRemindersOpen(true);
+    setRemindersLoading(true);
+    setReminders([]);
+    setRemindersMessage(null);
+
+    try {
+      if (!notifications || !kilometerReminderEnabled) {
+        setRemindersMessage(
+          "El recordatorio de kilometraje esta desactivado en Ajustes.",
+        );
+        return;
+      }
+
+      const recordatorios = await obtenerNotificacionesProgramadas();
+      const recordatoriosDeMoto = recordatorios.filter(
+        (recordatorio) => recordatorio.content.data?.type !== "kilometers_inactivity_reminder",
+      );
+
+      if (!recordatoriosDeMoto.length) {
+        setRemindersMessage(
+          "No hay recordatorios activos de mantenimiento, vencimientos o viajes.",
+        );
+        return;
+      }
+
+      const detalle = recordatoriosDeMoto
+        .map((recordatorio) => {
+          const titulo = recordatorio.content.title ?? "MotoTracker";
+          const mensaje = recordatorio.content.body ?? "Recordatorio programado";
+          return `${titulo}: ${mensaje}`;
+        });
+
+      setReminders(detalle);
+    } catch {
+      setRemindersMessage(
+        "No se pudieron consultar los recordatorios programados.",
+      );
+    } finally {
+      setRemindersLoading(false);
+    }
+  };
 
   const onActualizarKm = async () => {
     if (!selectedMotoId) return;
@@ -187,12 +239,90 @@ export function HomeScreen() {
               <StatusChip
                 icon="notifications-outline"
                 label="Recordatorios activos"
+                onPress={mostrarRecordatoriosActivos}
               />
               <StatusChip
                 icon="shield-checkmark-outline"
                 label="Control al día"
               />
             </View>
+
+            {remindersOpen ? (
+              <View
+                style={[
+                  styles.remindersPanel,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
+                <View style={styles.remindersHeader}>
+                  <Text
+                    style={[
+                      styles.remindersTitle,
+                      {
+                        color: theme.text,
+                      },
+                    ]}
+                  >
+                    Recordatorios activos
+                  </Text>
+
+                  <Pressable onPress={() => setRemindersOpen(false)}>
+                    <Ionicons name="close-outline" size={22} color={theme.textMuted} />
+                  </Pressable>
+                </View>
+
+                {remindersLoading ? (
+                  <Text
+                    style={[
+                      styles.remindersText,
+                      {
+                        color: theme.textMuted,
+                      },
+                    ]}
+                  >
+                    Consultando recordatorios...
+                  </Text>
+                ) : reminders.length ? (
+                  reminders.map((reminder) => (
+                    <View
+                      key={reminder}
+                      style={[
+                        styles.reminderItem,
+                        {
+                          borderColor: theme.border,
+                        },
+                      ]}
+                    >
+                      <Ionicons name="notifications-outline" size={18} color={theme.primary} />
+                      <Text
+                        style={[
+                          styles.remindersText,
+                          {
+                            color: theme.text,
+                          },
+                        ]}
+                      >
+                        {reminder}
+                      </Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text
+                    style={[
+                      styles.remindersText,
+                      {
+                        color: theme.textMuted,
+                      },
+                    ]}
+                  >
+                    {remindersMessage}
+                  </Text>
+                )}
+              </View>
+            ) : null}
           </>
         ) : (
           <View style={styles.empty}>
@@ -268,22 +398,16 @@ function InfoTile({ label, value }: { label: string; value: string }) {
 function StatusChip({
   icon,
   label,
+  onPress,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
+  onPress?: () => void;
 }) {
   const { theme } = useAppSettings();
 
-  return (
-    <View
-      style={[
-        styles.statusChip,
-        {
-          backgroundColor: theme.surface,
-          borderColor: theme.border,
-        },
-      ]}
-    >
+  const content = (
+    <>
       <Ionicons name={icon} size={18} color={theme.primary} />
       <Text
         style={[
@@ -295,6 +419,38 @@ function StatusChip({
       >
         {label}
       </Text>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={[
+          styles.statusChip,
+          {
+            backgroundColor: theme.surface,
+            borderColor: theme.border,
+          },
+        ]}
+      >
+        {content}
+      </Pressable>
+    );
+  }
+
+  return (
+    <View
+      style={[
+        styles.statusChip,
+        {
+          backgroundColor: theme.surface,
+          borderColor: theme.border,
+        },
+      ]}
+    >
+      {content}
     </View>
   );
 }
@@ -376,6 +532,39 @@ const styles = StyleSheet.create({
   quickRow: {
     marginTop: 14,
     gap: 10,
+  },
+  remindersPanel: {
+    marginTop: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 14,
+  },
+  remindersHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  remindersTitle: {
+    color: light.text,
+    fontFamily: fontFamily.bold,
+    fontWeight: "700",
+    fontSize: 16,
+  },
+  remindersText: {
+    flex: 1,
+    color: light.textMuted,
+    fontFamily: fontFamily.regular,
+    lineHeight: 20,
+  },
+  reminderItem: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderTopWidth: 1,
+    paddingTop: 10,
+    marginTop: 10,
   },
   statusChip: {
     minHeight: 50,
