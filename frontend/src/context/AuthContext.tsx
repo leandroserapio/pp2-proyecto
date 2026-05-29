@@ -11,6 +11,8 @@ export type SessionUser = LoginResponse;
 type AuthContextValue = {
   user: SessionUser | null;
   bootstrapping: boolean;
+  pendingMotoSetup: boolean;
+  consumePendingMotoSetup: () => void;
   login: (req: LoginRequest) => Promise<void>;
   register: (req: UsuarioInput) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,6 +23,7 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [bootstrapping, setBootstrapping] = useState(true);
+  const [pendingMotoSetup, setPendingMotoSetup] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +63,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     async (req: LoginRequest) => {
       const res = await apiLogin(req);
       setUser(res);
+      setPendingMotoSetup(false);
       await persist(res);
     },
     [persist],
@@ -68,20 +72,28 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const register = useCallback(
     async (req: UsuarioInput) => {
       await registrarUsuario(req);
-      await login({ email: req.email, password: req.password });
+      const res = await apiLogin({ email: req.email, password: req.password });
+      setUser(res);
+      setPendingMotoSetup(true);
+      await persist(res);
     },
-    [login],
+    [persist],
   );
 
   const logout = useCallback(async () => {
     setUser(null);
+    setPendingMotoSetup(false);
     await persist(null);
     await AsyncStorage.removeItem('@mototracker/selectedMotoId');
   }, [persist]);
 
+  const consumePendingMotoSetup = useCallback(() => {
+    setPendingMotoSetup(false);
+  }, []);
+
   const value = useMemo(
-    () => ({ user, bootstrapping, login, register, logout }),
-    [user, bootstrapping, login, register, logout],
+    () => ({ user, bootstrapping, pendingMotoSetup, consumePendingMotoSetup, login, register, logout }),
+    [user, bootstrapping, pendingMotoSetup, consumePendingMotoSetup, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

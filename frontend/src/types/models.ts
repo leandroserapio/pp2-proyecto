@@ -15,8 +15,8 @@ export interface UsuarioInput {
   password: string;
   preguntaSecreta: string;
   respuestaSecreta: string;
-  marcaMoto: string;
-  modeloMoto: string;
+  marcaMoto?: string;
+  modeloMoto?: string;
   anioMoto?: number | null;
   patenteMoto?: string | null;
   kilometrajeActualMoto?: number | null;

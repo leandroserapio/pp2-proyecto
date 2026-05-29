@@ -13,11 +13,6 @@ export function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [preguntaSecreta, setPreguntaSecreta] = useState('');
   const [respuestaSecreta, setRespuestaSecreta] = useState('');
-  const [marcaMoto, setMarcaMoto] = useState('');
-  const [modeloMoto, setModeloMoto] = useState('');
-  const [anioMoto, setAnioMoto] = useState('');
-  const [patenteMoto, setPatenteMoto] = useState('');
-  const [kilometrajeMoto, setKilometrajeMoto] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,11 +26,6 @@ export function RegisterScreen() {
         password,
         preguntaSecreta: preguntaSecreta.trim(),
         respuestaSecreta: respuestaSecreta.trim(),
-        marcaMoto: marcaMoto.trim(),
-        modeloMoto: modeloMoto.trim(),
-        anioMoto: anioMoto ? Number(anioMoto) : null,
-        patenteMoto: patenteMoto.trim() || null,
-        kilometrajeActualMoto: kilometrajeMoto ? Number(kilometrajeMoto) : 0,
       });
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'No se pudo registrar';
@@ -81,19 +71,6 @@ export function RegisterScreen() {
             secureTextEntry
             value={respuestaSecreta}
             onChangeText={setRespuestaSecreta}
-          />
-
-          <Text style={styles.sectionTitle}>Tu primera moto</Text>
-          <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marcaMoto} onChangeText={setMarcaMoto} />
-          <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modeloMoto} onChangeText={setModeloMoto} />
-          <AppTextInput label="Anio" variant="light" keyboardType="number-pad" value={anioMoto} onChangeText={setAnioMoto} />
-          <AppTextInput label="Patente" variant="light" autoCapitalize="characters" value={patenteMoto} onChangeText={setPatenteMoto} />
-          <AppTextInput
-            label="Kilometraje actual"
-            variant="light"
-            keyboardType="number-pad"
-            value={kilometrajeMoto}
-            onChangeText={setKilometrajeMoto}
           />
 
           <PrimaryButton title="Registrarme" variant="blue" loading={loading} onPress={onSubmit} style={styles.btn} />

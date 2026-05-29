@@ -9,6 +9,7 @@ import { Platform, StyleSheet } from 'react-native';
 import { fontFamily } from '../theme/fonts';
 
 import { useAppSettings } from '../context/AppSettingsContext';
+import { useAuth } from '../context/AuthContext';
 
 import type { MainTabParamList } from './types';
 
@@ -25,6 +26,7 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabs() {
   const { theme } = useAppSettings();
+  const { pendingMotoSetup } = useAuth();
 
   const androidTabScreenOptions = {
 
@@ -103,6 +105,7 @@ export function MainTabs() {
   return (
 
     <Tab.Navigator
+      initialRouteName={pendingMotoSetup ? 'Garage' : 'Inicio'}
       screenOptions={
         Platform.OS === 'android'
           ? androidTabScreenOptions
@@ -134,6 +137,7 @@ export function MainTabs() {
       <Tab.Screen
         name="Garage"
         component={GarageScreen}
+        initialParams={pendingMotoSetup ? { openAdd: true } : undefined}
         options={{
           title: 'Garage',
           tabBarIcon: ({ color, size }) => (

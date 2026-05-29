@@ -30,7 +30,7 @@ type GarageRoute = RouteProp<MainTabParamList, 'Garage'>;
 export function GarageScreen() {
   const navigation = useNavigation<any>();
   const route = useRoute<GarageRoute>();
-  const { user } = useAuth();
+  const { user, consumePendingMotoSetup } = useAuth();
   const { theme } = useAppSettings();
   const { motos, selectedMotoId, loading, refreshMotos, setSelectedMotoId, eliminarMoto } = useMoto();
   const [refreshing, setRefreshing] = useState(false);
@@ -46,9 +46,10 @@ export function GarageScreen() {
   useEffect(() => {
     if (route.params?.openAdd) {
       setAddOpen(true);
+      consumePendingMotoSetup();
       navigation.setParams({ openAdd: false });
     }
-  }, [navigation, route.params?.openAdd]);
+  }, [consumePendingMotoSetup, navigation, route.params?.openAdd]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
