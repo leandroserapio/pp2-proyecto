@@ -58,9 +58,9 @@ import type {
 
 import { MainTabs } from './MainTabs';
 
-import { LoginScreen } from '../screens/auth/LoginScreen';
+import { LoginScreen } from '../screens/login/LoginScreen';
 
-import { RegisterScreen } from '../screens/auth/RegisterScreen';
+import { RegisterScreen } from '../screens/login/RegisterScreen';
 
 import { AccountScreen } from '../screens/account/AccountScreen';
 
