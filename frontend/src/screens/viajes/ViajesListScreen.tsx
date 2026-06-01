@@ -90,6 +90,28 @@ export function ViajesListScreen() {
   const initial = user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M';
   const dropdownBottomGap = 96 + insets.bottom;
 
+  const confirmDeleteViaje = async (item: ViajeListNavItem) => {
+    if (!item.idViaje) return;
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(`¿Eliminar viaje a ${item.destino}?`)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert('Eliminar', `¿Eliminar viaje a ${item.destino}?`, [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
+          ]);
+        });
+
+    if (!confirmed) return;
+
+    try {
+      await eliminarViaje(item.idViaje);
+      await reload();
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : 'No se pudo eliminar';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+    }
+  };
+
   const topBlock = (
     <>
       <View style={styles.sectionHead}>
@@ -209,10 +231,21 @@ export function ViajesListScreen() {
                     <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
                       {item.destino}
                     </Text>
-                    <View style={[styles.badge, { backgroundColor: badge.backgroundColor }]}>
-                      <Text style={[styles.badgeText, { color: badge.textColor }]}>{badge.label}</Text>
+                    <View style={styles.cardTopRight}>
+                      <View style={[styles.badge, { backgroundColor: badge.backgroundColor }]}>
+                        <Text style={[styles.badgeText, { color: badge.textColor }]}>{badge.label}</Text>
+                      </View>
+                      <View style={styles.cardIconActions}>
+                        <Pressable onPress={() => navigation.navigate('ViajesEdit', { item })} hitSlop={8}>
+                          <Ionicons name="create-outline" size={17} color={light.textMuted} />
+                        </Pressable>
+                        <Pressable onPress={() => confirmDeleteViaje(item)} hitSlop={8}>
+                          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                        </Pressable>
+                      </View>
                     </View>
                   </View>
+                  
                   <Text style={[styles.cardDate, { color: theme.textMuted }]}>{formatViajeListDate(item.fechaSalida)}</Text>
                   <View style={[styles.cardDivider, { backgroundColor: theme.border }]} />
                   <View style={styles.cardStats}>
@@ -611,5 +644,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
     marginRight: 8,
+  },
+  cardTopRight: {
+  alignItems: 'flex-end',
+  gap: 8,
+  marginLeft: 8,
+  },
+  cardIconActions: {
+    flexDirection: 'row',
+    gap: 10,
   },
 });

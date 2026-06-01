@@ -184,6 +184,28 @@ export function GastosListScreen() {
 
   const empty = !loading && !motosLoading && items.length === 0;
 
+  const confirmDeleteGasto = async (item: GastoListNavItem) => {
+    if (!item.idGasto) return;
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(`¿Eliminar ${item.tipo}?`)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert('Eliminar', `¿Eliminar ${item.tipo}?`, [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
+          ]);
+        });
+
+    if (!confirmed) return;
+
+    try {
+      await eliminarGasto(item.idGasto);
+      await reload();
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : 'No se pudo eliminar';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+    }
+  };
+
   const openFilter = useCallback(() => {
     filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
       setFilterMenuRect({ x, y, width, height });
@@ -378,67 +400,28 @@ export function GastosListScreen() {
 
               return (
 
-                <Pressable
-                  style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
-                  onPress={() => navigation.navigate('GastosDetail', { item })}
-                  onLongPress={() => {
-                    Alert.alert(item.tipo, '¿Qué querés hacer?', [
-                      { text: 'Cancelar', style: 'cancel' },
-                      {
-                        text: 'Editar',
-                        onPress: () => {
-                          navigation.navigate('GastosEdit', { item });
-                        },
-                      },
-                      {
-                        text: 'Eliminar',
-                        style: 'destructive',
-                        onPress: async () => {
-                          if (!item.idGasto) return;
-                          try {
-                            await eliminarGasto(item.idGasto);
-                            await reload();
-                          } catch (e) {
-                            const msg = e instanceof ApiError ? e.message : 'No se pudo eliminar';
-                            Alert.alert('Error', msg);
-                          }
-                        },
-                      },
-                    ]);
-                  }}
-                >
-
-                  <View style={styles.cardMain}>
-
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>
-                      {item.tipo}
-                    </Text>
-
+                <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                  <Pressable style={styles.cardMain} onPress={() => navigation.navigate('GastosDetail', { item })}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>{item.tipo}</Text>
                     <Text style={[styles.cardSub, { color: theme.textMuted }]}>
                       {item.motoLabel} - {formatDisplayDate(item.fecha)}
                     </Text>
-
-                    <Text style={[styles.cardAmount, { color: theme.text }]}>
-                      {formatArs(item.monto)}
-                    </Text>
-
+                    <Text style={[styles.cardAmount, { color: theme.text }]}>{formatArs(item.monto)}</Text>
+                  </Pressable>
+                  <View style={styles.cardRight}>
+                    <View style={[styles.catIcon, { backgroundColor: `${cat.color}22` }]}>
+                      <CategoryGlyph cat={cat} />
+                    </View>
+                    <View style={styles.cardIconActions}>
+                      <Pressable onPress={() => navigation.navigate('GastosEdit', { item })} hitSlop={8}>
+                        <Ionicons name="create-outline" size={17} color={light.textMuted} />
+                      </Pressable>
+                      <Pressable onPress={() => confirmDeleteGasto(item)} hitSlop={8}>
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                      </Pressable>
+                    </View>
                   </View>
-
-                  <View
-                    style={[
-                      styles.catIcon,
-                      {
-                        backgroundColor: `${cat.color}22`
-                      }
-                    ]}
-                  >
-
-                    <CategoryGlyph cat={cat} />
-
-                  </View>
-
-                </Pressable>
-
+                </View>
               );
             }}
           />
@@ -803,5 +786,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
+  cardRight: {
+  alignItems: 'center',
+  gap: 8,
+  marginLeft: 12,
+  },
+  cardIconActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
 });
