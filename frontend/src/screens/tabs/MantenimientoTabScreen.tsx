@@ -46,8 +46,6 @@ export function MantenimientoTabScreen() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<Mantenimiento | null>(null);
-  const [actionsItem, setActionsItem] = useState<Mantenimiento | null>(null);
 
   const [tipo, setTipo] = useState('');
   const [descripcion, setDescripcion] = useState('');
