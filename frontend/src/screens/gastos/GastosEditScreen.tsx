@@ -26,7 +26,7 @@ import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { editarGasto } from '../../api/gastos';
 import { ApiError } from '../../api/client';
-import { mergeGastoDescripcion, splitGastoDescripcion } from '../../gastos/gastoKm';
+import { cleanGastoDescripcion } from '../../gastos/gastoKm';
 import { formatDisplayDate, parseAmountInput } from '../../gastos/format';
 import { motoLabel } from '../../gastos/gastosLoader';
 
@@ -56,7 +56,7 @@ export function GastosEditScreen() {
   const { darkMode, theme } = useAppSettings();
   const { item } = route.params;
 
-  const { descripcion: existingDesc, kilometraje: existingKm } = splitGastoDescripcion(item.descripcion ?? '');
+  const existingDesc = cleanGastoDescripcion(item.descripcion ?? '');
 
   const defaultMotoId = useMemo(() => {
     return item.idMoto ?? null;
@@ -66,7 +66,6 @@ export function GastosEditScreen() {
   const [montoStr, setMontoStr] = useState(typeof item.monto === 'number' ? String(item.monto) : String(item.monto ?? ''));
   const [idMoto, setIdMoto] = useState<number | null>(defaultMotoId);
   const [descripcion, setDescripcion] = useState(existingDesc);
-  const [kilometraje, setKilometraje] = useState(existingKm);
   const [date, setDate] = useState(() => parseDate(item.fecha));
   const [showDate, setShowDate] = useState(false);
   const [dateMenuRect, setDateMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -114,7 +113,7 @@ export function GastosEditScreen() {
     try {
       await editarGasto(item.idGasto, {
         tipo: tipo.trim(),
-        descripcion: mergeGastoDescripcion(kilometraje, descripcion),
+        descripcion: descripcion.trim() || null,
         monto,
         fecha: toIsoLocal(date),
       });
@@ -198,23 +197,6 @@ export function GastosEditScreen() {
             placeholder="Ej: Nafta Shell"
             value={descripcion}
             onChangeText={setDescripcion}
-          />
-
-          <Text style={[styles.label, { color: theme.text }]}>Kilometraje</Text>
-          <TextInput
-            placeholder="0.00 Km."
-            placeholderTextColor={theme.textMuted}
-            keyboardType="decimal-pad"
-            value={kilometraje}
-            onChangeText={setKilometraje}
-            style={[
-              styles.inlineInput,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                color: theme.text,
-              },
-            ]}
           />
 
           <Text style={[styles.label, { color: theme.text }]}>Fecha</Text>

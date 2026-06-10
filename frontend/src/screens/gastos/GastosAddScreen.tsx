@@ -26,7 +26,6 @@ import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { crearGasto } from '../../api/gastos';
 import { ApiError } from '../../api/client';
-import { mergeGastoDescripcion } from '../../gastos/gastoKm';
 import { formatDisplayDate, parseAmountInput } from '../../gastos/format';
 import { motoLabel } from '../../gastos/gastosLoader';
 
@@ -57,7 +56,6 @@ export function GastosAddScreen() {
   const [montoStr, setMontoStr] = useState('');
   const [idMoto, setIdMoto] = useState<number | null>(null);
   const [descripcion, setDescripcion] = useState('');
-  const [kilometraje, setKilometraje] = useState('');
   const [date, setDate] = useState(() => new Date());
   const [showDate, setShowDate] = useState(false);
   const [dateMenuRect, setDateMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -105,7 +103,7 @@ export function GastosAddScreen() {
     try {
       await crearGasto(idMoto, {
         tipo: tipo.trim(),
-        descripcion: mergeGastoDescripcion(kilometraje, descripcion),
+        descripcion: descripcion.trim() || null,
         monto,
         fecha: toIsoLocal(date),
       });
@@ -189,23 +187,6 @@ export function GastosAddScreen() {
             placeholder="Ej: Nafta Shell"
             value={descripcion}
             onChangeText={setDescripcion}
-          />
-
-          <Text style={[styles.label, { color: theme.text }]}>Kilometraje</Text>
-          <TextInput
-            placeholder="0.00 Km."
-            placeholderTextColor={theme.textMuted}
-            keyboardType="decimal-pad"
-            value={kilometraje}
-            onChangeText={setKilometraje}
-            style={[
-              styles.inlineInput,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                color: theme.text,
-              },
-            ]}
           />
 
           <Text style={[styles.label, { color: theme.text }]}>Fecha</Text>

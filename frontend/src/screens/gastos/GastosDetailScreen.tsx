@@ -10,8 +10,8 @@ import type { GastosStackParamList } from '../../navigation/types';
 import { eliminarGasto } from '../../api/gastos';
 import { ApiError } from '../../api/client';
 import { useAppSettings } from '../../context/AppSettingsContext';
-import { splitGastoDescripcion } from '../../gastos/gastoKm';
-import { formatArs, formatDisplayDate, formatKmDisplay } from '../../gastos/format';
+import { cleanGastoDescripcion } from '../../gastos/gastoKm';
+import { formatArs, formatDisplayDate } from '../../gastos/format';
 
 type Nav = NativeStackNavigationProp<GastosStackParamList, 'GastosDetail'>;
 type R = RouteProp<GastosStackParamList, 'GastosDetail'>;
@@ -23,7 +23,7 @@ export function GastosDetailScreen() {
   const [actionsOpen, setActionsOpen] = useState(false);
   const { item } = route.params;
 
-  const { descripcion, kilometraje } = splitGastoDescripcion(item.descripcion ?? '');
+  const descripcion = cleanGastoDescripcion(item.descripcion ?? '');
 
   const deleteGasto = async () => {
     if (!item.idGasto) return;
@@ -80,13 +80,6 @@ export function GastosDetailScreen() {
             <View style={styles.field}>
               <Text style={[styles.k, { color: theme.textMuted }]}>Descripcion</Text>
               <Text style={[styles.v, { color: theme.text }]}>{descripcion}</Text>
-            </View>
-          ) : null}
-
-          {kilometraje ? (
-            <View style={styles.field}>
-              <Text style={[styles.k, { color: theme.textMuted }]}>Kilometraje</Text>
-              <Text style={[styles.v, { color: theme.text }]}>{formatKmDisplay(kilometraje)}</Text>
             </View>
           ) : null}
 

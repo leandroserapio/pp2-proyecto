@@ -19,6 +19,7 @@ import { useAppSettings } from '../../context/AppSettingsContext';
 import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
+import { DatePickerField, toIsoLocal } from '../../components/DatePickerField';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { crearViaje, eliminarViaje, listarViajesPorMoto } from '../../api/viajes';
 import { ApiError } from '../../api/client';
@@ -35,7 +36,7 @@ export function ViajesTabScreen() {
   const [addOpen, setAddOpen] = useState(false);
 
   const [destino, setDestino] = useState('');
-  const [fechaSalida, setFechaSalida] = useState('');
+  const [fechaSalida, setFechaSalida] = useState(() => new Date());
   const [kmEst, setKmEst] = useState('');
   const [presupuesto, setPresupuesto] = useState('');
   const [notas, setNotas] = useState('');
@@ -68,14 +69,9 @@ export function ViajesTabScreen() {
     setRefreshing(false);
   }, [reload]);
 
-  const todayIso = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-
   const resetForm = () => {
     setDestino('');
-    setFechaSalida('');
+    setFechaSalida(new Date());
     setKmEst('');
     setPresupuesto('');
     setNotas('');
@@ -91,7 +87,7 @@ export function ViajesTabScreen() {
     try {
       await crearViaje(selectedMotoId, {
         destino: destino.trim(),
-        fechaSalida: fechaSalida.trim() || todayIso(),
+        fechaSalida: toIsoLocal(fechaSalida),
         kilometrosEstimados: kmEst ? Number(kmEst) : null,
         presupuestoEstimado: presupuesto ? Number(presupuesto.replace(',', '.')) : null,
         notas: notas.trim() || null,
@@ -209,7 +205,7 @@ export function ViajesTabScreen() {
             <ScrollView keyboardShouldPersistTaps="handled">
               <Text style={[styles.modalTitle, { color: theme.text }]}>Agregar viaje</Text>
               <AppTextInput label="Destino *" variant="light" placeholder="Ej: Chascomús" value={destino} onChangeText={setDestino} />
-              <AppTextInput label="Fecha salida (AAAA-MM-DD)" variant="light" placeholder={todayIso()} value={fechaSalida} onChangeText={setFechaSalida} />
+              <DatePickerField label="Fecha de salida" value={fechaSalida} onChange={setFechaSalida} />
               <AppTextInput label="Km estimados" variant="light" placeholder="Ej: 220" keyboardType="number-pad" value={kmEst} onChangeText={setKmEst} />
               <AppTextInput label="Presupuesto estimado" variant="light" placeholder="Ej: 30000" keyboardType="decimal-pad" value={presupuesto} onChangeText={setPresupuesto} />
               <AppTextInput label="Notas" variant="light" placeholder="Revisiones, paradas, etc." value={notas} onChangeText={setNotas} multiline />

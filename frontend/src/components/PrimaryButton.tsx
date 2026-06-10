@@ -31,9 +31,9 @@ export function PrimaryButton({
           styles.base,
           isGhost
             ? {
-                backgroundColor: 'transparent',
+                backgroundColor: theme.primarySoft,
                 borderWidth: 1,
-                borderColor: theme.border,
+                borderColor: theme.primary,
               }
             : {
                 backgroundColor: buttonColor,

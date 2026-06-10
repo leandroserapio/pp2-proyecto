@@ -38,6 +38,7 @@ export interface Moto {
   anio?: number | null;
   patente?: string | null;
   kilometrajeActual?: number | null;
+  fechaUltimaActualizacionKm?: string | null;
   usuario?: unknown;
 }
 

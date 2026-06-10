@@ -20,10 +20,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import type { ViajeListNavItem, ViajesStackParamList } from '../../navigation/types';
-import { useAuth } from '../../context/AuthContext';
 import { useMoto } from '../../context/MotoContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { PrimaryButton } from '../../components/PrimaryButton';
+import { AppHeader } from '../../components/AppHeader';
 import { eliminarViaje } from '../../api/viajes';
 import { ApiError } from '../../api/client';
 import { formatArs, formatKmViaje, formatViajeListDate } from '../../viajes/format';
@@ -35,7 +35,6 @@ type Nav = NativeStackNavigationProp<ViajesStackParamList>;
 export function ViajesListScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
-  const { user } = useAuth();
   const { motos, loading: motosLoading } = useMoto();
   const { theme } = useAppSettings();
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
@@ -87,7 +86,6 @@ export function ViajesListScreen() {
   }, [filtro, motos]);
 
   const empty = !loading && !motosLoading && items.length === 0;
-  const initial = user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M';
   const dropdownBottomGap = 96 + insets.bottom;
 
   const confirmDeleteViaje = async (item: ViajeListNavItem) => {
@@ -147,12 +145,7 @@ export function ViajesListScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
-        <View style={[styles.avatar, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-          <Text style={[styles.avatarText, { color: theme.primary }]}>{initial}</Text>
-        </View>
-        <Text style={[styles.brand, { color: theme.primary }]}>MotoTracker</Text>
-      </View>
+      <AppHeader title="Viajes" />
 
       {motosLoading || loading ? (
         <View style={styles.flexCenter}>
@@ -198,7 +191,7 @@ export function ViajesListScreen() {
             style={styles.list}
             contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
             renderItem={({ item }) => {
-              const badge = getViajeEstadoBadge(item.estado);
+              const badge = getViajeEstadoBadge(item.estado, theme);
               return (
                 <Pressable
                   style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}
@@ -237,10 +230,10 @@ export function ViajesListScreen() {
                       </View>
                       <View style={styles.cardIconActions}>
                         <Pressable onPress={() => navigation.navigate('ViajesEdit', { item })} hitSlop={8}>
-                          <Ionicons name="create-outline" size={17} color={light.textMuted} />
+                          <Ionicons name="create-outline" size={17} color={theme.textMuted} />
                         </Pressable>
                         <Pressable onPress={() => confirmDeleteViaje(item)} hitSlop={8}>
-                          <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                          <Ionicons name="trash-outline" size={18} color={theme.danger} />
                         </Pressable>
                       </View>
                     </View>
@@ -252,7 +245,7 @@ export function ViajesListScreen() {
                     <View style={styles.statsGrid}>
                       <View style={styles.statCol}>
                         <Text style={[styles.statLabel, { color: theme.textMuted }]}>DISTANCIA</Text>
-                        <Text style={styles.statKm}>{formatKmViaje(item.kilometrosEstimados ?? null)}</Text>
+                        <Text style={[styles.statKm, { color: theme.primary }]}>{formatKmViaje(item.kilometrosEstimados ?? null)}</Text>
                       </View>
                       <View style={styles.statCol}>
                         <Text style={[styles.statLabel, { color: theme.textMuted }]}>PRESUPUESTO</Text>
@@ -371,38 +364,6 @@ export function ViajesListScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    backgroundColor: light.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: light.border,
-  },
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: light.bg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: light.border,
-  },
-  avatarText: {
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    fontSize: 16,
-    color: light.primary,
-  },
-  brand: {
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    fontSize: 20,
-    color: light.primary,
-  },
   sectionHead: {
     paddingHorizontal: 18,
     marginTop: 16,

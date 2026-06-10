@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Dimensions,
@@ -15,13 +15,16 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { RouteProp } from '@react-navigation/native';
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
 import { AppTextInput } from '../../components/AppTextInput';
+import { DatePickerField, parseIsoDate, toIsoLocal } from '../../components/DatePickerField';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import {
   crearMantenimiento,
@@ -33,8 +36,14 @@ import { motoLabel } from '../../gastos/gastosLoader';
 import { ApiError } from '../../api/client';
 import { formatDisplayDate } from '../../gastos/format';
 import type { Mantenimiento } from '../../types/models';
+import type { MainTabParamList } from '../../navigation/types';
+
+type Nav = BottomTabNavigationProp<MainTabParamList, 'Mantenimiento'>;
+type R = RouteProp<MainTabParamList, 'Mantenimiento'>;
 
 export function MantenimientoTabScreen() {
+  const navigation = useNavigation<Nav>();
+  const route = useRoute<R>();
   const { motos, selectedMoto, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
   const insets = useSafeAreaInsets();
@@ -49,7 +58,7 @@ export function MantenimientoTabScreen() {
 
   const [tipo, setTipo] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const [fecha, setFecha] = useState('');
+  const [fecha, setFecha] = useState(() => new Date());
   const [km, setKm] = useState('');
   const [costo, setCosto] = useState('');
   const [saving, setSaving] = useState(false);
@@ -102,25 +111,29 @@ export function MantenimientoTabScreen() {
     setRefreshing(false);
   }, [reload]);
 
-  const todayIso = () => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  };
-
   const resetForm = () => {
     setTipo('');
     setDescripcion('');
-    setFecha('');
+    setFecha(new Date());
     setKm('');
     setCosto('');
     setMotoIdForm(selectedMotoId ?? null);
   };
 
+  useEffect(() => {
+    if (!route.params?.openAdd) return;
+
+    resetForm();
+    setEditItem(null);
+    setAddOpen(true);
+    navigation.setParams({ openAdd: undefined });
+  }, [navigation, route.params?.openAdd, selectedMotoId]);
+
   const openEdit = (item: Mantenimiento & { idMoto: number }) => {
     setEditItem(item);
     setTipo(item.tipo);
     setDescripcion(item.descripcion ?? '');
-    setFecha(String(item.fecha));
+    setFecha(parseIsoDate(item.fecha));
     setKm(item.kilometraje ? String(item.kilometraje) : '');
     setCosto(item.costo ? String(item.costo) : '');
     setMotoIdForm(item.idMoto);
@@ -142,7 +155,7 @@ const onSave = async () => {
       await editarMantenimiento(editItem.idMantenimiento!, {
         tipo: tipo.trim(),
         descripcion: descripcion.trim() || null,
-        fecha: fecha.trim() || todayIso(),
+        fecha: toIsoLocal(fecha),
         kilometraje: km ? Number(km) : null,
         costo: costo ? Number(costo.replace(',', '.')) : null,
       });
@@ -150,7 +163,7 @@ const onSave = async () => {
       await crearMantenimiento(motoIdParaGuardar, {
         tipo: tipo.trim(),
         descripcion: descripcion.trim() || null,
-        fecha: fecha.trim() || todayIso(),
+        fecha: toIsoLocal(fecha),
         kilometraje: km ? Number(km) : null,
         costo: costo ? Number(costo.replace(',', '.')) : null,
       });
@@ -242,26 +255,26 @@ const confirmDelete = async (m: Mantenimiento) => {
           renderItem={({ item }) => (
             <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <View style={styles.cardTopRow}>
-                <Text style={styles.cardTitle}>{item.tipo}</Text>
+                <Text style={[styles.cardTitle, { color: theme.text }]}>{item.tipo}</Text>
                 <View style={styles.cardIconActions}>
                   <Pressable onPress={() => openEdit(item)} hitSlop={8}>
-                    <Ionicons name="create-outline" size={17} color={light.textMuted} />
+                    <Ionicons name="create-outline" size={17} color={theme.textMuted} />
                   </Pressable>
                   <Pressable onPress={() => confirmDelete(item)} hitSlop={8}>
-                    <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                    <Ionicons name="trash-outline" size={18} color={theme.danger} />
                   </Pressable>
                 </View>
               </View>
-              {item.descripcion ? <Text style={styles.cardDesc}>{item.descripcion}</Text> : null}
-              <View style={styles.cardFooter}>
+              {item.descripcion ? <Text style={[styles.cardDesc, { color: theme.textMuted }]}>{item.descripcion}</Text> : null}
+              <View style={[styles.cardFooter, { borderTopColor: theme.border }]}>
                 <View style={styles.cardFooterLeft}>
-                  <Text style={styles.cardDate}>{formatDisplayDate(item.fecha)}</Text>
+                  <Text style={[styles.cardDate, { color: theme.textMuted }]}>{formatDisplayDate(item.fecha)}</Text>
                   {item.kilometraje ? (
-                    <Text style={styles.cardKm}>{item.kilometraje.toLocaleString('es-AR')} Km</Text>
+                    <Text style={[styles.cardKm, { color: theme.text }]}>{item.kilometraje.toLocaleString('es-AR')} Km</Text>
                   ) : null}
                 </View>
                 {item.costo ? (
-                  <Text style={styles.cardCosto}>$ {Number(item.costo).toLocaleString('es-AR')}</Text>
+                  <Text style={[styles.cardCosto, { color: theme.primary }]}>$ {Number(item.costo).toLocaleString('es-AR')}</Text>
                 ) : null}
               </View>
             </View>
@@ -279,41 +292,48 @@ const confirmDelete = async (m: Mantenimiento) => {
 
       <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => { setAddOpen(false); setEditItem(null); resetForm(); }}>
         <View style={styles.modalRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => { setAddOpen(false); setEditItem(null); resetForm(); }} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>{editItem ? 'Editar Mantenimiento' : 'Agregar Mantenimiento'}</Text>
+          <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => { setAddOpen(false); setEditItem(null); resetForm(); }} />
+          <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>{editItem ? 'Editar Mantenimiento' : 'Agregar Mantenimiento'}</Text>
             <AppTextInput label="Tipo *" variant="light" placeholder="Ej: Aceite, Service, Frenos" value={tipo} onChangeText={setTipo} />
 
-            <Text style={styles.formLabel}>Moto</Text>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Moto</Text>
             <Pressable
-              style={[styles.formMotoSelector, motoSelectorOpen && styles.filterRowOpen]}
+              style={[
+                styles.formMotoSelector,
+                {
+                  backgroundColor: theme.bg,
+                  borderColor: motoSelectorOpen ? theme.primary : theme.border,
+                },
+              ]}
               onPress={() => setMotoSelectorOpen((v) => !v)}
             >
-              <Text style={styles.formMotoSelectorText}>
+              <Text style={[styles.formMotoSelectorText, { color: theme.text }]}>
                 {motoIdParaGuardar
                   ? motoLabel(motos.find((m) => m.idMoto === motoIdParaGuardar)!)
                   : 'Seleccioná una moto'}
               </Text>
-              <Ionicons name={motoSelectorOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
+              <Ionicons name={motoSelectorOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
             </Pressable>
 
             {motoSelectorOpen && (
-              <View style={styles.inlineDropdown}>
+              <View style={[styles.inlineDropdown, { backgroundColor: theme.surface, borderColor: theme.primary }]}>
                 {motos.map((m, i) => (
                   <Pressable
                     key={m.idMoto}
                     style={({ pressed }) => [
                       styles.filterMenuRow,
                       i > 0 && styles.filterMenuRowBorder,
-                      pressed && styles.filterMenuRowPressed,
+                      i > 0 && { borderTopColor: theme.border },
+                      pressed && { backgroundColor: theme.bg },
                     ]}
                     onPress={() => {
                       if (m.idMoto != null) setMotoIdForm(m.idMoto);
                       setMotoSelectorOpen(false);
                     }}
                   >
-                    <Text style={styles.filterMenuRowText}>{motoLabel(m)}</Text>
-                    {motoIdForm === m.idMoto ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                    <Text style={[styles.filterMenuRowText, { color: theme.text }]}>{motoLabel(m)}</Text>
+                    {motoIdForm === m.idMoto ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
                   </Pressable>
                 ))}
               </View>
@@ -332,29 +352,29 @@ const confirmDelete = async (m: Mantenimiento) => {
 
             <View style={styles.formRow}>
               <View style={styles.formRowItem}>
-                <AppTextInput label="Fecha" variant="light" placeholder={todayIso()} value={fecha} onChangeText={setFecha} />
+                <DatePickerField label="Fecha" value={fecha} onChange={setFecha} />
               </View>
               <View style={styles.formRowItem}>
                 <AppTextInput label="Kilometraje (km)" variant="light" placeholder="0.00" keyboardType="decimal-pad" value={km} onChangeText={setKm} />
               </View>
             </View>
 
-            <Text style={styles.formLabel}>Costo</Text>
-            <View style={styles.costoRow}>
-              <Text style={styles.costoPrefixText}>$</Text>
+            <Text style={[styles.formLabel, { color: theme.text }]}>Costo</Text>
+            <View style={[styles.costoRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <Text style={[styles.costoPrefixText, { color: theme.textMuted }]}>$</Text>
               <TextInput
-                style={styles.costoTextInput}
+                style={[styles.costoTextInput, { color: theme.text }]}
                 placeholder="15.000,00"
                 keyboardType="decimal-pad"
                 value={costo}
                 onChangeText={setCosto}
-                placeholderTextColor={light.textMuted}
+                placeholderTextColor={theme.textMuted}
                 onStartShouldSetResponder={() => true}
               />
             </View>
 
-            <View style={styles.infoBox}>
-              <Ionicons name="information-circle-outline" size={16} color={light.primary} style={{ marginRight: 8 }} />
+            <View style={[styles.infoBox, { backgroundColor: theme.primarySoft }]}>
+              <Ionicons name="information-circle-outline" size={16} color={theme.primary} style={{ marginRight: 8 }} />
               <Text style={styles.infoBoxText}>Se registrará un gasto también</Text>
             </View>
 
