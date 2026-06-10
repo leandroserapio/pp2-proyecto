@@ -119,6 +119,13 @@ export function HomeScreen() {
       Alert.alert("Revisá el dato", "Ingresá el kilometraje actual de la moto.");
       return;
     }
+    if (selectedMoto?.kilometrajeActual != null && kilometrajeActual < selectedMoto.kilometrajeActual) {
+      Alert.alert(
+        "Revisá el dato",
+        `El kilometraje no puede ser menor al actual (${selectedMoto.kilometrajeActual} km).`,
+      );
+      return;
+    }
 
     setSaving(true);
 

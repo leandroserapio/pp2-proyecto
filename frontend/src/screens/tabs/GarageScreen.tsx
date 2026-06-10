@@ -67,18 +67,30 @@ export function GarageScreen() {
 
   const onAddMoto = async () => {
     if (!user) return;
+    const parsedAnio = anio ? Number(anio) : undefined;
+    const parsedKm = kmInicial ? Number(kmInicial) : 0;
+
     if (!marca.trim() || !modelo.trim()) {
       Alert.alert('Datos incompletos', 'Marca y modelo son obligatorios.');
       return;
     }
+    if (parsedAnio != null && (!Number.isInteger(parsedAnio) || parsedAnio < 1900 || parsedAnio > new Date().getFullYear() + 1)) {
+      Alert.alert('Dato invalido', 'Ingresa un anio de moto valido.');
+      return;
+    }
+    if (!Number.isFinite(parsedKm) || parsedKm < 0) {
+      Alert.alert('Dato invalido', 'El kilometraje no puede ser negativo.');
+      return;
+    }
+
     setSaving(true);
     try {
       await crearMoto(user.idUsuario, {
         marca: marca.trim(),
         modelo: modelo.trim(),
-        anio: anio ? Number(anio) : undefined,
+        anio: parsedAnio,
         patente: patente.trim() || undefined,
-        kilometrajeActual: kmInicial ? Number(kmInicial) : 0,
+        kilometrajeActual: parsedKm,
       });
       resetForm();
       setAddOpen(false);

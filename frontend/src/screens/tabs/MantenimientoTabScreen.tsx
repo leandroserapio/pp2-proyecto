@@ -149,6 +149,16 @@ const onSave = async () => {
     Alert.alert('Datos incompletos', 'El tipo es obligatorio.');
     return;
   }
+  const parsedKm = km ? Number(km.replace(',', '.')) : null;
+  const parsedCosto = costo ? Number(costo.replace(',', '.')) : null;
+  if (parsedKm != null && (!Number.isFinite(parsedKm) || parsedKm < 0)) {
+    Alert.alert('Dato invalido', 'Ingresa un kilometraje valido.');
+    return;
+  }
+  if (parsedCosto != null && (!Number.isFinite(parsedCosto) || parsedCosto < 0)) {
+    Alert.alert('Dato invalido', 'Ingresa un costo valido.');
+    return;
+  }
   setSaving(true);
   try {
     if (editItem) {
@@ -156,16 +166,16 @@ const onSave = async () => {
         tipo: tipo.trim(),
         descripcion: descripcion.trim() || null,
         fecha: toIsoLocal(fecha),
-        kilometraje: km ? Number(km) : null,
-        costo: costo ? Number(costo.replace(',', '.')) : null,
+        kilometraje: parsedKm,
+        costo: parsedCosto,
       });
     } else {
       await crearMantenimiento(motoIdParaGuardar, {
         tipo: tipo.trim(),
         descripcion: descripcion.trim() || null,
         fecha: toIsoLocal(fecha),
-        kilometraje: km ? Number(km) : null,
-        costo: costo ? Number(costo.replace(',', '.')) : null,
+        kilometraje: parsedKm,
+        costo: parsedCosto,
       });
     }
     resetForm();

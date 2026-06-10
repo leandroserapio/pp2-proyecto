@@ -92,7 +92,7 @@ public class ViajeController {
         }
 
         if (viaje.getKilometrosEstimados() != null && viaje.getKilometrosEstimados() < 0) {
-            throw new BadRequestException("Los kilómetros estimados no pueden ser negativos.");
+            throw new BadRequestException("Los kilometros estimados no pueden ser negativos.");
         }
 
         if (viaje.getPresupuestoEstimado() != null && viaje.getPresupuestoEstimado().compareTo(BigDecimal.ZERO) < 0) {

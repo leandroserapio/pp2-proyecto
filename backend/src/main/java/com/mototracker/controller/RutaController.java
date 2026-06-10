@@ -52,7 +52,7 @@ public class RutaController {
             throw new BadRequestException("El destino es obligatorio.");
         }
         if (request.getKilometrosPorLitro() == null || request.getKilometrosPorLitro() <= 0) {
-            throw new BadRequestException("Ingresá un rendimiento válido en KM/L.");
+            throw new BadRequestException("Ingresa un rendimiento valido en KM/L.");
         }
 
         Lugar salida = geocodificar(request.getSalida(), "salida");
@@ -87,14 +87,14 @@ public class RutaController {
                 + "&format=jsonv2&limit=1&addressdetails=1&accept-language=es";
         JsonNode results = getJson(url, true);
         if (!results.isArray() || results.isEmpty()) {
-            throw new BadRequestException("No se encontró la " + campo + ". Probá con ciudad y provincia.");
+            throw new BadRequestException("No se encontro la " + campo + ". Proba con ciudad y provincia.");
         }
 
         JsonNode place = results.get(0);
         double latitude = place.path("lat").asDouble(Double.NaN);
         double longitude = place.path("lon").asDouble(Double.NaN);
         if (Double.isNaN(latitude) || Double.isNaN(longitude)) {
-            throw new BadRequestException("La " + campo + " no devolvió coordenadas válidas.");
+            throw new BadRequestException("La " + campo + " no devolvio coordenadas validas.");
         }
 
         String displayName = place.path("display_name").asText(query);
@@ -110,7 +110,7 @@ public class RutaController {
                 ? body.path("routes").get(0)
                 : null;
         if (!"Ok".equals(body.path("code").asText()) || route == null) {
-            throw new BadRequestException(body.path("message").asText("No se encontró una ruta entre esos puntos."));
+            throw new BadRequestException(body.path("message").asText("No se encontro una ruta entre esos puntos."));
         }
 
         int kilometers = Math.max(1, (int) Math.round(route.path("distance").asDouble() / 1000));

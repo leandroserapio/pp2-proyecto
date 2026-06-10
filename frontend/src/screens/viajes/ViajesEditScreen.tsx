@@ -110,6 +110,10 @@ export function ViajesEditScreen() {
       Alert.alert('Datos incompletos', 'Ingresá kilómetros estimados válidos.');
       return;
     }
+    if (presupuestoStr.trim() && (presupuesto == null || presupuesto < 0)) {
+      Alert.alert('Datos incompletos', 'Ingresa un presupuesto valido.');
+      return;
+    }
 
     setSaving(true);
     try {

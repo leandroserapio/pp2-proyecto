@@ -26,6 +26,34 @@ export function RegisterScreen() {
 
   const onSubmit = async () => {
     setError(null);
+    const parsedAnio = anioMoto ? Number(anioMoto) : null;
+    const parsedKilometraje = kilometrajeMoto ? Number(kilometrajeMoto) : 0;
+
+    if (!nombre.trim() || !email.trim() || !password || !preguntaSecreta.trim() || !respuestaSecreta.trim()) {
+      setError('Completa tus datos y la recuperacion de cuenta.');
+      return;
+    }
+    if (!email.includes('@') || !email.includes('.')) {
+      setError('Ingresa un email valido.');
+      return;
+    }
+    if (password.length < 4) {
+      setError('La contrasena debe tener al menos 4 caracteres.');
+      return;
+    }
+    if (!marcaMoto.trim() || !modeloMoto.trim()) {
+      setError('Marca y modelo de la moto son obligatorios.');
+      return;
+    }
+    if (parsedAnio != null && (!Number.isInteger(parsedAnio) || parsedAnio < 1900 || parsedAnio > new Date().getFullYear() + 1)) {
+      setError('Ingresa un anio de moto valido.');
+      return;
+    }
+    if (!Number.isFinite(parsedKilometraje) || parsedKilometraje < 0) {
+      setError('El kilometraje no puede ser negativo.');
+      return;
+    }
+
     setLoading(true);
     try {
       await register({
@@ -36,9 +64,9 @@ export function RegisterScreen() {
         respuestaSecreta: respuestaSecreta.trim(),
         marcaMoto: marcaMoto.trim(),
         modeloMoto: modeloMoto.trim(),
-        anioMoto: anioMoto ? Number(anioMoto) : null,
+        anioMoto: parsedAnio,
         patenteMoto: patenteMoto.trim() || null,
-        kilometrajeActualMoto: kilometrajeMoto ? Number(kilometrajeMoto) : 0,
+        kilometrajeActualMoto: parsedKilometraje,
       });
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'No se pudo registrar';
