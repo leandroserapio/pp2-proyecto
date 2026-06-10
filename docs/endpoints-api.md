@@ -2,53 +2,87 @@
 
 ## Base URL
 
+```text
 http://localhost:8080
+```
 
----
+## Test
+
+```http
+GET /test
+```
+
+Endpoint simple para verificar que el backend esta levantado.
 
 ## Usuarios
 
+```http
 GET /api/usuarios
-
+GET /api/usuarios/{idUsuario}
 POST /api/usuarios
+POST /api/usuarios/login
+GET /api/usuarios/recuperacion/pregunta?email={email}
+POST /api/usuarios/recuperacion/reset
+```
+
+### Crear usuario
+
+```http
+POST /api/usuarios
+```
 
 Body:
 
+```json
 {
   "nombre": "Luciano",
   "email": "luciano@mail.com",
-  "password": "1234"
+  "password": "1234",
+  "preguntaSecreta": "Color favorito",
+  "respuestaSecreta": "azul",
+  "marcaMoto": "Siam",
+  "modeloMoto": "QU 110",
+  "anioMoto": 2023,
+  "patenteMoto": "A123BCD",
+  "kilometrajeActualMoto": 3500
 }
+```
 
----
+### Login
 
-## Login
-
+```http
 POST /api/usuarios/login
+```
 
 Body:
 
+```json
 {
   "email": "luciano@mail.com",
   "password": "1234"
 }
-
----
+```
 
 ## Motos
 
+```http
 GET /api/motos
-
 GET /api/motos/usuario/{idUsuario}
-
 POST /api/motos/usuario/{idUsuario}
+PUT /api/motos/{idMoto}
+PATCH /api/motos/{idMoto}/actualizar-kilometraje
+DELETE /api/motos/{idMoto}
+```
 
-Ejemplo:
+### Crear moto
 
+```http
 POST /api/motos/usuario/1
+```
 
 Body:
 
+```json
 {
   "marca": "Siam",
   "modelo": "QU 110",
@@ -56,105 +90,68 @@ Body:
   "patente": "A123BCD",
   "kilometrajeActual": 3500
 }
+```
 
-PATCH /api/motos/{idMoto}/sumar-kilometros
+### Actualizar kilometraje
 
-Ejemplo:
-
-PATCH /api/motos/1/sumar-kilometros
-
-Body:
-
-{
-  "kilometros": 35
-}
-
-PUT /api/motos/{idMoto}
-
-Ejemplo:
-
-PUT /api/motos/1
+```http
+PATCH /api/motos/1/actualizar-kilometraje
+```
 
 Body:
 
+```json
 {
-  "marca": "Honda",
-  "modelo": "Wave 110",
-  "anio": 2022,
-  "patente": "ABC123",
-  "kilometrajeActual": 5000
+  "kilometrajeActual": 3600
 }
-
-DELETE /api/motos/{idMoto}
-
-Ejemplo:
-
-DELETE /api/motos/1
-
-Este endpoint elimina la moto indicada. También elimina los gastos, mantenimientos y viajes asociados a esa moto.
-
----
+```
 
 ## Gastos
 
+```http
 GET /api/gastos
-
 GET /api/gastos/moto/{idMoto}
-
 POST /api/gastos/moto/{idMoto}
+PUT /api/gastos/{idGasto}
+DELETE /api/gastos/{idGasto}
+```
 
-Ejemplo:
+### Crear gasto
 
+```http
 POST /api/gastos/moto/1
+```
 
 Body:
 
+```json
 {
   "tipo": "Nafta",
   "descripcion": "Carga de combustible",
   "monto": 5000,
   "fecha": "2026-04-28"
 }
-
-PUT /api/gastos/{idGasto}
-
-Ejemplo:
-
-PUT /api/gastos/1
-
-Body:
-
-{
-  "tipo": "Nafta",
-  "descripcion": "Carga de combustible actualizada",
-  "monto": 7000,
-  "fecha": "2026-04-29"
-}
-
-DELETE /api/gastos/{idGasto}
-
-Ejemplo:
-
-DELETE /api/gastos/1
-
-Este endpoint elimina el gasto indicado.
-
----
+```
 
 ## Mantenimientos
 
+```http
 GET /api/mantenimientos
-
 GET /api/mantenimientos/moto/{idMoto}
-
 POST /api/mantenimientos/moto/{idMoto}
+PUT /api/mantenimientos/{idMantenimiento}
+DELETE /api/mantenimientos/{idMantenimiento}
+```
 
-Ejemplo:
+### Crear mantenimiento
 
+```http
 POST /api/mantenimientos/moto/1
+```
 
 Body:
 
+```json
 {
   "tipo": "Aceite",
   "descripcion": "Cambio de aceite 20W50",
@@ -162,47 +159,27 @@ Body:
   "kilometraje": 3535,
   "costo": 12000
 }
-
-PUT /api/mantenimientos/{idMantenimiento}
-
-Ejemplo:
-
-PUT /api/mantenimientos/1
-
-Body:
-
-{
-  "tipo": "Aceite",
-  "descripcion": "Cambio de aceite 20W50 actualizado",
-  "fecha": "2026-04-29",
-  "kilometraje": 4000,
-  "costo": 15000
-}
-
-DELETE /api/mantenimientos/{idMantenimiento}
-
-Ejemplo:
-
-DELETE /api/mantenimientos/1
-
-Este endpoint elimina el mantenimiento indicado.
-
----
+```
 
 ## Viajes
 
+```http
 GET /api/viajes
-
 GET /api/viajes/moto/{idMoto}
-
 POST /api/viajes/moto/{idMoto}
+PUT /api/viajes/{idViaje}
+DELETE /api/viajes/{idViaje}
+```
 
-Ejemplo:
+### Crear viaje
 
+```http
 POST /api/viajes/moto/1
+```
 
 Body:
 
+```json
 {
   "destino": "Punta Lara",
   "fechaSalida": "2026-05-10",
@@ -211,78 +188,56 @@ Body:
   "notas": "Revisar aceite, cubiertas, frenos y luces antes de salir",
   "estado": "Programado"
 }
+```
 
-PUT /api/viajes/{idViaje}
+## Recordatorios
 
-Ejemplo:
+```http
+GET /api/recordatorios
+GET /api/recordatorios/moto/{idMoto}
+POST /api/recordatorios/moto/{idMoto}
+DELETE /api/recordatorios/{idRecordatorio}
+```
 
-PUT /api/viajes/1
+### Crear recordatorio
+
+```http
+POST /api/recordatorios/moto/1
+```
 
 Body:
 
+```json
 {
-  "destino": "Chascomús",
-  "fechaSalida": "2026-05-20",
-  "kilometrosEstimados": 220,
-  "presupuestoEstimado": 30000,
-  "notas": "Revisar cubiertas antes de salir",
-  "estado": "Programado"
+  "titulo": "Cambio de aceite",
+  "descripcion": "Realizar cambio de aceite y revisar filtro",
+  "fecha": "2026-06-20",
+  "kilometraje": 5000,
+  "completado": false
 }
+```
 
-DELETE /api/viajes/{idViaje}
+## Rutas
 
-Ejemplo:
+```http
+POST /api/rutas/estimar
+```
 
-DELETE /api/viajes/1
+Endpoint utilizado para estimar informacion de una ruta entre origen y destino.
 
-Este endpoint elimina el viaje indicado.
+Body:
 
----
-
-## Resumen de DELETE
-
-DELETE /api/motos/{idMoto}
-
-Ejemplo:
-
-DELETE /api/motos/1
-
-Elimina una moto y sus datos asociados.
-
-DELETE /api/gastos/{idGasto}
-
-Ejemplo:
-
-DELETE /api/gastos/1
-
-Elimina un gasto.
-
-DELETE /api/mantenimientos/{idMantenimiento}
-
-Ejemplo:
-
-DELETE /api/mantenimientos/1
-
-Elimina un mantenimiento.
-
-DELETE /api/viajes/{idViaje}
-
-Ejemplo:
-
-DELETE /api/viajes/1
-
-Elimina un viaje.
-
----
+```json
+{
+  "salida": "Cordoba, Argentina",
+  "destino": "Villa Carlos Paz, Argentina",
+  "kilometrosPorLitro": 35
+}
+```
 
 ## Reglas importantes
 
-El kilometraje solo se actualiza desde:
-
-PATCH /api/motos/{idMoto}/sumar-kilometros
-
-Los gastos no modifican el kilometraje.
-
-Los mantenimientos sí pueden guardar kilometraje, porque indican en qué kilometraje se realizó un service, cambio de aceite, transmisión u otro mantenimiento.
-
-Cuando se crea un mantenimiento con costo, también puede generar un gasto automáticamente.
+- El kilometraje de una moto se actualiza desde `PATCH /api/motos/{idMoto}/actualizar-kilometraje`.
+- Los gastos no modifican el kilometraje de la moto.
+- Los mantenimientos pueden registrar el kilometraje en el que se realizo el trabajo.
+- Al eliminar una moto, tambien se eliminan sus datos asociados segun la configuracion del backend.

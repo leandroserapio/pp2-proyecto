@@ -1,47 +1,53 @@
-PASOS PARA EJECUTAR EL BACKEND DE MOTOTRACKER
+# Instalacion y ejecucion local - MotoTracker
 
-1 - Entrar a la carpeta del backend
+## Requisitos previos
 
-Abrir una terminal dentro del proyecto y ejecutar:
+Para correr el proyecto localmente es necesario tener instalado:
 
-cd backend
+- Node.js
+- npm
+- Java 21
+- Maven
+- MySQL
+- Expo Go, si se desea probar la app desde un celular
 
+## 1. Clonar o abrir el proyecto
 
-2 - Verificar que Java esté instalado
+Abrir una terminal en la carpeta raiz del proyecto:
 
-java -version
+```bash
+pp2-proyecto
+```
 
-Tiene que aparecer Java 17 o superior.
+## 2. Crear la base de datos
 
+Desde MySQL Workbench o desde la consola de MySQL, ejecutar:
 
-3 - Verificar que Maven esté instalado
-
-mvn -version
-
-Si no aparece la versión de Maven, hay que instalar Maven o configurar las variables de entorno.
-
-
-4 - Abrir MySQL y crear la base de datos
-
-Desde MySQL Workbench o consola de MySQL, ejecutar:
-
+```sql
 CREATE DATABASE mototracker;
-USE mototracker;
+```
 
+## 3. Configurar el backend
 
-5 - Crear el archivo application.properties
+Entrar a la carpeta del backend:
 
-Dentro de la carpeta:
+```bash
+cd backend
+```
 
-src/main/resources/
+Configurar el archivo:
 
-crear el archivo:
+```text
+src/main/resources/application.properties
+```
 
-application.properties
+Ejemplo:
 
-y colocar este código:
+```properties
+spring.application.name=mototracker
 
-spring.application.name=backend
+server.address=0.0.0.0
+server.port=8080
 
 spring.datasource.url=jdbc:mysql://localhost:3306/mototracker
 spring.datasource.username=root
@@ -50,71 +56,91 @@ spring.datasource.password=TU_PASSWORD
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
+```
 
-IMPORTANTE:
-Reemplazar TU_PASSWORD por la contraseña local de MySQL de cada computadora.
+Reemplazar `TU_PASSWORD` por la contrasena local de MySQL.
 
-Ejemplo:
+## 4. Ejecutar el backend
 
-spring.datasource.password=1234
+Desde la carpeta `backend`, ejecutar:
 
+```bash
+./mvnw spring-boot:run
+```
 
-6 - Instalar dependencias / compilar el proyecto
+En Windows:
 
-Desde la carpeta backend ejecutar:
+```bash
+mvnw.cmd spring-boot:run
+```
 
-mvn clean install
+El backend queda disponible en:
 
-
-7 - Ejecutar el backend
-
-Desde la carpeta backend ejecutar:
-
-mvn spring-boot:run
-
-
-8 - Verificar que levantó bien
-
-En la consola debería aparecer algo parecido a:
-
-Tomcat started on port 8080
-Started BackendApplication
-
-El backend queda corriendo en:
-
+```text
 http://localhost:8080
+```
 
+## 5. Instalar dependencias del frontend
 
-12 - Si el puerto 8080 está ocupado
+Abrir otra terminal y entrar a la carpeta del frontend:
 
-Ejecutar en terminal:
+```bash
+cd frontend
+npm install
+```
 
+## 6. Ejecutar el frontend con Expo
+
+Desde la carpeta `frontend`, ejecutar:
+
+```bash
+npm start
+```
+
+Expo iniciara el servidor de desarrollo y mostrara un codigo QR. Ese codigo puede escanearse desde la aplicacion Expo Go instalada en el celular.
+
+Tambien se puede ejecutar la app en web:
+
+```bash
+npm run web
+```
+
+O en Android:
+
+```bash
+npm run android
+```
+
+## Problemas frecuentes
+
+### El puerto 8080 esta ocupado
+
+En Windows, buscar el proceso:
+
+```bash
 netstat -ano | findstr :8080
+```
 
-Si aparece un proceso en LISTENING, copiar el PID y ejecutar:
+Luego finalizarlo reemplazando `NUMERO` por el PID:
 
+```bash
 taskkill /PID NUMERO /F
+```
 
-Ejemplo:
+### Error Unknown database mototracker
 
-taskkill /PID 2396 /F
+Crear la base de datos:
 
-Después volver a ejecutar:
-
-mvn spring-boot:run
-
-
-13 - Si aparece error Unknown database mototracker
-
-Abrir MySQL y ejecutar:
-
+```sql
 CREATE DATABASE mototracker;
+```
 
+### Error de contrasena de MySQL
 
-14 - Si aparece error de contraseña
+Revisar esta linea en `application.properties`:
 
-Revisar esta línea en application.properties:
-
+```properties
 spring.datasource.password=TU_PASSWORD
+```
 
-Debe tener la contraseña real de MySQL local.
+Debe contener la contrasena real de MySQL local.
