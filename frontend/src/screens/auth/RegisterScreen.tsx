@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import { useAuth } from '../../context/AuthContext';
@@ -83,7 +84,13 @@ export function RegisterScreen() {
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text style={[styles.title, { color: theme.text }]}>Crear cuenta</Text>
+          <View style={styles.header}>
+            <View style={[styles.logo, { backgroundColor: theme.primary }]}>
+              <Ionicons name="bicycle-outline" size={24} color={theme.onPrimary} />
+            </View>
+            <Text style={[styles.title, { color: theme.text }]}>Crear cuenta</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Configura tu perfil y tu primera moto</Text>
+          </View>
           {error ? <Text style={[styles.err, { color: theme.danger }]}>{error}</Text> : null}
 
           <Text style={[styles.sectionTitle, { color: theme.primary }]}>Tus datos</Text>
@@ -139,12 +146,25 @@ const styles = StyleSheet.create({
   scroll: { padding: 22, paddingBottom: 38 },
   card: {
     backgroundColor: light.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 22,
     borderWidth: 1,
     borderColor: light.border,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
   },
-  title: { fontSize: 22, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 12 },
+  header: { alignItems: 'center', marginBottom: 14 },
+  logo: {
+    width: 54,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  title: { fontSize: 24, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
+  subtitle: { marginTop: 6, fontSize: 14, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center' },
   sectionTitle: { marginTop: 10, marginBottom: 10, fontSize: 13, fontFamily: fontFamily.bold, fontWeight: '700', color: light.primary },
   err: { color: light.danger, marginBottom: 10, fontFamily: fontFamily.regular },
   btn: { marginTop: 6 },
