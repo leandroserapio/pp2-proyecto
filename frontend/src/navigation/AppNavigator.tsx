@@ -39,6 +39,7 @@ import {
 } from '@expo-google-fonts/inter';
 
 import { light } from '../theme/mototrackerLight';
+import { fontFamily } from '../theme/fonts';
 
 import {
   AuthProvider,
@@ -67,9 +68,9 @@ import type {
 
 import { MainTabs } from './MainTabs';
 
-import { LoginScreen } from '../screens/login/LoginScreen';
+import { LoginScreen } from '../screens/auth/LoginScreen';
 
-import { RegisterScreen } from '../screens/login/RegisterScreen';
+import { RegisterScreen } from '../screens/auth/RegisterScreen';
 
 import { AccountScreen } from '../screens/account/AccountScreen';
 
@@ -80,17 +81,23 @@ const RootStack = createNativeStackNavigator<RootStackParamList>();
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 
 function AuthNavigator() {
+  const { theme } = useAppSettings();
 
   return (
 
     <AuthStack.Navigator
       screenOptions={{
         headerStyle: {
-          backgroundColor: light.surface
+          backgroundColor: theme.surface
         },
-        headerTintColor: light.text,
+        headerTintColor: theme.primary,
+        headerTitleStyle: {
+          fontFamily: fontFamily.bold,
+          fontWeight: '700',
+          color: theme.primary,
+        },
         contentStyle: {
-          backgroundColor: light.bg
+          backgroundColor: theme.bg
         },
       }}
     >
@@ -139,16 +146,17 @@ function RootNavigator() {
     user,
     bootstrapping
   } = useAuth();
+  const { theme } = useAppSettings();
 
   if (bootstrapping) {
 
     return (
 
-      <View style={styles.boot}>
+      <View style={[styles.boot, { backgroundColor: theme.bg }]}>
 
         <ActivityIndicator
           size="large"
-          color={light.primary}
+          color={theme.primary}
         />
 
       </View>
@@ -162,7 +170,7 @@ function RootNavigator() {
       screenOptions={{
         headerShown: false,
         contentStyle: {
-          backgroundColor: light.bg
+          backgroundColor: theme.bg
         }
       }}
     >

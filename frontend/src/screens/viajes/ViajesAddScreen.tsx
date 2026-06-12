@@ -23,6 +23,7 @@ import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import type { ViajesStackParamList } from '../../navigation/types';
 import { useMoto } from '../../context/MotoContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { crearViaje } from '../../api/viajes';
 import { ApiError } from '../../api/client';
@@ -43,6 +44,7 @@ export function ViajesAddScreen() {
   const route = useRoute<R>();
   const insets = useSafeAreaInsets();
   const { motos, selectedMotoId } = useMoto();
+  const { darkMode, theme } = useAppSettings();
 
   const defaultMotoId = useMemo(() => {
     if (route.params?.idMoto != null) return route.params.idMoto;
@@ -87,7 +89,7 @@ export function ViajesAddScreen() {
 
   const dropdownMaxHeight = (rect: { y: number; height: number } | null, cap = 220) => {
     if (!rect) return cap;
-    return Math.min(cap, Math.max(120, Dimensions.get('window').height - (rect.y + rect.height) - 24));
+    return Math.min(cap, Math.max(120, Dimensions.get('window').height - (rect.y + rect.height) - 96 - insets.bottom));
   };
 
   const onSave = async () => {
@@ -171,7 +173,7 @@ export function ViajesAddScreen() {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView style={[styles.root, { backgroundColor: theme.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         contentContainerStyle={[styles.scroll, { paddingBottom: 100 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
@@ -182,7 +184,7 @@ export function ViajesAddScreen() {
               <Text style={styles.bannerEyebrow}>Título de Viaje</Text>
               <TextInput
                 placeholder="Nombra tu viaje"
-                placeholderTextColor="rgba(255,255,255,0.75)"
+                placeholderTextColor={light.onPrimarySubtle}
                 value={titulo}
                 onChangeText={setTitulo}
                 style={styles.bannerInput}
@@ -192,10 +194,16 @@ export function ViajesAddScreen() {
           </ImageBackground>
         </View>
 
-        <Text style={styles.fieldEyebrow}>ESTADO DE VIAJE</Text>
+        <Text style={[styles.fieldEyebrow, { color: theme.textMuted }]}>ESTADO DE VIAJE</Text>
         <Pressable
           ref={estadoSelectRef}
-          style={[styles.select, estadoMenuOpen && styles.selectOpen]}
+          style={[
+            styles.select,
+            {
+              backgroundColor: theme.surface,
+              borderColor: estadoMenuOpen ? theme.primary : theme.border,
+            },
+          ]}
           onPress={() => {
             if (estadoMenuOpen) {
               setEstadoMenuOpen(false);
@@ -208,14 +216,20 @@ export function ViajesAddScreen() {
             });
           }}
         >
-          <Text style={styles.selectText}>{estado}</Text>
-          <Ionicons name={estadoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
+          <Text style={[styles.selectText, { color: theme.text }]}>{estado}</Text>
+          <Ionicons name={estadoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
         </Pressable>
 
-        <Text style={styles.fieldEyebrow}>SELECCIONAR MOTO</Text>
+        <Text style={[styles.fieldEyebrow, { color: theme.textMuted }]}>SELECCIONAR MOTO</Text>
         <Pressable
           ref={motoSelectRef}
-          style={[styles.select, motoMenuOpen && styles.selectOpen]}
+          style={[
+            styles.select,
+            {
+              backgroundColor: theme.surface,
+              borderColor: motoMenuOpen ? theme.primary : theme.border,
+            },
+          ]}
           onPress={() => {
             if (motoMenuOpen) {
               setMotoMenuOpen(false);
@@ -228,35 +242,35 @@ export function ViajesAddScreen() {
             });
           }}
         >
-          <Text style={styles.selectText}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
-          <Ionicons name={motoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
+          <Text style={[styles.selectText, { color: theme.text }]}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
+          <Ionicons name={motoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
         </Pressable>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Destinos</Text>
-          <Text style={styles.fieldEyebrowInCard}>SALIDA</Text>
-          <View style={styles.inputWithIcon}>
-            <Ionicons name="location-outline" size={20} color={light.textMuted} style={styles.inputIcon} />
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Destinos</Text>
+          <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>SALIDA</Text>
+          <View style={[styles.inputWithIcon, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Ionicons name="location-outline" size={20} color={theme.textMuted} style={styles.inputIcon} />
             <TextInput
               placeholder="Ej: Córdoba"
-              placeholderTextColor={light.textMuted}
+              placeholderTextColor={theme.textMuted}
               value={salida}
               onChangeText={setSalida}
-              style={styles.iconInput}
+              style={[styles.iconInput, { color: theme.text }]}
             />
           </View>
-          <Text style={styles.fieldEyebrowInCard}>DESTINO</Text>
-          <View style={styles.inputWithIcon}>
-            <Ionicons name="flag-outline" size={20} color={light.textMuted} style={styles.inputIcon} />
+          <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>DESTINO</Text>
+          <View style={[styles.inputWithIcon, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Ionicons name="flag-outline" size={20} color={theme.textMuted} style={styles.inputIcon} />
             <TextInput
               placeholder="Ej: Villa Carlos Paz"
-              placeholderTextColor={light.textMuted}
+              placeholderTextColor={theme.textMuted}
               value={destino}
               onChangeText={(value) => {
                 setDestino(value);
                 if (!titulo) setTitulo(value);
               }}
-              style={styles.iconInput}
+              style={[styles.iconInput, { color: theme.text }]}
             />
           </View>
           <PrimaryButton
@@ -268,32 +282,38 @@ export function ViajesAddScreen() {
           />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Detalles del Viaje</Text>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.cardTitle, { color: theme.text }]}>Detalles del Viaje</Text>
 
-          <Text style={styles.fieldEyebrowInCard}>KILÓMETROS ESTIMADOS</Text>
+          <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>KILÓMETROS ESTIMADOS</Text>
           <TextInput
             placeholder="Km. 0.00"
-            placeholderTextColor={light.textMuted}
+            placeholderTextColor={theme.textMuted}
             keyboardType="number-pad"
             value={kmEst}
             onChangeText={setKmEst}
-            style={styles.inlineInput}
+            style={[styles.inlineInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
           />
 
-          <Text style={styles.fieldEyebrowInCard}>TIEMPO ESTIMADO</Text>
+          <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>TIEMPO ESTIMADO</Text>
           <TextInput
             placeholder="Ej: 1 h 25 min"
-            placeholderTextColor={light.textMuted}
+            placeholderTextColor={theme.textMuted}
             value={tiempoEstimado}
             onChangeText={setTiempoEstimado}
-            style={styles.inlineInput}
+            style={[styles.inlineInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
           />
 
-          <Text style={styles.fieldEyebrowInCard}>FECHA DE SALIDA</Text>
+          <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>FECHA DE SALIDA</Text>
           <Pressable
             ref={dateSelectRef}
-            style={[styles.select, showDate && styles.selectOpen]}
+            style={[
+              styles.select,
+              {
+                backgroundColor: theme.surface,
+                borderColor: showDate ? theme.primary : theme.border,
+              },
+            ]}
             onPress={() => {
               if (showDate) {
                 setShowDate(false);
@@ -306,68 +326,68 @@ export function ViajesAddScreen() {
               });
             }}
           >
-            <Text style={styles.selectText}>{formatDisplayDate(toIsoLocal(date))}</Text>
-            <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={light.textMuted} />
+            <Text style={[styles.selectText, { color: theme.text }]}>{formatDisplayDate(toIsoLocal(date))}</Text>
+            <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={theme.textMuted} />
           </Pressable>
 
-          <Text style={styles.fieldEyebrowInCard}>PRESUPUESTO</Text>
-          <View style={styles.inputWithIcon}>
-            <Text style={styles.currencyPrefix}>$</Text>
+          <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>PRESUPUESTO</Text>
+          <View style={[styles.inputWithIcon, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.currencyPrefix, { color: theme.textMuted }]}>$</Text>
             <TextInput
               placeholder="0.00"
-              placeholderTextColor={light.textMuted}
+              placeholderTextColor={theme.textMuted}
               keyboardType="decimal-pad"
               value={presupuestoStr}
               onChangeText={setPresupuestoStr}
-              style={[styles.iconInput, styles.currencyInput]}
+              style={[styles.iconInput, styles.currencyInput, { color: theme.text }]}
             />
           </View>
 
           <View style={styles.estimateGrid}>
             <View style={styles.estimateCol}>
-              <Text style={styles.fieldEyebrowInCard}>KM/L</Text>
+              <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>KM/L</Text>
               <TextInput
                 placeholder="Ej: 28"
-                placeholderTextColor={light.textMuted}
+                placeholderTextColor={theme.textMuted}
                 keyboardType="decimal-pad"
                 value={consumoLitros100}
                 onChangeText={setConsumoLitros100}
-                style={styles.inlineInput}
+                style={[styles.inlineInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
               />
             </View>
             <View style={styles.estimateCol}>
-              <Text style={styles.fieldEyebrowInCard}>$/LITRO</Text>
+              <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>$/LITRO</Text>
               <TextInput
                 placeholder="Ej: 1200"
-                placeholderTextColor={light.textMuted}
+                placeholderTextColor={theme.textMuted}
                 keyboardType="decimal-pad"
                 value={precioNafta}
                 onChangeText={setPrecioNafta}
-                style={styles.inlineInput}
+                style={[styles.inlineInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
               />
             </View>
           </View>
           <View style={styles.estimateActions}>
-            <Pressable style={styles.secondaryAction} onPress={estimateFuelCost}>
-              <Ionicons name="calculator-outline" size={18} color={light.primary} />
-              <Text style={styles.secondaryActionText}>Calcular costo</Text>
+            <Pressable style={[styles.secondaryAction, { backgroundColor: theme.surface, borderColor: theme.border }]} onPress={estimateFuelCost}>
+              <Ionicons name="calculator-outline" size={18} color={theme.primary} />
+              <Text style={[styles.secondaryActionText, { color: theme.primary }]}>Calcular costo</Text>
             </Pressable>
           </View>
 
-          <Text style={styles.fieldEyebrowInCard}>NOTAS</Text>
+          <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>NOTAS</Text>
           <TextInput
             placeholder="Notas del viaje..."
-            placeholderTextColor={light.textMuted}
+            placeholderTextColor={theme.textMuted}
             value={notas}
             onChangeText={setNotas}
             multiline
             textAlignVertical="top"
-            style={[styles.inlineInput, styles.notesInput]}
+            style={[styles.inlineInput, styles.notesInput, { backgroundColor: theme.surface, borderColor: theme.border, color: theme.text }]}
           />
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: theme.surface, borderTopColor: theme.border }]}>
         <PrimaryButton title="Agregar Viaje" variant="blue" loading={saving} onPress={onSave} />
       </View>
 
@@ -383,15 +403,20 @@ export function ViajesAddScreen() {
         {VIAJE_ESTADOS.map((e, i) => (
           <Pressable
             key={e}
-            style={({ pressed }) => [styles.menuRow, i > 0 && styles.menuRowBorder, pressed && styles.menuRowPressed]}
+            style={({ pressed }) => [
+              styles.menuRow,
+              i > 0 && styles.menuRowBorder,
+              i > 0 && { borderTopColor: theme.border },
+              pressed && { backgroundColor: theme.bg },
+            ]}
             onPress={() => {
               setEstado(e);
               setEstadoMenuOpen(false);
               setEstadoMenuRect(null);
             }}
           >
-            <Text style={styles.menuRowText}>{e}</Text>
-            {estado === e ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+            <Text style={[styles.menuRowText, { color: theme.text }]}>{e}</Text>
+            {estado === e ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
           </Pressable>
         ))}
       </DropdownModal>
@@ -408,15 +433,20 @@ export function ViajesAddScreen() {
         {motos.map((m, i) => (
           <Pressable
             key={m.idMoto}
-            style={({ pressed }) => [styles.menuRow, i > 0 && styles.menuRowBorder, pressed && styles.menuRowPressed]}
+            style={({ pressed }) => [
+              styles.menuRow,
+              i > 0 && styles.menuRowBorder,
+              i > 0 && { borderTopColor: theme.border },
+              pressed && { backgroundColor: theme.bg },
+            ]}
             onPress={() => {
               if (m.idMoto != null) setIdMoto(m.idMoto);
               setMotoMenuOpen(false);
               setMotoMenuRect(null);
             }}
           >
-            <Text style={styles.menuRowText}>{motoLabel(m)}</Text>
-            {idMoto === m.idMoto ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+            <Text style={[styles.menuRowText, { color: theme.text }]}>{motoLabel(m)}</Text>
+            {idMoto === m.idMoto ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
           </Pressable>
         ))}
       </DropdownModal>
@@ -432,7 +462,7 @@ export function ViajesAddScreen() {
       >
         <View style={styles.menuOverlay}>
           <Pressable
-            style={styles.menuBackdrop}
+            style={[styles.menuBackdrop, { backgroundColor: theme.overlaySoft }]}
             onPress={() => {
               setShowDate(false);
               setDateMenuRect(null);
@@ -442,6 +472,10 @@ export function ViajesAddScreen() {
             <View
               style={[
                 styles.menuDropdown,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
                 {
                   left: dateMenuRect.x,
                   top: dateMenuRect.y + dateMenuRect.height + 4,
@@ -454,19 +488,23 @@ export function ViajesAddScreen() {
                 value={date}
                 mode="date"
                 display={Platform.OS === 'ios' ? 'spinner' : Platform.OS === 'android' ? 'calendar' : 'spinner'}
-                {...(Platform.OS === 'ios' ? { themeVariant: 'light' as const } : {})}
+                {...(Platform.OS === 'ios' ? { themeVariant: darkMode ? 'dark' as const : 'light' as const } : {})}
                 onChange={(_, selected) => {
                   if (selected) setDate(selected);
                 }}
               />
               <Pressable
-                style={({ pressed }) => [styles.dateDone, pressed && styles.menuRowPressed]}
+                style={({ pressed }) => [
+                  styles.dateDone,
+                  { borderTopColor: theme.border },
+                  pressed && { backgroundColor: theme.bg },
+                ]}
                 onPress={() => {
                   setShowDate(false);
                   setDateMenuRect(null);
                 }}
               >
-                <Text style={styles.dateDoneText}>Listo</Text>
+                <Text style={[styles.dateDoneText, { color: theme.primary }]}>Listo</Text>
               </Pressable>
             </View>
           ) : null}
@@ -489,15 +527,24 @@ function DropdownModal({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const { theme } = useAppSettings();
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.menuOverlay}>
-        <Pressable style={styles.menuBackdrop} onPress={onClose} />
+        <Pressable style={[styles.menuBackdrop, { backgroundColor: theme.overlaySoft }]} onPress={onClose} />
         {rect ? (
           <View
             style={[
               styles.menuDropdown,
-              { left: rect.x, top: rect.y + rect.height + 4, width: rect.width, maxHeight },
+              {
+                left: rect.x,
+                top: rect.y + rect.height + 4,
+                width: rect.width,
+                maxHeight,
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
             ]}
           >
             <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled bounces={false}>
@@ -518,27 +565,27 @@ const styles = StyleSheet.create({
   bannerImage: { borderRadius: 12 },
   bannerOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.55)',
+    backgroundColor: light.overlayStrong,
     padding: 16,
     justifyContent: 'flex-end',
   },
   bannerEyebrow: {
     fontSize: 12,
     fontFamily: fontFamily.medium,
-    color: 'rgba(255,255,255,0.85)',
+    color: light.onPrimaryMuted,
   },
   bannerInput: {
     marginTop: 6,
     fontSize: 22,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
-    color: '#fff',
+    color: light.onPrimary,
     padding: 0,
   },
   bannerUnderline: {
     marginTop: 8,
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: light.onPrimarySubtle,
     alignSelf: 'stretch',
   },
   fieldEyebrow: {
@@ -658,7 +705,7 @@ const styles = StyleSheet.create({
     backgroundColor: light.surface,
   },
   menuOverlay: { flex: 1 },
-  menuBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.25)' },
+  menuBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlaySoft },
   menuDropdown: {
     position: 'absolute',
     zIndex: 2,
@@ -668,10 +715,10 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     overflow: 'hidden',
     ...(Platform.OS === 'web'
-      ? { boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)' }
+      ? { boxShadow: `0 8px 24px ${light.shadowMedium}` }
       : {
           elevation: 8,
-          shadowColor: '#0f172a',
+          shadowColor: light.navy,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,

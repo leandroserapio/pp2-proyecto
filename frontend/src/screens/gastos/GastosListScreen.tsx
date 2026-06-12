@@ -173,6 +173,7 @@ export function GastosListScreen() {
   }, [motos, filtro]);
 
   const total = useMemo(() => sumMontos(items), [items]);
+  const dropdownBottomGap = 96 + insets.bottom;
 
   const selectedMotoLabel = useMemo(() => {
     if (filtro === 'todas') return 'Todas las motos';
@@ -182,6 +183,28 @@ export function GastosListScreen() {
   }, [filtro, motos]);
 
   const empty = !loading && !motosLoading && items.length === 0;
+
+  const confirmDeleteGasto = async (item: GastoListNavItem) => {
+    if (!item.idGasto) return;
+    const confirmed = Platform.OS === 'web'
+      ? window.confirm(`¿Eliminar ${item.tipo}?`)
+      : await new Promise<boolean>((resolve) => {
+          Alert.alert('Eliminar', `¿Eliminar ${item.tipo}?`, [
+            { text: 'Cancelar', style: 'cancel', onPress: () => resolve(false) },
+            { text: 'Eliminar', style: 'destructive', onPress: () => resolve(true) },
+          ]);
+        });
+
+    if (!confirmed) return;
+
+    try {
+      await eliminarGasto(item.idGasto);
+      await reload();
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : 'No se pudo eliminar';
+      Platform.OS === 'web' ? window.alert(msg) : Alert.alert('Error', msg);
+    }
+  };
 
   const openFilter = useCallback(() => {
     filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
@@ -207,23 +230,23 @@ export function GastosListScreen() {
 
       <View style={styles.sectionHead}>
 
-        <Text style={styles.summaryEyebrow}>
+        <Text style={[styles.summaryEyebrow, { color: theme.textMuted }]}>
           RESUMEN DE GASTOS
         </Text>
 
-        <Text style={styles.summaryTitle}>
+        <Text style={[styles.summaryTitle, { color: theme.text }]}>
           Gastos
         </Text>
 
       </View>
 
-      <View style={styles.totalCard}>
+      <View style={[styles.totalCard, { backgroundColor: theme.primarySoft }]}>
 
-        <Text style={styles.totalLabel}>
+        <Text style={[styles.totalLabel, { color: theme.primary }]}>
           TOTAL
         </Text>
 
-        <Text style={styles.totalAmount}>
+        <Text style={[styles.totalAmount, { color: theme.text }]}>
           {formatArs(total)}
         </Text>
 
@@ -231,18 +254,18 @@ export function GastosListScreen() {
 
       <Pressable
         ref={filterSelectWrapRef}
-        style={styles.filterRow}
+        style={[styles.filterRow, { backgroundColor: theme.surface, borderColor: theme.border }]}
         onPress={openFilter}
       >
 
-        <Text style={styles.filterLabel}>
+        <Text style={[styles.filterLabel, { color: theme.textMuted }]}>
           Filtrar por moto
         </Text>
 
         <View style={styles.filterValueRow}>
 
           <Text
-            style={styles.filterText}
+            style={[styles.filterText, { color: theme.text }]}
             numberOfLines={1}
           >
             {selectedMotoLabel}
@@ -251,7 +274,7 @@ export function GastosListScreen() {
           <Ionicons
             name={filterOpen ? 'chevron-up' : 'chevron-down'}
             size={18}
-            color={light.textMuted}
+            color={theme.textMuted}
           />
 
         </View>
@@ -286,7 +309,7 @@ export function GastosListScreen() {
 
           <View style={styles.centerGrow}>
 
-            <ActivityIndicator color={light.primary} />
+            <ActivityIndicator color={theme.primary} />
 
           </View>
 
@@ -300,11 +323,11 @@ export function GastosListScreen() {
 
           <View style={styles.centerGrow}>
 
-            <Text style={styles.emptyTitle}>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>
               Necesitás una moto
             </Text>
 
-            <Text style={styles.emptySub}>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
               Registrá una moto para comenzar.
             </Text>
 
@@ -320,21 +343,23 @@ export function GastosListScreen() {
 
           <View style={styles.emptyWrap}>
 
-            <View style={styles.emptyIconCircle}>
+            <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+
+            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
 
               <MaterialCommunityIcons
                 name="gas-station-outline"
                 size={40}
-                color={light.textMuted}
+                color={theme.textMuted}
               />
 
             </View>
 
-            <Text style={styles.emptyTitle}>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>
               No hay gastos registrados
             </Text>
 
-            <Text style={styles.emptySub}>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
               Registrá tus primeros gastos.
             </Text>
 
@@ -344,6 +369,8 @@ export function GastosListScreen() {
               onPress={() => navigation.navigate('GastosAdd', {})}
               style={styles.cta}
             />
+
+            </View>
 
           </View>
 
@@ -373,67 +400,28 @@ export function GastosListScreen() {
 
               return (
 
-                <Pressable
-                  style={styles.card}
-                  onPress={() => navigation.navigate('GastosDetail', { item })}
-                  onLongPress={() => {
-                    Alert.alert(item.tipo, '¿Qué querés hacer?', [
-                      { text: 'Cancelar', style: 'cancel' },
-                      {
-                        text: 'Editar',
-                        onPress: () => {
-                          navigation.navigate('GastosEdit', { item });
-                        },
-                      },
-                      {
-                        text: 'Eliminar',
-                        style: 'destructive',
-                        onPress: async () => {
-                          if (!item.idGasto) return;
-                          try {
-                            await eliminarGasto(item.idGasto);
-                            await reload();
-                          } catch (e) {
-                            const msg = e instanceof ApiError ? e.message : 'No se pudo eliminar';
-                            Alert.alert('Error', msg);
-                          }
-                        },
-                      },
-                    ]);
-                  }}
-                >
-
-                  <View style={styles.cardMain}>
-
-                    <Text style={styles.cardTitle}>
-                      {item.tipo}
-                    </Text>
-
-                    <Text style={styles.cardSub}>
+                <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+                  <Pressable style={styles.cardMain} onPress={() => navigation.navigate('GastosDetail', { item })}>
+                    <Text style={[styles.cardTitle, { color: theme.text }]}>{item.tipo}</Text>
+                    <Text style={[styles.cardSub, { color: theme.textMuted }]}>
                       {item.motoLabel} - {formatDisplayDate(item.fecha)}
                     </Text>
-
-                    <Text style={styles.cardAmount}>
-                      {formatArs(item.monto)}
-                    </Text>
-
+                    <Text style={[styles.cardAmount, { color: theme.text }]}>{formatArs(item.monto)}</Text>
+                  </Pressable>
+                  <View style={styles.cardRight}>
+                    <View style={[styles.catIcon, { backgroundColor: `${cat.color}22` }]}>
+                      <CategoryGlyph cat={cat} />
+                    </View>
+                    <View style={styles.cardIconActions}>
+                      <Pressable onPress={() => navigation.navigate('GastosEdit', { item })} hitSlop={8}>
+                        <Ionicons name="create-outline" size={17} color={light.textMuted} />
+                      </Pressable>
+                      <Pressable onPress={() => confirmDeleteGasto(item)} hitSlop={8}>
+                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                      </Pressable>
+                    </View>
                   </View>
-
-                  <View
-                    style={[
-                      styles.catIcon,
-                      {
-                        backgroundColor: `${cat.color}22`
-                      }
-                    ]}
-                  >
-
-                    <CategoryGlyph cat={cat} />
-
-                  </View>
-
-                </Pressable>
-
+                </View>
               );
             }}
           />
@@ -453,7 +441,7 @@ export function GastosListScreen() {
             <Ionicons
               name="add"
               size={30}
-              color="#fff"
+              color={theme.onPrimary}
             />
 
           </Pressable>
@@ -479,15 +467,22 @@ export function GastosListScreen() {
           <View
             style={[
               styles.filterMenu,
+              {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
               filterMenuRect
                 ? {
                     left: filterMenuRect.x,
                     top: filterMenuRect.y + filterMenuRect.height + 6,
                     width: filterMenuRect.width,
-                    maxHeight: Dimensions.get('window').height
-                      - filterMenuRect.y
-                      - filterMenuRect.height
-                      - 24,
+                    maxHeight: Math.max(
+                      120,
+                      Dimensions.get('window').height
+                        - filterMenuRect.y
+                        - filterMenuRect.height
+                        - dropdownBottomGap,
+                    ),
                   }
                 : null,
             ]}
@@ -498,12 +493,12 @@ export function GastosListScreen() {
               <Pressable
                 style={[
                   styles.filterOption,
-                  filtro === 'todas' && styles.filterOptionActive,
+                  filtro === 'todas' && { backgroundColor: theme.primarySoft },
                 ]}
                 onPress={() => selectFilter('todas')}
               >
 
-                <Text style={styles.filterOptionText}>
+                <Text style={[styles.filterOptionText, { color: theme.text }]}>
                   Todas las motos
                 </Text>
 
@@ -511,7 +506,7 @@ export function GastosListScreen() {
                   <Ionicons
                     name="checkmark"
                     size={20}
-                    color={light.primary}
+                    color={theme.primary}
                   />
                 ) : null}
 
@@ -522,7 +517,7 @@ export function GastosListScreen() {
                   key={String(moto.idMoto)}
                   style={[
                     styles.filterOption,
-                    filtro === moto.idMoto && styles.filterOptionActive,
+                    filtro === moto.idMoto && { backgroundColor: theme.primarySoft },
                   ]}
                   onPress={() => {
                     if (moto.idMoto != null) selectFilter(moto.idMoto);
@@ -530,7 +525,7 @@ export function GastosListScreen() {
                 >
 
                   <Text
-                    style={styles.filterOptionText}
+                    style={[styles.filterOptionText, { color: theme.text }]}
                     numberOfLines={1}
                   >
                     {motoLabel(moto)}
@@ -540,7 +535,7 @@ export function GastosListScreen() {
                     <Ionicons
                       name="checkmark"
                       size={20}
-                      color={light.primary}
+                      color={theme.primary}
                     />
                   ) : null}
 
@@ -650,11 +645,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...(Platform.OS === 'web'
       ? {
-          boxShadow: '0 12px 24px rgba(15, 23, 42, 0.14)',
+          boxShadow: `0 12px 24px ${light.shadowStrong}`,
         }
       : {
           elevation: 8,
-          shadowColor: '#0F172A',
+          shadowColor: light.navy,
           shadowOffset: { width: 0, height: 12 },
           shadowOpacity: 0.14,
           shadowRadius: 24,
@@ -696,13 +691,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 18,
+  },
+
+  emptyCard: {
+    width: '100%',
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingHorizontal: 28,
+    paddingVertical: 36,
   },
 
   emptyIconCircle: {
     width: 112,
     height: 112,
     borderRadius: 56,
-    backgroundColor: '#EEF0F4',
+    backgroundColor: light.surfaceMuted,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -781,5 +786,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
+  cardRight: {
+  alignItems: 'center',
+  gap: 8,
+  marginLeft: 12,
+  },
+  cardIconActions: {
+    flexDirection: 'row',
+    gap: 10,
+  },
 });

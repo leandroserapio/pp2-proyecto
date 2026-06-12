@@ -66,17 +66,15 @@ public class UsuarioController {
 
         Usuario usuarioGuardado = usuarioRepository.save(usuario);
 
-        if (tieneDatosMoto(request)) {
-            Moto moto = new Moto();
-            moto.setMarca(request.getMarcaMoto().trim());
-            moto.setModelo(request.getModeloMoto().trim());
-            moto.setAnio(request.getAnioMoto());
-            moto.setPatente(request.getPatenteMoto() == null || request.getPatenteMoto().isBlank() ? null : request.getPatenteMoto().trim());
-            moto.setKilometrajeActual(request.getKilometrajeActualMoto() == null ? 0 : request.getKilometrajeActualMoto());
-            moto.setFechaUltimaActualizacionKm(LocalDateTime.now());
-            moto.setUsuario(usuarioGuardado);
-            motoRepository.save(moto);
-        }
+        Moto moto = new Moto();
+        moto.setMarca(request.getMarcaMoto().trim());
+        moto.setModelo(request.getModeloMoto().trim());
+        moto.setAnio(request.getAnioMoto());
+        moto.setPatente(request.getPatenteMoto() == null || request.getPatenteMoto().isBlank() ? null : request.getPatenteMoto().trim());
+        moto.setKilometrajeActual(request.getKilometrajeActualMoto() == null ? 0 : request.getKilometrajeActualMoto());
+        moto.setFechaUltimaActualizacionKm(LocalDateTime.now());
+        moto.setUsuario(usuarioGuardado);
+        motoRepository.save(moto);
 
         return new LoginResponse(
                 usuarioGuardado.getIdUsuario(),
@@ -173,24 +171,17 @@ public class UsuarioController {
             throw new BadRequestException("La respuesta secreta es obligatoria.");
         }
 
-        if (tieneDatosMoto(usuario)) {
-            if (usuario.getMarcaMoto() == null || usuario.getMarcaMoto().isBlank()) {
-                throw new BadRequestException("La marca de la moto es obligatoria.");
-            }
+        if (usuario.getMarcaMoto() == null || usuario.getMarcaMoto().isBlank()) {
+            throw new BadRequestException("La marca de la moto es obligatoria.");
+        }
 
-            if (usuario.getModeloMoto() == null || usuario.getModeloMoto().isBlank()) {
-                throw new BadRequestException("El modelo de la moto es obligatorio.");
-            }
+        if (usuario.getModeloMoto() == null || usuario.getModeloMoto().isBlank()) {
+            throw new BadRequestException("El modelo de la moto es obligatorio.");
         }
 
         if (usuario.getKilometrajeActualMoto() != null && usuario.getKilometrajeActualMoto() < 0) {
             throw new BadRequestException("El kilometraje no puede ser negativo.");
         }
-    }
-
-    private boolean tieneDatosMoto(RegistroUsuarioRequest request) {
-        return (request.getMarcaMoto() != null && !request.getMarcaMoto().isBlank())
-                || (request.getModeloMoto() != null && !request.getModeloMoto().isBlank());
     }
 
     private String normalizarRespuesta(String respuesta) {

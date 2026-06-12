@@ -1,8 +1,7 @@
 import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
 import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import { colors } from '../theme/colors';
-import { light } from '../theme/mototrackerLight';
 import { fontFamily } from '../theme/fonts';
+import { useAppSettings } from '../context/AppSettingsContext';
 
 type Props = PressableProps & {
   title: string;
@@ -18,19 +17,27 @@ export function PrimaryButton({
   style,
   ...rest
 }: Props) {
+  const { theme } = useAppSettings();
   const isGhost = variant === 'ghost';
   const isDanger = variant === 'danger';
-  const isBlue = variant === 'blue';
+  const buttonColor = isDanger ? theme.danger : theme.primary;
+  const textColor = isGhost ? theme.primary : theme.onPrimary;
+
   return (
     <Pressable
       accessibilityRole="button"
       style={({ pressed }) =>
         [
           styles.base,
-          isGhost && styles.ghost,
-          isDanger && styles.danger,
-          isBlue && styles.blue,
-          !isGhost && !isDanger && !isBlue && styles.primary,
+          isGhost
+            ? {
+                backgroundColor: theme.primarySoft,
+                borderWidth: 1,
+                borderColor: theme.primary,
+              }
+            : {
+                backgroundColor: buttonColor,
+              },
           (disabled || loading) && styles.disabled,
           pressed && styles.pressed,
           style,
@@ -40,12 +47,12 @@ export function PrimaryButton({
       {...rest}
     >
       {loading ? (
-        <ActivityIndicator color={isGhost ? colors.accent : '#fff'} />
+        <ActivityIndicator color={textColor} />
       ) : (
         <Text
           style={[
             styles.text,
-            isGhost && styles.textGhost,
+            { color: textColor },
             isDanger && styles.textDanger,
           ]}
         >
@@ -64,17 +71,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
   },
-  primary: { backgroundColor: colors.accent },
-  blue: { backgroundColor: light.primary },
-  ghost: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  danger: { backgroundColor: colors.danger },
   disabled: { opacity: 0.55 },
   pressed: { opacity: 0.88 },
-  text: { color: '#fff', fontSize: 16, fontFamily: fontFamily.semiBold, fontWeight: '600' },
-  textGhost: { color: colors.accent },
-  textDanger: { color: '#1a0505', fontWeight: '700' },
+  text: { fontSize: 16, fontFamily: fontFamily.semiBold, fontWeight: '600' },
+  textDanger: { fontWeight: '700' },
 });

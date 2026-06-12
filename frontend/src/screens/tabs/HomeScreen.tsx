@@ -1,8 +1,12 @@
 // src/screens/tabs/HomeScreen.tsx
 
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import type { BottomTabNavigationProp } from "@react-navigation/bottom-tabs";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -12,73 +16,98 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { actualizarKilometraje } from "../../api/motos";
 import { ApiError } from "../../api/client";
+import { listarGastosPorMoto } from "../../api/gastos";
+import { listarMantenimientosPorMoto } from "../../api/mantenimientos";
+import { actualizarKilometraje } from "../../api/motos";
 import { AppHeader } from "../../components/AppHeader";
 import { AppTextInput } from "../../components/AppTextInput";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { useAppSettings } from "../../context/AppSettingsContext";
 import { useMoto } from "../../context/MotoContext";
-import { obtenerNotificacionesProgramadas } from "../../services/notificationsService";
+import { formatArs, formatDisplayDate } from "../../gastos/format";
+import type { MainTabParamList } from "../../navigation/types";
 import { fontFamily } from "../../theme/fonts";
 import { light } from "../../theme/mototrackerLight";
+import type { Gasto, Mantenimiento } from "../../types/models";
+
+const LAST_KM_STORAGE_PREFIX = "@mototracker/lastKmDelta/";
+
+type HomeStatus = {
+  lastService: Mantenimiento | null;
+  lastInsurance: Gasto | null;
+};
+
+type Nav = BottomTabNavigationProp<MainTabParamList, "Inicio">;
 
 export function HomeScreen() {
+  const navigation = useNavigation<Nav>();
   const { selectedMoto, selectedMotoId, refreshMotos } = useMoto();
-  const {
-    notifications,
-    reminders: kilometerReminderEnabled,
-    theme,
-  } = useAppSettings();
+  const { theme } = useAppSettings();
   const [kmOpen, setKmOpen] = useState(false);
   const [kmAdd, setKmAdd] = useState("");
   const [saving, setSaving] = useState(false);
-  const [remindersOpen, setRemindersOpen] = useState(false);
-  const [remindersLoading, setRemindersLoading] = useState(false);
-  const [reminders, setReminders] = useState<string[]>([]);
-  const [remindersMessage, setRemindersMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<HomeStatus>({
+    lastService: null,
+    lastInsurance: null,
+  });
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [lastKmDelta, setLastKmDelta] = useState<number | null>(null);
 
-  const mostrarRecordatoriosActivos = async () => {
-    setRemindersOpen(true);
-    setRemindersLoading(true);
-    setReminders([]);
-    setRemindersMessage(null);
+  const loadStatus = useCallback(async () => {
+    if (!selectedMotoId) {
+      setStatus({ lastService: null, lastInsurance: null });
+      setLastKmDelta(null);
+      return;
+    }
+
+    setStatusLoading(true);
+    setStatusError(null);
 
     try {
-      if (!notifications || !kilometerReminderEnabled) {
-        setRemindersMessage(
-          "El recordatorio de kilometraje esta desactivado en Ajustes.",
-        );
-        return;
-      }
+      const [mantenimientos, gastos, storedKmDelta] = await Promise.all([
+        listarMantenimientosPorMoto(selectedMotoId),
+        listarGastosPorMoto(selectedMotoId),
+        AsyncStorage.getItem(`${LAST_KM_STORAGE_PREFIX}${selectedMotoId}`),
+      ]);
 
-      const recordatorios = await obtenerNotificacionesProgramadas();
-      const recordatoriosDeMoto = recordatorios.filter(
-        (recordatorio) => recordatorio.content.data?.type !== "kilometers_inactivity_reminder",
-      );
+      setStatus({
+        lastService: findLatestService(mantenimientos),
+        lastInsurance: findLatestInsurance(gastos),
+      });
 
-      if (!recordatoriosDeMoto.length) {
-        setRemindersMessage(
-          "No hay recordatorios activos de mantenimiento, vencimientos o viajes.",
-        );
-        return;
-      }
-
-      const detalle = recordatoriosDeMoto
-        .map((recordatorio) => {
-          const titulo = recordatorio.content.title ?? "MotoTracker";
-          const mensaje = recordatorio.content.body ?? "Recordatorio programado";
-          return `${titulo}: ${mensaje}`;
-        });
-
-      setReminders(detalle);
-    } catch {
-      setRemindersMessage(
-        "No se pudieron consultar los recordatorios programados.",
+      const parsedKmDelta = storedKmDelta == null ? null : Number(storedKmDelta);
+      setLastKmDelta(Number.isFinite(parsedKmDelta) ? parsedKmDelta : null);
+    } catch (e) {
+      setStatusError(
+        e instanceof ApiError
+          ? e.message
+          : "No pudimos cargar el estado de tu moto.",
       );
     } finally {
-      setRemindersLoading(false);
+      setStatusLoading(false);
     }
+  }, [selectedMotoId]);
+
+  useEffect(() => {
+    void loadStatus();
+  }, [loadStatus]);
+
+  const lastKmUpdateLabel = useMemo(
+    () => formatDateTime(selectedMoto?.fechaUltimaActualizacionKm ?? null),
+    [selectedMoto?.fechaUltimaActualizacionKm],
+  );
+
+  const openAddService = () => {
+    navigation.navigate("Mantenimiento", { openAdd: true });
+  };
+
+  const openAddInsurance = () => {
+    navigation.navigate("GastosStack", {
+      screen: "GastosAdd",
+      params: selectedMotoId ? { idMoto: selectedMotoId } : undefined,
+    });
   };
 
   const onActualizarKm = async () => {
@@ -87,8 +116,7 @@ export function HomeScreen() {
     const kilometrajeActual = Number(kmAdd);
 
     if (!Number.isFinite(kilometrajeActual) || kilometrajeActual <= 0) {
-      Alert.alert("Valor inválido", "Ingresá un kilometraje válido.");
-
+      Alert.alert("Revisá el dato", "Ingresá el kilometraje actual de la moto.");
       return;
     }
 
@@ -101,22 +129,27 @@ export function HomeScreen() {
       );
 
       setKmAdd("");
-
       setKmOpen(false);
+
+      await AsyncStorage.setItem(
+        `${LAST_KM_STORAGE_PREFIX}${selectedMotoId}`,
+        String(response.kilometrosRecorridos),
+      );
+      setLastKmDelta(response.kilometrosRecorridos);
 
       await refreshMotos();
 
       Alert.alert(
         "Kilometraje actualizado",
-        `Hiciste ${response.kilometrosRecorridos} km desde la última actualización.`,
+        `Recorriste ${response.kilometrosRecorridos} km desde la última actualización.`,
       );
     } catch (e) {
       const msg =
         e instanceof ApiError
           ? e.message
-          : "No se pudo actualizar el kilometraje";
+          : "No pudimos actualizar el kilometraje.";
 
-      Alert.alert("Error", msg);
+      Alert.alert("No se pudo guardar", msg);
     } finally {
       setSaving(false);
     }
@@ -124,12 +157,7 @@ export function HomeScreen() {
 
   return (
     <SafeAreaView
-      style={[
-        styles.safe,
-        {
-          backgroundColor: theme.bg,
-        },
-      ]}
+      style={[styles.safe, { backgroundColor: theme.bg }]}
       edges={["top"]}
     >
       {!kmOpen ? <AppHeader title="Inicio" /> : null}
@@ -139,53 +167,107 @@ export function HomeScreen() {
           <>
             <View
               style={[
-                styles.heroCard,
+                styles.statusPanel,
                 {
                   backgroundColor: theme.surface,
                   borderColor: theme.border,
                 },
               ]}
             >
-              <Text
-                style={[
-                  styles.eyebrow,
-                  {
-                    color: theme.textMuted,
-                  },
-                ]}
-              >
-                MOTO ACTIVA
-              </Text>
+              <View style={styles.statusPanelHead}>
+                <View style={styles.statusHeaderCopy}>
+                  <Text style={[styles.eyebrow, { color: theme.textMuted }]}>
+                    ESTADO DE TU MOTO
+                  </Text>
+                  <Text style={[styles.statusHeading, { color: theme.text }]}>
+                    {selectedMoto.marca} {selectedMoto.modelo}
+                  </Text>
+                  <Text style={[styles.statusSubhead, { color: theme.textMuted }]}>
+                    {selectedMoto.patente || "Sin patente registrada"}
+                  </Text>
+                </View>
 
-              <Text
-                style={[
-                  styles.motoTitle,
-                  {
-                    color: theme.text,
-                  },
-                ]}
-              >
-                {selectedMoto.marca} {selectedMoto.modelo}
+                {statusLoading ? (
+                  <ActivityIndicator color={theme.primary} size="small" />
+                ) : null}
+              </View>
+
+              {statusError ? (
+                <Text style={[styles.statusError, { color: theme.danger }]}>
+                  {statusError}
+                </Text>
+              ) : null}
+
+              <StatusCard
+                icon="construct-outline"
+                title="Service más reciente"
+                value={
+                  status.lastService
+                    ? formatDisplayDate(status.lastService.fecha)
+                    : "Sin service registrado"
+                }
+                detail={buildServiceDetail(status.lastService)}
+                onAdd={openAddService}
+              />
+
+              <StatusCard
+                icon="shield-checkmark-outline"
+                title="Último pago del seguro"
+                value={
+                  status.lastInsurance
+                    ? formatDisplayDate(status.lastInsurance.fecha)
+                    : "Sin pagos registrados"
+                }
+                detail={buildInsuranceDetail(status.lastInsurance)}
+                onAdd={openAddInsurance}
+              />
+
+              <StatusCard
+                icon="refresh-outline"
+                title="Kilómetros desde el último registro"
+                value={
+                  lastKmDelta == null
+                    ? "Sin datos aún"
+                    : `${lastKmDelta.toLocaleString("es-AR")} km`
+                }
+                detail={
+                  lastKmDelta == null
+                    ? "Actualizá el kilometraje para ver cuánto recorriste."
+                    : "Calculado con tu última actualización de kilometraje."
+                }
+              />
+            </View>
+
+            <View
+              style={[
+                styles.kmPanel,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <Text style={[styles.eyebrow, { color: theme.textMuted }]}>
+                KILOMETRAJE
               </Text>
 
               <View style={styles.infoGrid}>
                 <InfoTile
-                  label="Kilometraje"
+                  label="Kilometraje actual"
                   value={`${selectedMoto.kilometrajeActual ?? 0} km`}
                 />
                 <InfoTile
-                  label="Año"
-                  value={selectedMoto.anio ? String(selectedMoto.anio) : "-"}
+                  label="Última actualización"
+                  value={lastKmUpdateLabel}
                 />
-                <InfoTile label="Patente" value={selectedMoto.patente || "-"} />
               </View>
 
               {kmOpen ? (
                 <View style={styles.kmForm}>
                   <AppTextInput
-                    label="Kilómetros actuales"
+                    label="Kilometraje actual"
                     variant="light"
-                    placeholder="Ej: 50"
+                    placeholder="Ej: 50000"
                     keyboardType="number-pad"
                     value={kmAdd}
                     onChangeText={setKmAdd}
@@ -217,7 +299,7 @@ export function HomeScreen() {
                     </Pressable>
 
                     <PrimaryButton
-                      title="Actualizar"
+                      title="Guardar"
                       variant="blue"
                       loading={saving}
                       onPress={onActualizarKm}
@@ -227,102 +309,13 @@ export function HomeScreen() {
                 </View>
               ) : (
                 <PrimaryButton
-                  title="Sumar kilómetros"
+                  title="Actualizar kilometraje"
                   variant="blue"
                   onPress={() => setKmOpen(true)}
                   style={styles.cta}
                 />
               )}
             </View>
-
-            <View style={styles.quickRow}>
-              <StatusChip
-                icon="notifications-outline"
-                label="Recordatorios activos"
-                onPress={mostrarRecordatoriosActivos}
-              />
-              <StatusChip
-                icon="shield-checkmark-outline"
-                label="Control al día"
-              />
-            </View>
-
-            {remindersOpen ? (
-              <View
-                style={[
-                  styles.remindersPanel,
-                  {
-                    backgroundColor: theme.surface,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <View style={styles.remindersHeader}>
-                  <Text
-                    style={[
-                      styles.remindersTitle,
-                      {
-                        color: theme.text,
-                      },
-                    ]}
-                  >
-                    Recordatorios activos
-                  </Text>
-
-                  <Pressable onPress={() => setRemindersOpen(false)}>
-                    <Ionicons name="close-outline" size={22} color={theme.textMuted} />
-                  </Pressable>
-                </View>
-
-                {remindersLoading ? (
-                  <Text
-                    style={[
-                      styles.remindersText,
-                      {
-                        color: theme.textMuted,
-                      },
-                    ]}
-                  >
-                    Consultando recordatorios...
-                  </Text>
-                ) : reminders.length ? (
-                  reminders.map((reminder) => (
-                    <View
-                      key={reminder}
-                      style={[
-                        styles.reminderItem,
-                        {
-                          borderColor: theme.border,
-                        },
-                      ]}
-                    >
-                      <Ionicons name="notifications-outline" size={18} color={theme.primary} />
-                      <Text
-                        style={[
-                          styles.remindersText,
-                          {
-                            color: theme.text,
-                          },
-                        ]}
-                      >
-                        {reminder}
-                      </Text>
-                    </View>
-                  ))
-                ) : (
-                  <Text
-                    style={[
-                      styles.remindersText,
-                      {
-                        color: theme.textMuted,
-                      },
-                    ]}
-                  >
-                    {remindersMessage}
-                  </Text>
-                )}
-              </View>
-            ) : null}
           </>
         ) : (
           <View style={styles.empty}>
@@ -331,31 +324,68 @@ export function HomeScreen() {
               size={64}
               color={theme.textMuted}
             />
-            <Text
-              style={[
-                styles.emptyTitle,
-                {
-                  color: theme.text,
-                },
-              ]}
-            >
-              No hay moto activa
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>
+              Todavía no hay una moto activa
             </Text>
-            <Text
-              style={[
-                styles.emptySub,
-                {
-                  color: theme.textMuted,
-                },
-              ]}
-            >
-              Registrá o seleccioná una moto desde Garage para ver el panel.
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
+              Registrá o seleccioná una moto desde Garage para ver su estado.
             </Text>
           </View>
         )}
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function findLatestService(items: Mantenimiento[]): Mantenimiento | null {
+  return latestByDate(
+    items.filter((item) => {
+      const haystack = `${item.tipo ?? ""} ${item.descripcion ?? ""}`.toLowerCase();
+      return /(service|servicio)/.test(haystack);
+    }),
+  );
+}
+
+function findLatestInsurance(items: Gasto[]): Gasto | null {
+  return latestByDate(
+    items.filter((item) => {
+      const haystack = `${item.tipo ?? ""} ${item.descripcion ?? ""}`.toLowerCase();
+      return /seguro/.test(haystack);
+    }),
+  );
+}
+
+function latestByDate<T extends { fecha: string }>(items: T[]): T | null {
+  if (items.length === 0) return null;
+
+  return [...items].sort((a, b) => String(b.fecha).localeCompare(String(a.fecha)))[0];
+}
+
+function buildServiceDetail(item: Mantenimiento | null): string {
+  if (!item) return "Cuando cargues un service, lo vas a ver acá.";
+
+  const details = [
+    item.tipo,
+    item.kilometraje ? `${item.kilometraje.toLocaleString("es-AR")} km` : null,
+    item.costo ? formatArs(item.costo) : null,
+  ].filter(Boolean);
+
+  return details.join(" - ");
+}
+
+function buildInsuranceDetail(item: Gasto | null): string {
+  if (!item) return "Cuando registres el seguro, lo vas a ver acá.";
+
+  const details = [item.tipo, formatArs(item.monto)].filter(Boolean);
+
+  return details.join(" - ");
+}
+
+function formatDateTime(value: string | null): string {
+  if (!value) return "Sin actualizaciones";
+
+  const [date] = value.split("T");
+  return formatDisplayDate(date);
 }
 
 function InfoTile({ label, value }: { label: string; value: string }) {
@@ -371,86 +401,68 @@ function InfoTile({ label, value }: { label: string; value: string }) {
         },
       ]}
     >
-      <Text
-        style={[
-          styles.infoLabel,
-          {
-            color: theme.textMuted,
-          },
-        ]}
-      >
+      <Text style={[styles.infoLabel, { color: theme.textMuted }]}>
         {label}
       </Text>
-      <Text
-        style={[
-          styles.infoValue,
-          {
-            color: theme.text,
-          },
-        ]}
-      >
+      <Text style={[styles.infoValue, { color: theme.text }]}>
         {value}
       </Text>
     </View>
   );
 }
 
-function StatusChip({
+function StatusCard({
   icon,
-  label,
-  onPress,
+  title,
+  value,
+  detail,
+  onAdd,
 }: {
   icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress?: () => void;
+  title: string;
+  value: string;
+  detail: string;
+  onAdd?: () => void;
 }) {
   const { theme } = useAppSettings();
-
-  const content = (
-    <>
-      <Ionicons name={icon} size={18} color={theme.primary} />
-      <Text
-        style={[
-          styles.statusText,
-          {
-            color: theme.text,
-          },
-        ]}
-      >
-        {label}
-      </Text>
-    </>
-  );
-
-  if (onPress) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        onPress={onPress}
-        style={[
-          styles.statusChip,
-          {
-            backgroundColor: theme.surface,
-            borderColor: theme.border,
-          },
-        ]}
-      >
-        {content}
-      </Pressable>
-    );
-  }
 
   return (
     <View
       style={[
-        styles.statusChip,
+        styles.statusCard,
         {
-          backgroundColor: theme.surface,
+          backgroundColor: theme.bg,
           borderColor: theme.border,
         },
       ]}
     >
-      {content}
+      <View style={[styles.statusIcon, { backgroundColor: theme.primarySoft }]}>
+        <Ionicons name={icon} size={20} color={theme.primary} />
+      </View>
+
+      <View style={styles.statusCopy}>
+        <Text style={[styles.statusTitle, { color: theme.textMuted }]}>
+          {title}
+        </Text>
+        <Text style={[styles.statusValue, { color: theme.text }]}>
+          {value}
+        </Text>
+        <Text style={[styles.statusDetail, { color: theme.textMuted }]}>
+          {detail}
+        </Text>
+      </View>
+
+      {onAdd ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Agregar ${title}`}
+          hitSlop={8}
+          style={[styles.addButton, { backgroundColor: theme.primary }]}
+          onPress={onAdd}
+        >
+          <Ionicons name="add" size={18} color={theme.onPrimary} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -464,7 +476,8 @@ const styles = StyleSheet.create({
     padding: 18,
     paddingBottom: 32,
   },
-  heroCard: {
+  kmPanel: {
+    marginTop: 14,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: light.border,
@@ -477,12 +490,17 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 11,
   },
-  motoTitle: {
+  statusHeading: {
     marginTop: 8,
     color: light.text,
     fontFamily: fontFamily.bold,
     fontWeight: "700",
-    fontSize: 28,
+    fontSize: 26,
+  },
+  statusSubhead: {
+    marginTop: 4,
+    color: light.textMuted,
+    fontSize: 13,
   },
   infoGrid: {
     marginTop: 18,
@@ -529,56 +547,68 @@ const styles = StyleSheet.create({
   primaryAction: {
     flex: 1,
   },
-  quickRow: {
-    marginTop: 14,
-    gap: 10,
-  },
-  remindersPanel: {
-    marginTop: 14,
+  statusPanel: {
     borderRadius: 8,
     borderWidth: 1,
-    padding: 14,
+    padding: 16,
+    gap: 10,
   },
-  remindersHeader: {
+  statusPanelHead: {
+    minHeight: 42,
     flexDirection: "row",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
+    gap: 12,
   },
-  remindersTitle: {
+  statusHeaderCopy: {
+    flex: 1,
+  },
+  statusError: {
+    color: light.danger,
+    fontSize: 13,
+  },
+  statusCard: {
+    minHeight: 86,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    padding: 12,
+  },
+  statusIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusCopy: {
+    flex: 1,
+  },
+  statusTitle: {
+    color: light.textMuted,
+    fontSize: 12,
+  },
+  addButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  statusValue: {
+    marginTop: 4,
     color: light.text,
     fontFamily: fontFamily.bold,
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: 17,
   },
-  remindersText: {
-    flex: 1,
+  statusDetail: {
+    marginTop: 4,
     color: light.textMuted,
-    fontFamily: fontFamily.regular,
-    lineHeight: 20,
-  },
-  reminderItem: {
-    minHeight: 44,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderTopWidth: 1,
-    paddingTop: 10,
-    marginTop: 10,
-  },
-  statusChip: {
-    minHeight: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: 14,
-  },
-  statusText: {
-    color: light.text,
-    fontFamily: fontFamily.medium,
-    fontWeight: "500",
+    fontSize: 12,
+    lineHeight: 17,
   },
   empty: {
     minHeight: 360,

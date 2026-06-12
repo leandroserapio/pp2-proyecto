@@ -14,6 +14,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { light } from '../../theme/mototrackerLight';
+import { fontFamily } from '../../theme/fonts';
 import { useAuth } from '../../context/AuthContext';
 import { useMoto } from '../../context/MotoContext';
 import { crearMoto } from '../../api/motos';
@@ -123,17 +124,17 @@ export function GarageScreen() {
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Mis motos</Text>
         <Pressable
           accessibilityRole="button"
-          style={styles.addMotoButton}
+          style={[styles.addMotoButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
           onPress={() => setAddOpen(true)}
         >
-          <Ionicons name="add-circle" size={24} color={light.primary} />
-          <Text style={styles.addMotoText}>Agregar moto</Text>
+          <Ionicons name="add-circle" size={24} color={theme.primary} />
+          <Text style={[styles.addMotoText, { color: theme.primary }]}>Agregar moto</Text>
         </Pressable>
       </View>
 
       {motos.length === 0 && !loading ? (
         <View style={styles.emptyWrap}>
-          <Ionicons name="bicycle-outline" size={64} color={light.border} />
+          <Ionicons name="bicycle-outline" size={64} color={theme.border} />
           <Text style={[styles.emptyTitle, { color: theme.text }]}>No tenes motos registradas</Text>
           <Text style={[styles.emptySub, { color: theme.textMuted }]}>Agrega tu primera moto para empezar a registrar gastos y mas.</Text>
           <PrimaryButton title="Agregar moto" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
@@ -151,7 +152,7 @@ export function GarageScreen() {
                 style={[
                   styles.motoCard,
                   {
-                    backgroundColor: isSelected ? light.primarySoft : theme.surface,
+                    backgroundColor: isSelected ? theme.primarySoft : theme.surface,
                     borderColor: isSelected ? theme.primary : theme.border,
                   },
                 ]}
@@ -165,17 +166,17 @@ export function GarageScreen() {
                       {[item.anio, item.patente].filter(Boolean).join(' - ') || 'Sin patente cargada'}
                     </Text>
                   </View>
-                  {isSelected ? <Ionicons name="checkmark-circle" size={24} color={light.primary} /> : null}
+                  {isSelected ? <Ionicons name="checkmark-circle" size={24} color={theme.primary} /> : null}
                 </View>
 
                 <View style={styles.motoInfoGrid}>
-                  <View style={styles.infoPill}>
-                    <Text style={styles.infoLabel}>KILOMETRAJE</Text>
-                    <Text style={styles.infoValue}>{item.kilometrajeActual ?? 0} km</Text>
+                  <View style={[styles.infoPill, { backgroundColor: theme.bg }]}>
+                    <Text style={[styles.infoLabel, { color: theme.textMuted }]}>KILOMETRAJE</Text>
+                    <Text style={[styles.infoValue, { color: theme.text }]}>{item.kilometrajeActual ?? 0} km</Text>
                   </View>
-                  <View style={styles.infoPill}>
-                    <Text style={styles.infoLabel}>ESTADO</Text>
-                    <Text style={styles.infoValue}>{isSelected ? 'Seleccionada' : 'Disponible'}</Text>
+                  <View style={[styles.infoPill, { backgroundColor: theme.bg }]}>
+                    <Text style={[styles.infoLabel, { color: theme.textMuted }]}>ESTADO</Text>
+                    <Text style={[styles.infoValue, { color: theme.text }]}>{isSelected ? 'Seleccionada' : 'Disponible'}</Text>
                   </View>
                 </View>
               </Pressable>
@@ -186,9 +187,9 @@ export function GarageScreen() {
 
       <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
         <View style={styles.modalRoot}>
-          <Pressable style={styles.modalBackdrop} onPress={() => setAddOpen(false)} />
-          <View style={styles.modalSheet}>
-            <Text style={styles.modalTitle}>Agregar moto</Text>
+          <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => setAddOpen(false)} />
+          <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Agregar moto</Text>
             <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marca} onChangeText={setMarca} />
             <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modelo} onChangeText={setModelo} />
             <AppTextInput label="Anio" variant="light" placeholder="Ej: 2023" keyboardType="number-pad" value={anio} onChangeText={setAnio} />
@@ -212,7 +213,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     marginBottom: 8,
   },
-  sectionTitle: { fontSize: 22, fontWeight: '900', color: light.text },
+  sectionTitle: { fontSize: 22, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
   addMotoButton: {
     minHeight: 40,
     flexDirection: 'row',
@@ -224,10 +225,10 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     backgroundColor: light.surface,
   },
-  addMotoText: { color: light.primary, fontSize: 13, fontWeight: '800' },
+  addMotoText: { color: light.primary, fontSize: 13, fontFamily: fontFamily.bold, fontWeight: '700' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 },
-  emptyTitle: { marginTop: 14, fontSize: 18, fontWeight: '800', color: light.text, textAlign: 'center' },
-  emptySub: { marginTop: 8, color: light.textMuted, textAlign: 'center', lineHeight: 22 },
+  emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
+  emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
   list: { paddingHorizontal: 18, paddingBottom: 30 },
   motoCard: {
@@ -240,14 +241,14 @@ const styles = StyleSheet.create({
   },
   motoCardHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 },
   motoTitleWrap: { flex: 1 },
-  motoCardTitle: { fontSize: 18, fontWeight: '900', color: light.text },
-  motoCardSub: { fontSize: 13, color: light.textMuted, marginTop: 4 },
+  motoCardTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
+  motoCardSub: { fontSize: 13, fontFamily: fontFamily.regular, color: light.textMuted, marginTop: 4 },
   motoInfoGrid: { flexDirection: 'row', gap: 10, marginTop: 14 },
   infoPill: { flex: 1, backgroundColor: light.bg, borderRadius: 10, padding: 10 },
-  infoLabel: { fontSize: 10, fontWeight: '800', color: light.textMuted },
-  infoValue: { marginTop: 4, fontSize: 14, fontWeight: '800', color: light.navy },
+  infoLabel: { fontSize: 10, fontFamily: fontFamily.bold, fontWeight: '700', color: light.textMuted },
+  infoValue: { marginTop: 4, fontSize: 14, fontFamily: fontFamily.bold, fontWeight: '700', color: light.navy },
   modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(15,23,42,0.35)' },
+  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
   modalSheet: {
     backgroundColor: light.surface,
     borderTopLeftRadius: 20,
@@ -256,6 +257,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: light.border,
   },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: light.text, marginBottom: 14 },
+  modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
   saveBtn: { marginTop: 4 },
 });

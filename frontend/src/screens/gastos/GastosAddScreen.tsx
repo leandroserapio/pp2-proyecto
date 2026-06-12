@@ -21,11 +21,11 @@ import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import type { GastosStackParamList } from '../../navigation/types';
 import { useMoto } from '../../context/MotoContext';
+import { useAppSettings } from '../../context/AppSettingsContext';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { crearGasto } from '../../api/gastos';
 import { ApiError } from '../../api/client';
-import { mergeGastoDescripcion } from '../../gastos/gastoKm';
 import { formatDisplayDate, parseAmountInput } from '../../gastos/format';
 import { motoLabel } from '../../gastos/gastosLoader';
 
@@ -43,6 +43,7 @@ export function GastosAddScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const { motos, selectedMotoId } = useMoto();
+  const { darkMode, theme } = useAppSettings();
 
   const defaultMotoId = useMemo(() => {
     const fromRoute = route.params?.idMoto;
@@ -55,7 +56,6 @@ export function GastosAddScreen() {
   const [montoStr, setMontoStr] = useState('');
   const [idMoto, setIdMoto] = useState<number | null>(null);
   const [descripcion, setDescripcion] = useState('');
-  const [kilometraje, setKilometraje] = useState('');
   const [date, setDate] = useState(() => new Date());
   const [showDate, setShowDate] = useState(false);
   const [dateMenuRect, setDateMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
@@ -103,7 +103,7 @@ export function GastosAddScreen() {
     try {
       await crearGasto(idMoto, {
         tipo: tipo.trim(),
-        descripcion: mergeGastoDescripcion(kilometraje, descripcion),
+        descripcion: descripcion.trim() || null,
         monto,
         fecha: toIsoLocal(date),
       });
@@ -118,11 +118,11 @@ export function GastosAddScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={[styles.root, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <AppTextInput
             label="Tipo de gasto"
             variant="light"
@@ -131,27 +131,40 @@ export function GastosAddScreen() {
             onChangeText={setTipo}
           />
 
-          <Text style={styles.label}>Monto</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Monto</Text>
           <View style={styles.montoRow}>
-            <Text style={styles.montoPrefix}>$</Text>
+            <Text style={[styles.montoPrefix, { color: theme.textMuted }]}>$</Text>
             <View style={styles.montoInputWrap}>
               <TextInput
                 placeholder="0,00"
-                placeholderTextColor={light.textMuted}
+                placeholderTextColor={theme.textMuted}
                 keyboardType="decimal-pad"
                 value={montoStr}
                 onChangeText={setMontoStr}
                 multiline={false}
                 numberOfLines={1}
-                style={styles.montoInput}
+                style={[
+                  styles.montoInput,
+                  {
+                    backgroundColor: theme.surface,
+                    borderColor: theme.border,
+                    color: theme.text,
+                  },
+                ]}
               />
             </View>
           </View>
 
-          <Text style={styles.label}>Moto</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Moto</Text>
           <Pressable
             ref={motoSelectWrapRef}
-            style={[styles.select, motoMenuOpen && styles.selectMenuOpen]}
+            style={[
+              styles.select,
+              {
+                backgroundColor: theme.surface,
+                borderColor: motoMenuOpen ? theme.primary : theme.border,
+              },
+            ]}
             onPress={() => {
               if (motoMenuOpen) {
                 setMotoMenuOpen(false);
@@ -164,8 +177,8 @@ export function GastosAddScreen() {
               });
             }}
           >
-            <Text style={styles.selectText}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
-            <Ionicons name={motoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
+            <Text style={[styles.selectText, { color: theme.text }]}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
+            <Ionicons name={motoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
           </Pressable>
 
           <AppTextInput
@@ -176,20 +189,16 @@ export function GastosAddScreen() {
             onChangeText={setDescripcion}
           />
 
-          <Text style={styles.label}>Kilometraje</Text>
-          <TextInput
-            placeholder="0.00 Km."
-            placeholderTextColor={light.textMuted}
-            keyboardType="decimal-pad"
-            value={kilometraje}
-            onChangeText={setKilometraje}
-            style={styles.inlineInput}
-          />
-
-          <Text style={styles.label}>Fecha</Text>
+          <Text style={[styles.label, { color: theme.text }]}>Fecha</Text>
           <Pressable
             ref={dateSelectWrapRef}
-            style={[styles.select, showDate && styles.selectMenuOpen]}
+            style={[
+              styles.select,
+              {
+                backgroundColor: theme.surface,
+                borderColor: showDate ? theme.primary : theme.border,
+              },
+            ]}
             onPress={() => {
               if (showDate) {
                 setShowDate(false);
@@ -202,8 +211,8 @@ export function GastosAddScreen() {
               });
             }}
           >
-            <Text style={styles.selectText}>{formatDisplayDate(toIsoLocal(date))}</Text>
-            <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={light.textMuted} />
+            <Text style={[styles.selectText, { color: theme.text }]}>{formatDisplayDate(toIsoLocal(date))}</Text>
+            <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={theme.textMuted} />
           </Pressable>
         </View>
 
@@ -221,7 +230,7 @@ export function GastosAddScreen() {
       >
         <View style={styles.motoMenuOverlay}>
           <Pressable
-            style={styles.motoMenuBackdrop}
+            style={[styles.motoMenuBackdrop, { backgroundColor: theme.overlaySoft }]}
             onPress={() => {
               setMotoMenuOpen(false);
               setMotoMenuRect(null);
@@ -231,6 +240,10 @@ export function GastosAddScreen() {
             <View
               style={[
                 styles.motoMenuDropdown,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
                 {
                   left: motoMenuRect.x,
                   top: motoMenuRect.y + motoMenuRect.height + 4,
@@ -251,7 +264,8 @@ export function GastosAddScreen() {
                     style={({ pressed }) => [
                       styles.motoMenuRow,
                       i > 0 && styles.motoMenuRowBorder,
-                      pressed && styles.motoMenuRowPressed,
+                      i > 0 && { borderTopColor: theme.border },
+                      pressed && { backgroundColor: theme.bg },
                     ]}
                     onPress={() => {
                       if (m.idMoto != null) setIdMoto(m.idMoto);
@@ -259,8 +273,8 @@ export function GastosAddScreen() {
                       setMotoMenuRect(null);
                     }}
                   >
-                    <Text style={styles.motoMenuRowText}>{motoLabel(m)}</Text>
-                    {idMoto === m.idMoto ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                    <Text style={[styles.motoMenuRowText, { color: theme.text }]}>{motoLabel(m)}</Text>
+                    {idMoto === m.idMoto ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
                   </Pressable>
                 ))}
               </ScrollView>
@@ -280,7 +294,7 @@ export function GastosAddScreen() {
       >
         <View style={styles.dateMenuOverlay}>
           <Pressable
-            style={styles.dateMenuBackdrop}
+            style={[styles.dateMenuBackdrop, { backgroundColor: theme.overlaySoft }]}
             onPress={() => {
               setShowDate(false);
               setDateMenuRect(null);
@@ -290,6 +304,10 @@ export function GastosAddScreen() {
             <View
               style={[
                 styles.dateMenuDropdown,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
                 {
                   left: dateMenuRect.x,
                   top: dateMenuRect.y + dateMenuRect.height + 4,
@@ -305,19 +323,26 @@ export function GastosAddScreen() {
                 value={date}
                 mode="date"
                 display={Platform.OS === 'ios' ? 'spinner' : Platform.OS === 'android' ? 'calendar' : 'spinner'}
-                {...(Platform.OS === 'ios' ? { themeVariant: 'light' as const } : {})}
+                {...(Platform.OS === 'ios' ? { themeVariant: darkMode ? 'dark' as const : 'light' as const } : {})}
                 onChange={(_, selected) => {
                   if (selected) setDate(selected);
                 }}
               />
               <Pressable
-                style={({ pressed }) => [styles.dateMenuDone, pressed && styles.dateMenuDonePressed]}
+                style={({ pressed }) => [
+                  styles.dateMenuDone,
+                  {
+                    backgroundColor: theme.surface,
+                    borderTopColor: theme.border,
+                  },
+                  pressed && { backgroundColor: theme.bg },
+                ]}
                 onPress={() => {
                   setShowDate(false);
                   setDateMenuRect(null);
                 }}
               >
-                <Text style={styles.dateMenuDoneText}>Listo</Text>
+                <Text style={[styles.dateMenuDoneText, { color: theme.primary }]}>Listo</Text>
               </Pressable>
             </View>
           ) : null}
@@ -418,7 +443,7 @@ const styles = StyleSheet.create({
   motoMenuOverlay: { flex: 1 },
   motoMenuBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.25)',
+    backgroundColor: light.overlaySoft,
   },
   motoMenuDropdown: {
     position: 'absolute',
@@ -429,10 +454,10 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     maxHeight: 280,
     ...(Platform.OS === 'web'
-      ? { boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)' }
+      ? { boxShadow: `0 8px 24px ${light.shadowMedium}` }
       : {
           elevation: 8,
-          shadowColor: '#0f172a',
+          shadowColor: light.navy,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,
@@ -462,7 +487,7 @@ const styles = StyleSheet.create({
   dateMenuOverlay: { flex: 1 },
   dateMenuBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(15,23,42,0.25)',
+    backgroundColor: light.overlaySoft,
   },
   dateMenuDropdown: {
     position: 'absolute',
@@ -473,10 +498,10 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     overflow: 'hidden',
     ...(Platform.OS === 'web'
-      ? { boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)' }
+      ? { boxShadow: `0 8px 24px ${light.shadowMedium}` }
       : {
           elevation: 8,
-          shadowColor: '#0f172a',
+          shadowColor: light.navy,
           shadowOffset: { width: 0, height: 4 },
           shadowOpacity: 0.12,
           shadowRadius: 12,

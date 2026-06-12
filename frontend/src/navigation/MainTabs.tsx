@@ -57,7 +57,7 @@ export function MainTabs() {
 
     headerShown: false,
 
-    tabBarActiveTintColor: '#FFFFFF',
+    tabBarActiveTintColor: theme.onPrimary,
 
     tabBarInactiveTintColor: theme.tabInactive,
 
@@ -177,7 +177,8 @@ export function MainTabs() {
         name="Mantenimiento"
         component={MantenimientoTabScreen}
         options={{
-          title: 'Mantenimiento',
+          title: 'Servicios',
+          tabBarLabel: 'Servicios',
           tabBarIcon: ({ color, size }) => (
 
             <Ionicons

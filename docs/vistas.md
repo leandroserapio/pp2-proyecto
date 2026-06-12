@@ -2,24 +2,36 @@
 
 ## Login
 
-Permite que el usuario ingrese a la aplicación con su cuenta.
+Permite que el usuario ingrese a la aplicacion con su cuenta. Desde esta vista tambien se puede acceder al registro y a la recuperacion de contrasena.
+
+## Registro
+
+Permite crear una cuenta nueva cargando los datos necesarios del usuario.
 
 ## Inicio
 
-Muestra los datos principales de la moto seleccionada, como marca, modelo, patente y kilometraje actual. También permite sumar kilómetros recorridos.
+Muestra un resumen de la moto seleccionada, incluyendo marca, modelo, patente y kilometraje actual. Tambien permite acceder rapidamente a las secciones principales de la aplicacion.
+
+## Garage
+
+Permite consultar y administrar las motos registradas por el usuario.
 
 ## Gastos
 
-Permite registrar gastos como nafta, seguro, patente, reparaciones y otros gastos.
+Permite listar, cargar, editar y eliminar gastos asociados a una moto. Los gastos pueden corresponder a combustible, seguro, patente, reparaciones, service u otros conceptos.
 
-## Estado
+## Mantenimiento
 
-Permite controlar mantenimientos como services, cambio de aceite, transmisión, frenos y cubiertas.
+Permite registrar y consultar mantenimientos realizados, como services, cambio de aceite, transmision, frenos, cubiertas u otros controles importantes.
 
 ## Viajes
 
-Permite programar viajes indicando destino, fecha, kilómetros estimados, presupuesto y notas.
+Permite planificar viajes indicando destino, fecha de salida, kilometros estimados, presupuesto, notas y estado del viaje.
 
-## Configuración
+## Perfil
 
-Permite modificar datos del usuario, motos registradas y preferencias generales.
+Permite consultar datos del usuario y acceder a opciones relacionadas con la cuenta.
+
+## Configuracion
+
+Permite modificar preferencias generales de la aplicacion y acceder a opciones de configuracion.

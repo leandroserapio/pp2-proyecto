@@ -1,99 +1,182 @@
-
 # MotoTracker
 
-MotoTracker es una aplicación móvil pensada para usuarios de motos. Permite registrar una o varias motos y llevar un control básico de kilometraje, gastos, mantenimientos y viajes programados.
+MotoTracker es una aplicacion movil pensada para usuarios de motos. Permite registrar una o varias motos y llevar un control organizado del kilometraje, los gastos, los mantenimientos y los viajes asociados a cada vehiculo.
 
-## Objetivo
+El sistema busca centralizar la informacion principal de la moto en una sola aplicacion, ayudando al usuario a conocer el estado general de su vehiculo, evitar olvidos de mantenimiento y registrar cuanto dinero invierte en su uso diario.
 
-El objetivo de MotoTracker es centralizar la información principal de la moto en una sola aplicación, ayudando al usuario a organizar gastos, controlar el estado de mantenimiento y planificar viajes.
+## Funcionalidades principales
 
-## Vistas principales
+- Registro e inicio de sesion de usuarios.
+- Registro de una o varias motos por usuario.
+- Visualizacion de datos principales de la moto, como marca, modelo, patente y kilometraje.
+- Actualizacion del kilometraje actual.
+- Registro, edicion y consulta de gastos.
+- Registro de mantenimientos realizados.
+- Organizacion de viajes, con destino, fecha, kilometros estimados, presupuesto y notas.
+- Gestion de datos del perfil y configuracion de la aplicacion.
 
-### Login
+## Tecnologias utilizadas
 
-Permite que el usuario acceda a la aplicación con su cuenta.
-
-### Inicio
-
-Muestra los datos principales de la moto seleccionada, como marca, modelo, patente y kilometraje actual. También permite sumar kilómetros recorridos.
-
-### Gastos
-
-Permite registrar gastos relacionados con la moto, como nafta, seguro, patente, reparaciones, service y otros gastos.
-
-### Estado
-
-Permite controlar el mantenimiento de la moto, registrando services, cambios de aceite, transmisión, frenos, cubiertas y otros controles importantes.
-
-### Viajes
-
-Permite programar viajes, indicando destino, fecha, kilómetros estimados, presupuesto aproximado y notas.
-
-### Configuración
-
-Permite modificar datos del usuario, datos de las motos registradas y preferencias generales de la aplicación.
-
-## Tecnologías utilizadas
-
-### Frontend Mobile
+### Frontend
 
 - React Native
 - Expo
+- Expo Go
 - TypeScript
+- React Navigation
+- Async Storage
 
 ### Backend
 
 - Java
 - Spring Boot
+- Spring Web
+- Spring Data JPA
+- Maven
 
 ### Base de datos
 
 - MySQL
 
-## Uso de la base de datos
+## Estructura del proyecto
 
-La base de datos se utilizará para guardar la información principal de la aplicación:
+```text
+pp2-proyecto/
++-- backend/     API REST desarrollada con Spring Boot
++-- frontend/    Aplicacion movil desarrollada con React Native y Expo
++-- docs/        Documentacion del proyecto
+```
 
-- usuarios
-- motos
-- gastos
-- mantenimientos
-- viajes
+## Instalacion y ejecucion local
 
-## Relaciones principales
+### Requisitos previos
 
+Para correr el proyecto localmente es necesario tener instalado:
 
-usuarios 1 ─── N motos
+- Node.js
+- npm
+- Java 21
+- Maven
+- MySQL
+- Expo Go, en caso de probar la app desde un celular
 
-motos 1 ─── N gastos
+## Configuracion de la base de datos
 
-motos 1 ─── N mantenimientos
+Crear una base de datos en MySQL con el nombre:
 
-motos 1 ─── N viajes
+```sql
+CREATE DATABASE mototracker;
+```
 
+Luego configurar las credenciales de conexion en el archivo:
+
+```text
+backend/src/main/resources/application.properties
+```
+
+Ejemplo de configuracion:
+
+```properties
+spring.application.name=mototracker
+
+server.address=0.0.0.0
+server.port=8080
+
+spring.datasource.url=jdbc:mysql://localhost:3306/mototracker
+spring.datasource.username=root
+spring.datasource.password=tu_password
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.format_sql=true
+```
+
+## Ejecucion del backend
+
+Desde la carpeta del backend:
+
+```bash
+cd backend
+./mvnw spring-boot:run
+```
+
+En Windows tambien puede ejecutarse con:
+
+```bash
+cd backend
+mvnw.cmd spring-boot:run
+```
+
+El backend se ejecuta por defecto en:
+
+```text
+http://localhost:8080
+```
+
+## Ejecucion del frontend
+
+Desde la carpeta del frontend:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+El proyecto frontend se ejecuta con Expo. Al iniciar el servidor de desarrollo, Expo muestra un codigo QR que puede escanearse desde la aplicacion Expo Go en un celular.
+
+Para correr la version web:
+
+```bash
+npm run web
+```
+
+Para correr en Android:
+
+```bash
+npm run android
+```
+
+Tambien se puede escanear el codigo QR generado por Expo usando la aplicacion Expo Go desde el celular.
+
+## Relacion entre entidades principales
+
+```text
+Usuario 1 ---- N Moto
+
+Moto 1 ---- N Gasto
+Moto 1 ---- N Mantenimiento
+Moto 1 ---- N Viaje
+```
 
 Un usuario puede registrar una o varias motos.
 Cada moto puede tener muchos gastos, mantenimientos y viajes asociados.
 
-## Estructura general del sistema
+## Endpoints principales
 
+El backend expone una API REST para gestionar las entidades principales del sistema:
 
-React Native
-     |
-     v
-Spring Boot API REST
-     |
-     v
-MySQL
+- Usuarios
+- Motos
+- Gastos
+- Mantenimientos
+- Viajes
+- Rutas
 
+## Justificacion del proyecto
 
-## Justificación del proyecto
+Muchas personas que usan moto no llevan un control ordenado del kilometraje, los gastos o los mantenimientos realizados. Esto puede generar olvidos importantes, como no hacer un service a tiempo, no controlar el cambio de aceite o no saber cuanto dinero se gasta realmente en la moto.
 
-Muchas personas que utilizan moto no llevan un control ordenado del kilometraje, los gastos o los mantenimientos realizados. Esto puede generar olvidos importantes, como no realizar un service a tiempo o no saber cuánto dinero se gasta en la moto.
+MotoTracker busca resolver este problema ofreciendo una herramienta simple y accesible para registrar y consultar la informacion principal de la moto desde el celular.
 
-MotoTracker busca resolver este problema ofreciendo una herramienta simple para registrar y consultar la información principal de la moto desde el celular.
+## Integrantes del grupo
+
+- Luciano Larrosa
+- Leandro Serapio
+- Matias Palacio
+- Aylen Abalos
+- Alex Trigo
 
 ## Estado del proyecto
 
-Proyecto en etapa inicial de desarrollo.
-
+Proyecto desarrollado como parte de la materia Proyecto Profesional II.

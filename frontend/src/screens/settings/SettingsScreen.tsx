@@ -50,7 +50,7 @@ export function SettingsScreen() {
         />
 
         <SettingRow
-          label="Recordatorio de kilometraje"
+          label="Recordatorios"
           value={reminders}
           onValueChange={setReminders}
         />
@@ -90,6 +90,8 @@ function SettingRow({
       <Switch
         value={value}
         onValueChange={onValueChange}
+        trackColor={{ false: theme.surfaceMuted, true: theme.primarySoft }}
+        thumbColor={value ? theme.primary : theme.textMuted}
       />
     </View>
   );

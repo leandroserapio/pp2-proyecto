@@ -1,4 +1,5 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { Gasto, Viaje } from '../types/models';
 
 export type AuthStackParamList = {
@@ -33,9 +34,9 @@ export type ViajeListNavItem = Viaje & {
 export type MainTabParamList = {
   Inicio: undefined;
   Garage: { openAdd?: boolean } | undefined;
-  GastosStack: undefined;
-  Mantenimiento: undefined;
-  ViajesStack: undefined;
+  GastosStack: NavigatorScreenParams<GastosStackParamList> | undefined;
+  Mantenimiento: { openAdd?: boolean } | undefined;
+  ViajesStack: NavigatorScreenParams<ViajesStackParamList> | undefined;
 };
 
 
