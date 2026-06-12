@@ -1,5 +1,6 @@
 // src/navigation/AppNavigator.tsx
 
+import { useEffect } from 'react';
 import {
   NavigationContainer,
   DefaultTheme
@@ -11,6 +12,7 @@ import {
 
 import {
   ActivityIndicator,
+  AppState,
   StyleSheet,
   View
 } from 'react-native';
@@ -51,6 +53,12 @@ import {
   AppSettingsProvider,
   useAppSettings
 } from '../context/AppSettingsContext';
+
+import {
+  KILOMETERS_REMINDER_ID,
+  cancelarNotificacion,
+  programarRecordatorioKilometros
+} from '../services/notificationsService';
 
 import type {
   AuthStackParamList,
@@ -263,8 +271,33 @@ export function AppNavigator() {
 function AppNavigationContent() {
   const {
     darkMode,
+    notifications,
+    reminders,
     theme
   } = useAppSettings();
+
+  useEffect(() => {
+    const sincronizarRecordatorioKilometros = () => {
+      if (!notifications || !reminders) {
+        void cancelarNotificacion(KILOMETERS_REMINDER_ID);
+        return;
+      }
+
+      void programarRecordatorioKilometros();
+    };
+
+    sincronizarRecordatorioKilometros();
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') {
+        sincronizarRecordatorioKilometros();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [notifications, reminders]);
 
   const navTheme = {
     ...DefaultTheme,
