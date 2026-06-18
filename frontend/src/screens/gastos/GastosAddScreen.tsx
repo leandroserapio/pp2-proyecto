@@ -10,6 +10,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -28,6 +29,11 @@ import { crearGasto } from '../../api/gastos';
 import { ApiError } from '../../api/client';
 import { formatDisplayDate, parseAmountInput } from '../../gastos/format';
 import { motoLabel } from '../../gastos/gastosLoader';
+import {
+  FORM_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<GastosStackParamList, 'GastosAdd'>;
 type R = RouteProp<GastosStackParamList, 'GastosAdd'>;
@@ -44,6 +50,9 @@ export function GastosAddScreen() {
   const route = useRoute<R>();
   const { motos, selectedMotoId } = useMoto();
   const { darkMode, theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const contentFrame = getCenteredContentStyle(width, FORM_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
 
   const defaultMotoId = useMemo(() => {
     const fromRoute = route.params?.idMoto;
@@ -121,7 +130,16 @@ export function GastosAddScreen() {
       style={[styles.root, { backgroundColor: theme.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={[
+          styles.scroll,
+          contentFrame,
+          {
+            paddingHorizontal: pagePadding,
+          },
+        ]}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <AppTextInput
             label="Tipo de gasto"
@@ -177,7 +195,7 @@ export function GastosAddScreen() {
               });
             }}
           >
-            <Text style={[styles.selectText, { color: theme.text }]}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
+            <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
             <Ionicons name={motoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
           </Pressable>
 
@@ -211,7 +229,7 @@ export function GastosAddScreen() {
               });
             }}
           >
-            <Text style={[styles.selectText, { color: theme.text }]}>{formatDisplayDate(toIsoLocal(date))}</Text>
+            <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{formatDisplayDate(toIsoLocal(date))}</Text>
             <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={theme.textMuted} />
           </Pressable>
         </View>
@@ -354,7 +372,7 @@ export function GastosAddScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
-  scroll: { padding: 18, paddingBottom: 40 },
+  scroll: { paddingTop: 18, paddingBottom: 56 },
   card: {
     backgroundColor: light.surface,
     borderRadius: 12,
@@ -434,6 +452,8 @@ const styles = StyleSheet.create({
     borderColor: light.primary,
   },
   selectText: {
+    flex: 1,
+    marginRight: 8,
     fontSize: 16,
     color: light.navy,
     fontFamily: fontFamily.medium,

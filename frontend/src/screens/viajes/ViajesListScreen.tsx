@@ -11,6 +11,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
@@ -29,14 +30,22 @@ import { ApiError } from '../../api/client';
 import { formatArs, formatKmViaje, formatViajeListDate } from '../../viajes/format';
 import { getViajeEstadoBadge } from '../../viajes/viajeEstado';
 import { loadViajesItems, motoLabel } from '../../viajes/viajesLoader';
+import {
+  CONTENT_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsiveFabRight,
+} from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<ViajesStackParamList>;
 
 export function ViajesListScreen() {
   const navigation = useNavigation<Nav>();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { motos, loading: motosLoading } = useMoto();
   const { theme } = useAppSettings();
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
   const [items, setItems] = useState<ViajeListNavItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,7 +120,7 @@ export function ViajesListScreen() {
   };
 
   const topBlock = (
-    <>
+    <View style={contentFrame}>
       <View style={styles.sectionHead}>
         <Text style={[styles.pageTitle, { color: theme.text }]}>Viajes</Text>
       </View>
@@ -137,10 +146,10 @@ export function ViajesListScreen() {
           });
         }}
       >
-        <Text style={[styles.filterText, { color: theme.text }]}>{filtroDisplay}</Text>
+        <Text style={[styles.filterText, { color: theme.text }]} numberOfLines={1}>{filtroDisplay}</Text>
         <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
       </Pressable>
-    </>
+    </View>
   );
 
   return (
@@ -167,6 +176,7 @@ export function ViajesListScreen() {
       ) : empty ? (
         <View style={styles.flexCenter}>
           {topBlock}
+          <View style={[styles.emptyFrame, contentFrame]}>
           <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
               <MaterialCommunityIcons name="map-marker-path" size={40} color={theme.textMuted} />
@@ -180,6 +190,7 @@ export function ViajesListScreen() {
               style={styles.cta}
             />
           </View>
+          </View>
         </View>
       ) : (
         <View style={styles.listRoot}>
@@ -189,7 +200,7 @@ export function ViajesListScreen() {
             keyExtractor={(v) => `${v.idViaje}-${v.idMoto}`}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             style={styles.list}
-            contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+            contentContainerStyle={[contentFrame, { paddingBottom: 120 + insets.bottom }]}
             renderItem={({ item }) => {
               const badge = getViajeEstadoBadge(item.estado, theme);
               return (
@@ -268,7 +279,7 @@ export function ViajesListScreen() {
           />
           <Pressable
             accessibilityRole="button"
-            style={[styles.fab, { bottom: 24 + insets.bottom, backgroundColor: theme.primary }]}
+            style={[styles.fab, { bottom: 24 + insets.bottom, right: fabRight, backgroundColor: theme.primary }]}
             onPress={() => navigation.navigate('ViajesAdd', {})}
           >
             <Ionicons name="add" size={30} color={theme.onPrimary} />
@@ -398,6 +409,8 @@ const styles = StyleSheet.create({
   },
   filterRowOpen: { borderColor: light.primary },
   filterText: {
+    flex: 1,
+    marginRight: 8,
     fontSize: 15,
     fontFamily: fontFamily.medium,
     fontWeight: '500',
@@ -405,6 +418,7 @@ const styles = StyleSheet.create({
   },
   flexCenter: { flex: 1 },
   centerGrow: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
+  emptyFrame: { flex: 1 },
   emptyCard: {
     flex: 1,
     marginHorizontal: 18,
@@ -539,7 +553,6 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    right: 22,
     width: 56,
     height: 56,
     borderRadius: 28,

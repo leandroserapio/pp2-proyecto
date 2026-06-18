@@ -1,5 +1,6 @@
 import { useLayoutEffect } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,6 +14,11 @@ import { useAppSettings } from '../../context/AppSettingsContext';
 import { splitViajeNotas } from '../../viajes/viajeNotas';
 import { formatArs, formatDisplayDate, formatKmViaje } from '../../viajes/format';
 import { getViajeEstadoBadge, normalizeViajeEstado } from '../../viajes/viajeEstado';
+import {
+  DETAIL_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<ViajesStackParamList, 'ViajesDetail'>;
 type R = RouteProp<ViajesStackParamList, 'ViajesDetail'>;
@@ -21,6 +27,10 @@ export function ViajesDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const contentFrame = getCenteredContentStyle(width, DETAIL_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
   const { item } = route.params;
   const { salida, tiempoEstimado, consumoLitros100, precioNafta, notas } = splitViajeNotas(item.notas ?? '');
   const badge = getViajeEstadoBadge(item.estado);
@@ -63,7 +73,17 @@ export function ViajesDetailScreen() {
   }, [navigation, item, item.idViaje, theme.primary]);
 
   return (
-    <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.root, { backgroundColor: theme.bg }]}
+      contentContainerStyle={[
+        styles.content,
+        contentFrame,
+        {
+          paddingHorizontal: pagePadding,
+          paddingBottom: 96 + insets.bottom,
+        },
+      ]}
+    >
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <View style={styles.section}>
           <View style={[styles.iconBox, { backgroundColor: theme.successSoft }]}>
@@ -171,7 +191,7 @@ export function ViajesDetailScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
-  content: { padding: 18, paddingBottom: 32 },
+  content: { paddingTop: 18 },
   card: {
     backgroundColor: light.surface,
     borderRadius: 12,

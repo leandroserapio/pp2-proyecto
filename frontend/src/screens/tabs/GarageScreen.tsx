@@ -7,12 +7,13 @@ import {
   RefreshControl,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { RouteProp } from '@react-navigation/native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import { useAuth } from '../../context/AuthContext';
@@ -25,6 +26,12 @@ import { ApiError } from '../../api/client';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import type { MainTabParamList } from '../../navigation/types';
 import type { Moto } from '../../types/models';
+import {
+  CONTENT_MAX_WIDTH,
+  FORM_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from '../../theme/responsive';
 
 type GarageRoute = RouteProp<MainTabParamList, 'Garage'>;
 
@@ -33,7 +40,12 @@ export function GarageScreen() {
   const route = useRoute<GarageRoute>();
   const { user } = useAuth();
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const { motos, selectedMotoId, loading, refreshMotos, setSelectedMotoId, eliminarMoto } = useMoto();
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const modalFrame = getCenteredContentStyle(width, FORM_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
   const [refreshing, setRefreshing] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
 
@@ -131,7 +143,7 @@ export function GarageScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       {!addOpen ? <AppHeader subtitle={`Hola, ${user?.nombre ?? 'usuario'}`} /> : null}
 
-      <View style={styles.sectionHeader}>
+      <View style={[styles.sectionHeader, contentFrame, { paddingHorizontal: pagePadding }]}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Mis motos</Text>
         <Pressable
           accessibilityRole="button"
@@ -144,7 +156,7 @@ export function GarageScreen() {
       </View>
 
       {motos.length === 0 && !loading ? (
-        <View style={styles.emptyWrap}>
+        <View style={[styles.emptyWrap, contentFrame, { paddingHorizontal: pagePadding, paddingBottom: 96 + insets.bottom }]}>
           <Ionicons name="bicycle-outline" size={64} color={theme.border} />
           <Text style={[styles.emptyTitle, { color: theme.text }]}>No tenes motos registradas</Text>
           <Text style={[styles.emptySub, { color: theme.textMuted }]}>Agrega tu primera moto para empezar a registrar gastos y mas.</Text>
@@ -155,7 +167,14 @@ export function GarageScreen() {
           data={motos}
           keyExtractor={(m) => String(m.idMoto)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[
+            styles.list,
+            contentFrame,
+            {
+              paddingHorizontal: pagePadding,
+              paddingBottom: 96 + insets.bottom,
+            },
+          ]}
           renderItem={({ item }) => {
             const isSelected = item.idMoto === selectedMotoId;
             return (
@@ -172,8 +191,8 @@ export function GarageScreen() {
               >
                 <View style={styles.motoCardHeader}>
                   <View style={styles.motoTitleWrap}>
-                    <Text style={[styles.motoCardTitle, { color: theme.text }]}>{item.marca} {item.modelo}</Text>
-                    <Text style={[styles.motoCardSub, { color: theme.textMuted }]}>
+                    <Text style={[styles.motoCardTitle, { color: theme.text }]} numberOfLines={2}>{item.marca} {item.modelo}</Text>
+                    <Text style={[styles.motoCardSub, { color: theme.textMuted }]} numberOfLines={1}>
                       {[item.anio, item.patente].filter(Boolean).join(' - ') || 'Sin patente cargada'}
                     </Text>
                   </View>
@@ -199,7 +218,7 @@ export function GarageScreen() {
       <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
         <View style={styles.modalRoot}>
           <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => setAddOpen(false)} />
-          <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <View style={[styles.modalSheet, modalFrame, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>Agregar moto</Text>
             <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marca} onChangeText={setMarca} />
             <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modelo} onChangeText={setModelo} />
@@ -221,7 +240,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 12,
-    paddingHorizontal: 18,
     marginBottom: 8,
   },
   sectionTitle: { fontSize: 22, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
@@ -241,7 +259,7 @@ const styles = StyleSheet.create({
   emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
   emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
-  list: { paddingHorizontal: 18, paddingBottom: 30 },
+  list: {},
   motoCard: {
     backgroundColor: light.surface,
     borderRadius: 12,
@@ -258,7 +276,7 @@ const styles = StyleSheet.create({
   infoPill: { flex: 1, backgroundColor: light.bg, borderRadius: 10, padding: 10 },
   infoLabel: { fontSize: 10, fontFamily: fontFamily.bold, fontWeight: '700', color: light.textMuted },
   infoValue: { marginTop: 4, fontSize: 14, fontFamily: fontFamily.bold, fontWeight: '700', color: light.navy },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  modalRoot: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
   modalSheet: {
     backgroundColor: light.surface,
@@ -267,6 +285,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: light.border,
+    width: '100%',
   },
   modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
   saveBtn: { marginTop: 4 },

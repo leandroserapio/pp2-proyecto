@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -35,6 +36,11 @@ import { formatDisplayDate } from '../../viajes/format';
 import { parseIsoDate, toIsoLocal, VIAJE_BANNER_URI } from '../../viajes/viajeFormUtils';
 import { estimateRoute, RouteEstimateError } from '../../viajes/routeEstimation';
 import { estimateFuelBudget, parsePositiveNumber } from '../../viajes/fuelCost';
+import {
+  CONTENT_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<ViajesStackParamList, 'ViajesAdd'>;
 type R = RouteProp<ViajesStackParamList, 'ViajesAdd'>;
@@ -43,8 +49,12 @@ export function ViajesAddScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { motos, selectedMotoId } = useMoto();
   const { darkMode, theme } = useAppSettings();
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
+  const narrow = width < 380;
 
   const defaultMotoId = useMemo(() => {
     if (route.params?.idMoto != null) return route.params.idMoto;
@@ -179,7 +189,14 @@ export function ViajesAddScreen() {
   return (
     <KeyboardAvoidingView style={[styles.root, { backgroundColor: theme.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: 100 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.scroll,
+          contentFrame,
+          {
+            paddingHorizontal: pagePadding,
+            paddingBottom: 100 + insets.bottom,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.bannerWrap}>
@@ -220,7 +237,7 @@ export function ViajesAddScreen() {
             });
           }}
         >
-          <Text style={[styles.selectText, { color: theme.text }]}>{estado}</Text>
+          <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{estado}</Text>
           <Ionicons name={estadoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
         </Pressable>
 
@@ -246,7 +263,7 @@ export function ViajesAddScreen() {
             });
           }}
         >
-          <Text style={[styles.selectText, { color: theme.text }]}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
+          <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{selectedMoto ? motoLabel(selectedMoto) : 'Seleccionar moto'}</Text>
           <Ionicons name={motoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
         </Pressable>
 
@@ -330,7 +347,7 @@ export function ViajesAddScreen() {
               });
             }}
           >
-            <Text style={[styles.selectText, { color: theme.text }]}>{formatDisplayDate(toIsoLocal(date))}</Text>
+            <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{formatDisplayDate(toIsoLocal(date))}</Text>
             <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={theme.textMuted} />
           </Pressable>
 
@@ -347,7 +364,7 @@ export function ViajesAddScreen() {
             />
           </View>
 
-          <View style={styles.estimateGrid}>
+          <View style={[styles.estimateGrid, narrow && styles.estimateGridNarrow]}>
             <View style={styles.estimateCol}>
               <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>KM/L</Text>
               <TextInput
@@ -392,7 +409,7 @@ export function ViajesAddScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: theme.surface, borderTopColor: theme.border }]}>
-        <PrimaryButton title="Agregar Viaje" variant="blue" loading={saving} onPress={onSave} />
+        <PrimaryButton title="Agregar Viaje" variant="blue" loading={saving} onPress={onSave} style={contentFrame} />
       </View>
 
       <DropdownModal
@@ -563,7 +580,7 @@ function DropdownModal({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
-  scroll: { padding: 18, paddingTop: 12 },
+  scroll: { paddingTop: 12 },
   bannerWrap: { marginBottom: 18 },
   banner: { height: 160, borderRadius: 12, overflow: 'hidden' },
   bannerImage: { borderRadius: 12 },
@@ -623,6 +640,8 @@ const styles = StyleSheet.create({
   },
   selectOpen: { borderColor: light.primary },
   selectText: {
+    flex: 1,
+    marginRight: 8,
     fontSize: 16,
     color: light.navy,
     fontFamily: fontFamily.medium,
@@ -683,6 +702,7 @@ const styles = StyleSheet.create({
   notesInput: { minHeight: 96 },
   mapsButton: { marginTop: 10 },
   estimateGrid: { flexDirection: 'row', gap: 10 },
+  estimateGridNarrow: { flexDirection: 'column', gap: 0 },
   estimateCol: { flex: 1 },
   estimateActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
   secondaryAction: {

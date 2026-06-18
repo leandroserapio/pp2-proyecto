@@ -14,6 +14,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -68,6 +69,11 @@ import {
   motoLabel,
   sumMontos
 } from '../../gastos/gastosLoader';
+import {
+  CONTENT_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsiveFabRight,
+} from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<GastosStackParamList>;
 
@@ -102,9 +108,12 @@ export function GastosListScreen() {
   const navigation = useNavigation<Nav>();
 
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
   const { motos, loading: motosLoading } = useMoto();
   const { theme } = useAppSettings();
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
 
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
 
@@ -213,11 +222,12 @@ export function GastosListScreen() {
     });
 
     if (!filterSelectWrapRef.current) {
-      const width = Dimensions.get('window').width - 36;
-      setFilterMenuRect({ x: 18, y: 190, width, height: 48 });
+      const fallbackWidth = Math.min(width, CONTENT_MAX_WIDTH) - 36;
+      const fallbackX = Math.max(18, (width - Math.min(width, CONTENT_MAX_WIDTH)) / 2 + 18);
+      setFilterMenuRect({ x: fallbackX, y: 190, width: fallbackWidth, height: 48 });
       setFilterOpen(true);
     }
-  }, []);
+  }, [width]);
 
   const selectFilter = useCallback((next: number | 'todas') => {
     setFiltro(next);
@@ -226,7 +236,7 @@ export function GastosListScreen() {
 
   const topBlock = (
 
-    <>
+    <View style={contentFrame}>
 
       <View style={styles.sectionHead}>
 
@@ -281,7 +291,7 @@ export function GastosListScreen() {
 
       </Pressable>
 
-    </>
+    </View>
 
   );
 
@@ -341,7 +351,7 @@ export function GastosListScreen() {
 
           {topBlock}
 
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, contentFrame]}>
 
             <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
 
@@ -392,6 +402,7 @@ export function GastosListScreen() {
               />
             }
             contentContainerStyle={{
+              ...contentFrame,
               paddingBottom: 120 + insets.bottom
             }}
             renderItem={({ item }) => {
@@ -402,7 +413,7 @@ export function GastosListScreen() {
 
                 <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
                   <Pressable style={styles.cardMain} onPress={() => navigation.navigate('GastosDetail', { item })}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]}>{item.tipo}</Text>
+                    <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>{item.tipo}</Text>
                     <Text style={[styles.cardSub, { color: theme.textMuted }]}>
                       {item.motoLabel} - {formatDisplayDate(item.fecha)}
                     </Text>
@@ -414,10 +425,10 @@ export function GastosListScreen() {
                     </View>
                     <View style={styles.cardIconActions}>
                       <Pressable onPress={() => navigation.navigate('GastosEdit', { item })} hitSlop={8}>
-                        <Ionicons name="create-outline" size={17} color={light.textMuted} />
+                        <Ionicons name="create-outline" size={17} color={theme.textMuted} />
                       </Pressable>
                       <Pressable onPress={() => confirmDeleteGasto(item)} hitSlop={8}>
-                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                        <Ionicons name="trash-outline" size={18} color={theme.danger} />
                       </Pressable>
                     </View>
                   </View>
@@ -430,7 +441,9 @@ export function GastosListScreen() {
             style={[
               styles.fab,
               {
-                bottom: 24 + insets.bottom
+                bottom: 24 + insets.bottom,
+                right: fabRight,
+                backgroundColor: theme.primary,
               }
             ]}
             onPress={() =>
@@ -778,7 +791,6 @@ const styles = StyleSheet.create({
 
   fab: {
     position: 'absolute',
-    right: 22,
     width: 56,
     height: 56,
     borderRadius: 28,

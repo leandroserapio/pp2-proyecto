@@ -4,11 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { fontFamily } from '../theme/fonts';
 
 import { useAppSettings } from '../context/AppSettingsContext';
+import { isTabletWidth, TAB_BAR_MAX_WIDTH } from '../theme/responsive';
 
 import type { MainTabParamList } from './types';
 
@@ -25,6 +26,18 @@ const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabs() {
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const tablet = isTabletWidth(width);
+  const tabletTabFrame = tablet
+    ? {
+        width: '100%' as const,
+        maxWidth: TAB_BAR_MAX_WIDTH,
+        alignSelf: 'center' as const,
+        borderRadius: Platform.OS === 'android' ? 0 : 18,
+        marginBottom: Platform.OS === 'web' ? 12 : 8,
+        overflow: 'hidden' as const,
+      }
+    : {};
 
   const androidTabScreenOptions = {
 
@@ -41,6 +54,7 @@ export function MainTabs() {
       borderTopWidth: StyleSheet.hairlineWidth,
       borderTopColor: theme.border,
       elevation: 0,
+      ...tabletTabFrame,
     },
 
     tabBarLabelStyle: {
@@ -74,6 +88,7 @@ export function MainTabs() {
       elevation: 0,
       padding: 8,
       paddingHorizontal: 8,
+      ...tabletTabFrame,
       ...(Platform.OS === 'web'
         ? {
             boxShadow: 'none',

@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -35,6 +36,11 @@ import { formatDisplayDate } from '../../viajes/format';
 import { parseIsoDate, toIsoLocal, VIAJE_BANNER_URI } from '../../viajes/viajeFormUtils';
 import { estimateRoute, RouteEstimateError } from '../../viajes/routeEstimation';
 import { estimateFuelBudget, parsePositiveNumber } from '../../viajes/fuelCost';
+import {
+  CONTENT_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<ViajesStackParamList, 'ViajesEdit'>;
 type R = RouteProp<ViajesStackParamList, 'ViajesEdit'>;
@@ -43,9 +49,13 @@ export function ViajesEditScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { motos } = useMoto();
   const { darkMode, theme } = useAppSettings();
   const { item } = route.params;
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
+  const narrow = width < 380;
 
   const {
     salida: existingSalida,
@@ -182,7 +192,14 @@ export function ViajesEditScreen() {
   return (
     <KeyboardAvoidingView style={[styles.root, { backgroundColor: theme.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={[styles.scroll, { paddingBottom: 100 + insets.bottom }]}
+        contentContainerStyle={[
+          styles.scroll,
+          contentFrame,
+          {
+            paddingHorizontal: pagePadding,
+            paddingBottom: 100 + insets.bottom,
+          },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.bannerWrap}>
@@ -223,13 +240,13 @@ export function ViajesEditScreen() {
             });
           }}
         >
-          <Text style={[styles.selectText, { color: theme.text }]}>{estado}</Text>
+          <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{estado}</Text>
           <Ionicons name={estadoMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
         </Pressable>
 
         <Text style={[styles.fieldEyebrow, { color: theme.textMuted }]}>MOTO</Text>
         <View style={[styles.selectDisabled, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-          <Text style={[styles.selectText, { color: theme.text }]}>{motoDisplay}</Text>
+          <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{motoDisplay}</Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
@@ -298,7 +315,7 @@ export function ViajesEditScreen() {
               });
             }}
           >
-            <Text style={[styles.selectText, { color: theme.text }]}>{formatDisplayDate(toIsoLocal(date))}</Text>
+            <Text style={[styles.selectText, { color: theme.text }]} numberOfLines={1}>{formatDisplayDate(toIsoLocal(date))}</Text>
             <Ionicons name={showDate ? 'chevron-up' : 'calendar-outline'} size={18} color={theme.textMuted} />
           </Pressable>
 
@@ -315,7 +332,7 @@ export function ViajesEditScreen() {
             />
           </View>
 
-          <View style={styles.estimateGrid}>
+          <View style={[styles.estimateGrid, narrow && styles.estimateGridNarrow]}>
             <View style={styles.estimateCol}>
               <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>KM/L</Text>
               <TextInput
@@ -360,7 +377,7 @@ export function ViajesEditScreen() {
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: theme.surface, borderTopColor: theme.border }]}>
-        <PrimaryButton title="Guardar cambios" variant="blue" loading={saving} onPress={onSave} />
+        <PrimaryButton title="Guardar cambios" variant="blue" loading={saving} onPress={onSave} style={contentFrame} />
       </View>
 
       <Modal
@@ -487,7 +504,7 @@ export function ViajesEditScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
-  scroll: { padding: 18, paddingTop: 12 },
+  scroll: { paddingTop: 12 },
   bannerWrap: { marginBottom: 18 },
   banner: { height: 160, borderRadius: 12, overflow: 'hidden' },
   bannerImage: { borderRadius: 12 },
@@ -559,6 +576,8 @@ const styles = StyleSheet.create({
   },
   selectOpen: { borderColor: light.primary },
   selectText: {
+    flex: 1,
+    marginRight: 8,
     fontSize: 16,
     color: light.navy,
     fontFamily: fontFamily.medium,
@@ -619,6 +638,7 @@ const styles = StyleSheet.create({
   notesInput: { minHeight: 96 },
   mapsButton: { marginTop: 10 },
   estimateGrid: { flexDirection: 'row', gap: 10 },
+  estimateGridNarrow: { flexDirection: 'column', gap: 0 },
   estimateCol: { flex: 1 },
   estimateActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
   secondaryAction: {

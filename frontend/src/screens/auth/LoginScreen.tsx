@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   btn: { marginTop: 6 },
   linkWrap: { marginTop: 16, alignItems: 'center' },
   link: { color: light.primary, fontWeight: '700', fontFamily: fontFamily.bold },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
+  modalRoot: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
   modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
   modalSheet: {
     backgroundColor: light.surface,
@@ -269,6 +269,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: light.border,
     padding: 20,
+    width: '100%',
+    maxWidth: 430,
   },
   modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
   questionLabel: { color: light.navy, fontFamily: fontFamily.bold, fontWeight: '700', marginBottom: 12, lineHeight: 20 },

@@ -9,6 +9,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -16,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAppSettings } from '../context/AppSettingsContext';
 import { fontFamily } from '../theme/fonts';
 import { light } from '../theme/mototrackerLight';
+import { isTabletWidth } from '../theme/responsive';
 
 type Props = {
   visible: boolean;
@@ -52,6 +54,8 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
   const navigation = useNavigation<any>();
   const { logout, user } = useAuth();
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const tablet = isTabletWidth(width);
 
   function goTo(routeName: MenuRoute) {
     onClose();
@@ -120,26 +124,33 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
       <View style={[styles.overlay, { backgroundColor: theme.overlayStrong }]}>
         <View style={[
           styles.menu,
+          tablet && styles.menuTablet,
           {
             backgroundColor: theme.surface,
           }
         ]}>
           <View style={styles.header}>
             <View>
-              <Text style={[
+              <Text
+                numberOfLines={1}
+                style={[
                 styles.title,
                 {
                   color: theme.primary
                 }
-              ]}>
+              ]}
+              >
                 MotoTracker
               </Text>
-              <Text style={[
+              <Text
+                numberOfLines={1}
+                style={[
                 styles.subtitle,
                 {
                   color: theme.textMuted
                 }
-              ]}>
+              ]}
+              >
                 {user?.nombre ?? 'Usuario'}
               </Text>
             </View>
@@ -223,11 +234,15 @@ const styles = StyleSheet.create({
   },
   menu: {
     width: '82%',
+    maxWidth: 360,
     height: '100%',
     backgroundColor: light.surface,
     paddingTop: 60,
     paddingHorizontal: 18,
     paddingBottom: 24,
+  },
+  menuTablet: {
+    width: 360,
   },
   header: {
     flexDirection: 'row',

@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,6 +13,11 @@ import { ApiError } from '../../api/client';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { cleanGastoDescripcion } from '../../gastos/gastoKm';
 import { formatArs, formatDisplayDate } from '../../gastos/format';
+import {
+  DETAIL_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<GastosStackParamList, 'GastosDetail'>;
 type R = RouteProp<GastosStackParamList, 'GastosDetail'>;
@@ -20,6 +26,10 @@ export function GastosDetailScreen() {
   const navigation = useNavigation<Nav>();
   const route = useRoute<R>();
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const contentFrame = getCenteredContentStyle(width, DETAIL_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
   const [actionsOpen, setActionsOpen] = useState(false);
   const { item } = route.params;
 
@@ -66,7 +76,17 @@ export function GastosDetailScreen() {
 
   return (
     <>
-      <ScrollView style={[styles.root, { backgroundColor: theme.bg }]} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={[styles.root, { backgroundColor: theme.bg }]}
+        contentContainerStyle={[
+          styles.content,
+          contentFrame,
+          {
+            paddingHorizontal: pagePadding,
+            paddingBottom: 96 + insets.bottom,
+          },
+        ]}
+      >
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <Text style={[styles.title, { color: theme.text }]}>{item.tipo}</Text>
           <Text style={[styles.amount, { color: theme.primary }]}>{formatArs(item.monto)}</Text>
@@ -122,7 +142,7 @@ export function GastosDetailScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
-  content: { padding: 18, paddingBottom: 32 },
+  content: { paddingTop: 18 },
   card: {
     backgroundColor: light.surface,
     borderRadius: 12,

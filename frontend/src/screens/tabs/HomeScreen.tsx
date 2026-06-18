@@ -12,9 +12,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ApiError } from "../../api/client";
 import { listarGastosPorMoto } from "../../api/gastos";
@@ -29,6 +30,11 @@ import { formatArs, formatDisplayDate } from "../../gastos/format";
 import type { MainTabParamList } from "../../navigation/types";
 import { fontFamily } from "../../theme/fonts";
 import { light } from "../../theme/mototrackerLight";
+import {
+  CONTENT_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from "../../theme/responsive";
 import type { Gasto, Mantenimiento } from "../../types/models";
 
 const LAST_KM_STORAGE_PREFIX = "@mototracker/lastKmDelta/";
@@ -44,6 +50,10 @@ export function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { selectedMoto, selectedMotoId, refreshMotos } = useMoto();
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
   const [kmOpen, setKmOpen] = useState(false);
   const [kmAdd, setKmAdd] = useState("");
   const [saving, setSaving] = useState(false);
@@ -169,7 +179,16 @@ export function HomeScreen() {
     >
       {!kmOpen ? <AppHeader title="Inicio" /> : null}
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          contentFrame,
+          {
+            paddingHorizontal: pagePadding,
+            paddingBottom: 96 + insets.bottom,
+          },
+        ]}
+      >
         {selectedMoto ? (
           <>
             <View
@@ -480,8 +499,7 @@ const styles = StyleSheet.create({
     backgroundColor: light.bg,
   },
   content: {
-    padding: 18,
-    paddingBottom: 32,
+    paddingVertical: 18,
   },
   kmPanel: {
     marginTop: 14,
