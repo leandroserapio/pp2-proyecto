@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,20 +39,49 @@ import {
 import { motoLabel } from '../../gastos/gastosLoader';
 import { ApiError } from '../../api/client';
 import { formatDisplayDate } from '../../gastos/format';
-import type { Mantenimiento } from '../../types/models';
+import type { Mantenimiento, Moto } from '../../types/models';
 import type { MainTabParamList } from '../../navigation/types';
 import {
+<<<<<<< HEAD
   consumeMantenimientoAddRequest,
 } from '../../navigation/pendingActions';
+=======
+  CONTENT_MAX_WIDTH,
+  FORM_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsiveFabRight,
+  getResponsivePadding,
+} from '../../theme/responsive';
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
 
 type Nav = BottomTabNavigationProp<MainTabParamList, 'Mantenimiento'>;
+
+function formatMotoDisplayName(moto: Moto): string {
+  return motoLabel(moto)
+    .replace(/\s+/g, ' ')
+    .trim()
+    .split(' ')
+    .map((word) => {
+      if (/[a-zA-Z]\d|\d[a-zA-Z]/.test(word)) return word.toUpperCase();
+      const lower = word.toLocaleLowerCase('es-AR');
+      return lower.charAt(0).toLocaleUpperCase('es-AR') + lower.slice(1);
+    })
+    .join(' ');
+}
 
 export function MantenimientoTabScreen() {
   const navigation = useNavigation<Nav>();
   const { motos, selectedMoto, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
   const insets = useSafeAreaInsets();
+<<<<<<< HEAD
   const sheetRef = useRef<BottomSheetRef>(null);
+=======
+  const { width } = useWindowDimensions();
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const modalFrame = getCenteredContentStyle(width, FORM_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
   const [allItems, setAllItems] = useState<(Mantenimiento & { idMoto: number })[]>([]);
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -99,10 +129,14 @@ export function MantenimientoTabScreen() {
   const filtroDisplay = useMemo(() => {
     if (filtro === 'todas') return 'Todas las motos';
     const m = motos.find((x) => x.idMoto === filtro);
-    return m ? motoLabel(m) : 'Todas las motos';
+    return m ? formatMotoDisplayName(m) : 'Todas las motos';
   }, [filtro, motos]);
 
   const motoIdParaGuardar = motoIdForm ?? selectedMotoId;
+  const empty = items.length === 0 && !loading;
+  const dropdownBottomGap = 112 + insets.bottom;
+  const fabBottom = 36 + insets.bottom;
+  const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
 
   useFocusEffect(
     useCallback(() => {
@@ -242,6 +276,7 @@ const confirmDelete = async (m: Mantenimiento) => {
   if (!selectedMoto) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+<<<<<<< HEAD
         <AppHeader />
         <ScrollView contentContainerStyle={styles.emptyScroll}>
           <ScreenSectionHeader
@@ -253,10 +288,23 @@ const confirmDelete = async (m: Mantenimiento) => {
             <Text style={[styles.emptySub, { color: theme.textMuted }]}>Selecciona una moto desde Garage.</Text>
           </View>
         </ScrollView>
+=======
+        {!addOpen ? <AppHeader title="Servicios" /> : null}
+        <View style={[styles.emptyWrap, contentFrame, { paddingHorizontal: pagePadding, paddingBottom: 28 + insets.bottom }]}>
+          <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
+              <Ionicons name="bicycle-outline" size={40} color={theme.textMuted} />
+            </View>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin moto seleccionada</Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Selecciona una moto desde Garage.</Text>
+          </View>
+        </View>
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
       </SafeAreaView>
     );
   }
 
+<<<<<<< HEAD
   const topBlock = (
     <>
       <ScreenSectionHeader
@@ -301,23 +349,75 @@ const confirmDelete = async (m: Mantenimiento) => {
           {topBlock}
           <View style={styles.emptyWrap}>
             <Ionicons name="construct-outline" size={64} color={theme.border} />
+=======
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+      {!addOpen ? <AppHeader title="Servicios" /> : null}
+
+      <View style={contentFrame}>
+        <View style={[styles.sectionHead, { paddingHorizontal: pagePadding }]}>
+          <Text style={[styles.pageTitle, { color: theme.text }]}>Mantenimiento</Text>
+        </View>
+        <Text style={[styles.filterLabel, { color: theme.textMuted, marginHorizontal: pagePadding }]}>Filtrar por moto</Text>
+        <Pressable
+          ref={filterSelectWrapRef}
+          style={[
+            styles.filterRow,
+            {
+              backgroundColor: theme.surface,
+              borderColor: filterOpen ? theme.primary : theme.border,
+              marginHorizontal: pagePadding,
+            },
+          ]}
+          onPress={() => {
+            if (filterOpen) { setFilterOpen(false); setFilterMenuRect(null); return; }
+            filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
+              setFilterMenuRect({ x, y, width, height });
+              setFilterOpen(true);
+            });
+          }}
+        >
+          <Text style={[styles.filterText, { color: theme.text }]} numberOfLines={1}>{filtroDisplay}</Text>
+          <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
+        </Pressable>
+      </View>
+
+      {empty ? (
+        <View style={[styles.emptyWrap, contentFrame, { paddingHorizontal: pagePadding, paddingBottom: 28 + insets.bottom }]}>
+          <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
+              <Ionicons name="construct-outline" size={40} color={theme.textMuted} />
+            </View>
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin mantenimientos</Text>
             <Text style={[styles.emptySub, { color: theme.textMuted }]}>Registra services, cambios de aceite, frenos y mas.</Text>
             <PrimaryButton title="Agregar" variant="blue" onPress={() => { resetForm(); setAddOpen(true); }} style={styles.emptyBtn} />
           </View>
+<<<<<<< HEAD
         </ScrollView>
+=======
+        </View>
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
       ) : (
         <View style={styles.listWrap}>
           <FlatList
             data={items}
             keyExtractor={(m) => String(m.idMantenimiento)}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+<<<<<<< HEAD
             contentContainerStyle={{ paddingBottom: FAB_SCROLL_PADDING }}
             ListHeaderComponent={topBlock}
           renderItem={({ item }) => (
             <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <View style={styles.cardTopRow}>
                 <Text style={[sectionStyles.listCardTitle, { color: theme.text, flex: 1 }]}>{item.tipo}</Text>
+=======
+            contentContainerStyle={[contentFrame, { paddingBottom: 136 + insets.bottom, paddingTop: 2 }]}
+          renderItem={({ item }) => (
+            <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+              <View style={styles.cardTopRow}>
+                <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>{item.tipo}</Text>
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
                 <View style={styles.cardIconActions}>
                   <Pressable onPress={() => openEdit(item)} hitSlop={8}>
                     <Ionicons name="create-outline" size={17} color={theme.textMuted} />
@@ -342,6 +442,7 @@ const confirmDelete = async (m: Mantenimiento) => {
             </View>
           )}
           />
+<<<<<<< HEAD
         </View>
       )}
 
@@ -351,6 +452,23 @@ const confirmDelete = async (m: Mantenimiento) => {
         title={editItem ? 'Editar Mantenimiento' : 'Agregar Mantenimiento'}
         onClose={handleSheetClosed}
       >
+=======
+          <Pressable
+            accessibilityRole="button"
+            style={[styles.fab, { bottom: fabBottom, right: fabRight, backgroundColor: theme.primary }]}
+            onPress={() => { resetForm(); setAddOpen(true); }}
+          >
+            <Ionicons name="add" size={30} color={theme.onPrimary} />
+          </Pressable>
+        </View>
+      )}
+
+      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => { setAddOpen(false); setEditItem(null); resetForm(); }}>
+        <View style={styles.modalRoot}>
+          <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => { setAddOpen(false); setEditItem(null); resetForm(); }} />
+          <View style={[styles.modalSheet, modalFrame, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>{editItem ? 'Editar Mantenimiento' : 'Agregar Mantenimiento'}</Text>
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
             <AppTextInput label="Tipo *" variant="light" placeholder="Ej: Aceite, Service, Frenos" value={tipo} onChangeText={setTipo} />
 
             <Text style={[styles.formLabel, { color: theme.text }]}>Moto</Text>
@@ -366,7 +484,7 @@ const confirmDelete = async (m: Mantenimiento) => {
             >
               <Text style={[styles.formMotoSelectorText, { color: theme.text }]}>
                 {motoIdParaGuardar
-                  ? motoLabel(motos.find((m) => m.idMoto === motoIdParaGuardar)!)
+                  ? formatMotoDisplayName(motos.find((m) => m.idMoto === motoIdParaGuardar)!)
                   : 'Seleccioná una moto'}
               </Text>
               <Ionicons name={motoSelectorOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
@@ -388,7 +506,7 @@ const confirmDelete = async (m: Mantenimiento) => {
                       setMotoSelectorOpen(false);
                     }}
                   >
-                    <Text style={[styles.filterMenuRowText, { color: theme.text }]}>{motoLabel(m)}</Text>
+                    <Text style={[styles.filterMenuRowText, { color: theme.text }]}>{formatMotoDisplayName(m)}</Text>
                     {motoIdForm === m.idMoto ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
                   </Pressable>
                 ))}
@@ -431,7 +549,7 @@ const confirmDelete = async (m: Mantenimiento) => {
 
             <View style={[styles.infoBox, { backgroundColor: theme.primarySoft }]}>
               <Ionicons name="information-circle-outline" size={16} color={theme.primary} style={{ marginRight: 8 }} />
-              <Text style={styles.infoBoxText}>Se registrará un gasto también</Text>
+              <Text style={[styles.infoBoxText, { color: theme.primary }]}>Se registrará un gasto también</Text>
             </View>
 
             <PrimaryButton title="Guardar Mantenimiento" variant="blue" loading={saving} onPress={onSave} style={styles.saveBtn} />
@@ -448,7 +566,7 @@ const confirmDelete = async (m: Mantenimiento) => {
       >
       <View style={styles.filterMenuOverlay}>
         <Pressable
-          style={styles.filterMenuBackdrop}
+          style={[styles.filterMenuBackdrop, { backgroundColor: theme.overlaySoft }]}
           onPress={() => {
             setFilterOpen(false);
             setFilterMenuRect(null);
@@ -459,37 +577,46 @@ const confirmDelete = async (m: Mantenimiento) => {
             style={[
               styles.filterMenuDropdown,
               {
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+              },
+              {
                 left: filterMenuRect.x,
                 top: filterMenuRect.y + filterMenuRect.height + 4,
                 width: filterMenuRect.width,
                 maxHeight: Math.max(
                   160,
-                  Dimensions.get('window').height - (filterMenuRect.y + filterMenuRect.height) - 24,
+                  Dimensions.get('window').height - (filterMenuRect.y + filterMenuRect.height) - dropdownBottomGap,
                 ),
               },
             ]}
           >
-            <Text style={styles.filterMenuTitle}>Filtrar por moto</Text>
+            <Text style={[styles.filterMenuTitle, { color: theme.textMuted }]}>Filtrar por moto</Text>
             <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled style={styles.filterMenuScroll} bounces={false}>
               <Pressable
-                style={({ pressed }) => [styles.filterMenuRow, pressed && styles.filterMenuRowPressed]}
+                style={({ pressed }) => [styles.filterMenuRow, pressed && { backgroundColor: theme.bg }]}
                 onPress={() => { setFiltro('todas'); setFilterOpen(false); setFilterMenuRect(null); }}
               >
-                <Text style={styles.filterMenuRowText}>Todas las motos</Text>
-                {filtro === 'todas' ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                <Text style={[styles.filterMenuRowText, { color: theme.text }]}>Todas las motos</Text>
+                {filtro === 'todas' ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
               </Pressable>
               {motos.map((m) => (
                 <Pressable
                   key={m.idMoto}
-                  style={({ pressed }) => [styles.filterMenuRow, styles.filterMenuRowBorder, pressed && styles.filterMenuRowPressed]}
+                  style={({ pressed }) => [
+                    styles.filterMenuRow,
+                    styles.filterMenuRowBorder,
+                    { borderTopColor: theme.border },
+                    pressed && { backgroundColor: theme.bg },
+                  ]}
                   onPress={() => {
                     if (m.idMoto != null) setFiltro(m.idMoto);
                     setFilterOpen(false);
                     setFilterMenuRect(null);
                   }}
                 >
-                  <Text style={styles.filterMenuRowText}>{motoLabel(m)}</Text>
-                  {filtro !== 'todas' && filtro === m.idMoto ? <Ionicons name="checkmark" color={light.primary} size={20} /> : null}
+                  <Text style={[styles.filterMenuRowText, { color: theme.text }]}>{formatMotoDisplayName(m)}</Text>
+                  {filtro !== 'todas' && filtro === m.idMoto ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
                 </Pressable>
               ))}
             </ScrollView>
@@ -511,17 +638,58 @@ const confirmDelete = async (m: Mantenimiento) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
+<<<<<<< HEAD
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
   emptyScroll: { flexGrow: 1 },
   emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
   emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
+=======
+  header: { paddingHorizontal: 18, paddingBottom: 10 },
+  title: { fontSize: 24, fontFamily: fontFamily.bold, fontWeight: '800', color: light.text, marginTop: 12 },
+  subtitle: { fontSize: 14, color: light.textMuted, marginTop: 4 },
+  sectionHead: {
+    paddingHorizontal: 18,
+    marginTop: 16,
+  },
+  pageTitle: {
+    fontSize: 28,
+    fontFamily: fontFamily.bold,
+    fontWeight: '700',
+    color: light.navy,
+  },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
+  emptyCard: {
+    flex: 1,
+    width: '100%',
+    marginTop: 8,
+    marginBottom: 24,
+    backgroundColor: light.surfaceMuted,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 48,
+  },
+  emptyIconCircle: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    backgroundColor: light.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: { marginTop: 20, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
+  emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22, marginBottom: 22, fontSize: 15 },
+  emptyBtn: { alignSelf: 'stretch', marginHorizontal: 18 },
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
   listWrap: { flex: 1 },
   card: {
     marginHorizontal: 18,
     marginBottom: 10,
     backgroundColor: light.surface,
-    borderRadius: 14,
+    borderRadius: 12,
     padding: 14,
     borderWidth: 1,
     borderColor: light.border,
@@ -535,6 +703,11 @@ const styles = StyleSheet.create({
   cardKm: { fontSize: 16, fontFamily: fontFamily.bold, fontWeight: '700', color: light.navy },
   cardCosto: { fontSize: 16, fontFamily: fontFamily.bold, fontWeight: '700', color: light.primary },
   saveBtn: { marginTop: 4 },
+<<<<<<< HEAD
+=======
+  filterLabel: { fontSize: 13, fontFamily: fontFamily.medium, fontWeight: '500', color: light.textMuted, marginHorizontal: 18, marginBottom: 8, marginTop: 14 },
+  filterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: light.surface, borderRadius: 12, borderWidth: 1, borderColor: light.border, paddingHorizontal: 14, paddingVertical: 12, marginHorizontal: 18, marginBottom: 14 },
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
   filterRowOpen: { borderColor: light.primary },
   filterText: { flex: 1, fontSize: 15, fontFamily: fontFamily.medium, fontWeight: '500', color: light.textMuted },
   filterMenuOverlay: { flex: 1 },

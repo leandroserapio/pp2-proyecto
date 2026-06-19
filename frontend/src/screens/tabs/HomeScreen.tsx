@@ -12,9 +12,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ApiError } from "../../api/client";
 import { listarGastosPorMoto } from "../../api/gastos";
@@ -34,7 +35,15 @@ import {
 import type { MainTabParamList } from "../../navigation/types";
 import { fontFamily } from "../../theme/fonts";
 import { light } from "../../theme/mototrackerLight";
+<<<<<<< HEAD
 import { sectionStyles } from "../../theme/sectionStyles";
+=======
+import {
+  CONTENT_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from "../../theme/responsive";
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
 import type { Gasto, Mantenimiento } from "../../types/models";
 
 const LAST_KM_STORAGE_PREFIX = "@mototracker/lastKmDelta/";
@@ -50,6 +59,10 @@ export function HomeScreen() {
   const navigation = useNavigation<Nav>();
   const { selectedMoto, selectedMotoId, refreshMotos } = useMoto();
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
   const [kmOpen, setKmOpen] = useState(false);
   const [kmAdd, setKmAdd] = useState("");
   const [saving, setSaving] = useState(false);
@@ -174,6 +187,7 @@ export function HomeScreen() {
     >
       {!kmOpen ? <AppHeader /> : null}
 
+<<<<<<< HEAD
       <ScrollView contentContainerStyle={styles.content}>
         {!kmOpen ? (
           <ScreenSectionHeader
@@ -182,6 +196,18 @@ export function HomeScreen() {
           />
         ) : null}
 
+=======
+      <ScrollView
+        contentContainerStyle={[
+          styles.content,
+          contentFrame,
+          {
+            paddingHorizontal: pagePadding,
+            paddingBottom: 96 + insets.bottom,
+          },
+        ]}
+      >
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
         {selectedMoto ? (
           <>
             <View
@@ -493,7 +519,11 @@ const styles = StyleSheet.create({
     backgroundColor: light.bg,
   },
   content: {
+<<<<<<< HEAD
     paddingBottom: 32,
+=======
+    paddingVertical: 18,
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
   },
   kmPanel: {
     marginHorizontal: 18,

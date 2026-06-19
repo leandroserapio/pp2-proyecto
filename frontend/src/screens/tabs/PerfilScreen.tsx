@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { light } from '../../theme/mototrackerLight';
 import { sectionStyles } from '../../theme/sectionStyles';
 import { fontFamily } from '../../theme/fonts';
@@ -9,6 +10,11 @@ import { useAppSettings } from '../../context/AppSettingsContext';
 import { listarMotosPorUsuario } from '../../api/motos';
 import { listarGastosPorMoto } from '../../api/gastos';
 import { listarMantenimientosPorMoto } from '../../api/mantenimientos';
+import {
+  DETAIL_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsivePadding,
+} from '../../theme/responsive';
 
 type ProfileSummary = {
   motos: number;
@@ -19,6 +25,10 @@ type ProfileSummary = {
 export default function PerfilScreen() {
   const { user, logout } = useAuth();
   const { theme } = useAppSettings();
+  const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const contentFrame = getCenteredContentStyle(width, DETAIL_MAX_WIDTH);
+  const pagePadding = getResponsivePadding(width);
   const [summary, setSummary] = useState<ProfileSummary>({
     motos: 0,
     mantenimientos: 0,
@@ -85,7 +95,17 @@ export default function PerfilScreen() {
   }, [user?.idUsuario]);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.bg }]} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={[styles.container, { backgroundColor: theme.bg }]}
+      contentContainerStyle={[
+        styles.content,
+        contentFrame,
+        {
+          paddingHorizontal: pagePadding,
+          paddingBottom: 96 + insets.bottom,
+        },
+      ]}
+    >
       <View style={styles.header}>
         <View style={[styles.avatar, { backgroundColor: theme.primarySoft }]}>
           <Ionicons name="person-outline" size={42} color={theme.primary} />
@@ -134,8 +154,7 @@ const styles = StyleSheet.create({
     backgroundColor: light.bg,
   },
   content: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingVertical: 20,
   },
   header: {
     alignItems: 'center',
@@ -165,7 +184,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: light.surface,
-    borderRadius: 20,
+    borderRadius: 12,
     padding: 18,
     marginBottom: 16,
     borderWidth: 1,
@@ -192,11 +211,14 @@ const styles = StyleSheet.create({
     borderBottomColor: light.border,
   },
   statLabel: {
+    flex: 1,
+    marginRight: 12,
     fontSize: 14,
     fontFamily: fontFamily.regular,
     color: light.textMuted,
   },
   statValue: {
+    flexShrink: 0,
     fontSize: 14,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
@@ -205,7 +227,7 @@ const styles = StyleSheet.create({
   logoutButton: {
     marginTop: 4,
     height: 52,
-    borderRadius: 16,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: light.dangerSoft,
     backgroundColor: light.surface,

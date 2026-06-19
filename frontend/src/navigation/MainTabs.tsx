@@ -9,11 +9,12 @@ import {
 } from '@react-navigation/bottom-tabs';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
-import { Platform, StyleSheet } from 'react-native';
+import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
 
 import { fontFamily } from '../theme/fonts';
 
 import { useAppSettings } from '../context/AppSettingsContext';
+import { isTabletWidth, TAB_BAR_MAX_WIDTH } from '../theme/responsive';
 
 import type { MainTabParamList } from './types';
 
@@ -55,11 +56,24 @@ function WebBottomTabBar(props: BottomTabBarProps) {
 export function MainTabs() {
   const { theme } = useAppSettings();
   const hiddenTabBarStyle = { display: 'none' as const };
+  const { width } = useWindowDimensions();
+  const tablet = isTabletWidth(width);
+  const tabletTabFrame = tablet
+    ? {
+        width: '100%' as const,
+        maxWidth: TAB_BAR_MAX_WIDTH,
+        alignSelf: 'center' as const,
+        borderRadius: Platform.OS === 'android' ? 0 : 18,
+        marginBottom: Platform.OS === 'web' ? 12 : 8,
+        overflow: 'hidden' as const,
+      }
+    : {};
   const androidBaseTabBarStyle = {
     backgroundColor: theme.surface,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.border,
     elevation: 0,
+    ...tabletTabFrame,
   };
   const iosWebBaseTabBarStyle = {
     backgroundColor: theme.surface,
@@ -70,6 +84,7 @@ export function MainTabs() {
     paddingBottom: 8,
     paddingHorizontal: 8,
     width: '100%' as const,
+    ...tabletTabFrame,
     ...(Platform.OS === 'web'
       ? {
           boxShadow: 'none',

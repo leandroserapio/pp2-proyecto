@@ -15,6 +15,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from 'react-native';
 
@@ -76,6 +77,11 @@ import {
   motoLabel,
   sumMontos
 } from '../../gastos/gastosLoader';
+import {
+  CONTENT_MAX_WIDTH,
+  getCenteredContentStyle,
+  getResponsiveFabRight,
+} from '../../theme/responsive';
 
 import {
   consumeGastosAddRequest,
@@ -114,10 +120,13 @@ export function GastosListScreen() {
   const navigation = useNavigation<Nav>();
 
   const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
   const { motos, loading: motosLoading, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
   const sheetRef = useRef<BottomSheetRef>(null);
+  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
+  const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
 
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
 
@@ -319,11 +328,12 @@ export function GastosListScreen() {
     });
 
     if (!filterSelectWrapRef.current) {
-      const width = Dimensions.get('window').width - 36;
-      setFilterMenuRect({ x: 18, y: 190, width, height: 48 });
+      const fallbackWidth = Math.min(width, CONTENT_MAX_WIDTH) - 36;
+      const fallbackX = Math.max(18, (width - Math.min(width, CONTENT_MAX_WIDTH)) / 2 + 18);
+      setFilterMenuRect({ x: fallbackX, y: 190, width: fallbackWidth, height: 48 });
       setFilterOpen(true);
     }
-  }, []);
+  }, [width]);
 
   const selectFilter = useCallback((next: number | 'todas') => {
     setFiltro(next);
@@ -332,7 +342,7 @@ export function GastosListScreen() {
 
   const topBlock = (
 
-    <>
+    <View style={contentFrame}>
 
       <ScreenSectionHeader
         title="Gastos"
@@ -401,7 +411,7 @@ export function GastosListScreen() {
 
       </Pressable>
 
-    </>
+    </View>
 
   );
 
@@ -475,7 +485,7 @@ export function GastosListScreen() {
 
           {topBlock}
 
-          <View style={styles.emptyWrap}>
+          <View style={[styles.emptyWrap, contentFrame]}>
 
             <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
 
@@ -547,10 +557,10 @@ export function GastosListScreen() {
                     </View>
                     <View style={styles.cardIconActions}>
                       <Pressable onPress={() => navigation.navigate('GastosEdit', { item })} hitSlop={8}>
-                        <Ionicons name="create-outline" size={17} color={light.textMuted} />
+                        <Ionicons name="create-outline" size={17} color={theme.textMuted} />
                       </Pressable>
                       <Pressable onPress={() => confirmDeleteGasto(item)} hitSlop={8}>
-                        <Ionicons name="trash-outline" size={18} color="#EF4444" />
+                        <Ionicons name="trash-outline" size={18} color={theme.danger} />
                       </Pressable>
                     </View>
                   </View>
@@ -559,6 +569,31 @@ export function GastosListScreen() {
             }}
           />
 
+<<<<<<< HEAD
+=======
+          <Pressable
+            style={[
+              styles.fab,
+              {
+                bottom: 24 + insets.bottom,
+                right: fabRight,
+                backgroundColor: theme.primary,
+              }
+            ]}
+            onPress={() =>
+              navigation.navigate('GastosAdd', {})
+            }
+          >
+
+            <Ionicons
+              name="add"
+              size={30}
+              color={theme.onPrimary}
+            />
+
+          </Pressable>
+
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
         </View>
 
       )}
@@ -977,6 +1012,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
+<<<<<<< HEAD
   saveBtn: { marginTop: 4 },
   formLabel: {
     fontSize: 13,
@@ -988,6 +1024,14 @@ const styles = StyleSheet.create({
   },
   formMotoSelector: {
     flexDirection: 'row',
+=======
+  fab: {
+    position: 'absolute',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: light.primary,
+>>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: light.bg,
