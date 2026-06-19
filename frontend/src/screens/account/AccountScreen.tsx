@@ -13,11 +13,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '../../components/AppHeader';
+import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { useAuth } from '../../context/AuthContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { fontFamily } from '../../theme/fonts';
 import { light } from '../../theme/mototrackerLight';
+import { sectionStyles } from '../../theme/sectionStyles';
 
 export function AccountScreen() {
   const { user } = useAuth();
@@ -74,9 +76,15 @@ export function AccountScreen() {
       ]}
       edges={['top']}
     >
-      <AppHeader title="Cuenta" />
+      <AppHeader />
 
       <ScrollView contentContainerStyle={styles.content}>
+        <ScreenSectionHeader
+          title="Cuenta"
+          subtitle="Administrá tu perfil y datos de acceso."
+          style={styles.screenHeader}
+        />
+
         <View style={[
           styles.avatar,
           {
@@ -101,11 +109,12 @@ export function AccountScreen() {
             borderColor: theme.border,
           }
         ]}>
-          <View style={styles.panelHeader}>
+          <View style={sectionStyles.panelTitleRow}>
             <Text style={[
-              styles.panelTitle,
+              sectionStyles.panelTitle,
               {
-                color: theme.text
+                color: theme.text,
+                marginBottom: 0,
               }
             ]}>
               Datos personales
@@ -154,7 +163,7 @@ export function AccountScreen() {
           }
         ]}>
           <Text style={[
-            styles.panelTitle,
+            sectionStyles.panelTitle,
             {
               color: theme.text
             }
@@ -249,9 +258,12 @@ const styles = StyleSheet.create({
     backgroundColor: light.bg,
   },
   content: {
-    padding: 20,
+    paddingHorizontal: 18,
     paddingBottom: 36,
     alignItems: 'center',
+  },
+  screenHeader: {
+    alignSelf: 'stretch',
   },
   avatar: {
     width: 110,
@@ -278,19 +290,6 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     padding: 16,
     marginBottom: 16,
-  },
-  panelHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  panelTitle: {
-    fontSize: 17,
-    color: light.text,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    marginBottom: 12,
   },
   editLink: {
     paddingHorizontal: 8,

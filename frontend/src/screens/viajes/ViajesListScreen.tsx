@@ -24,6 +24,9 @@ import { useMoto } from '../../context/MotoContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { AppHeader } from '../../components/AppHeader';
+import { FAB_SCROLL_PADDING, ScreenFab, ScreenRoot } from '../../components/ScreenFab';
+import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
+import { sectionStyles } from '../../theme/sectionStyles';
 import { eliminarViaje } from '../../api/viajes';
 import { ApiError } from '../../api/client';
 import { formatArs, formatKmViaje, formatViajeListDate } from '../../viajes/format';
@@ -86,6 +89,7 @@ export function ViajesListScreen() {
   }, [filtro, motos]);
 
   const empty = !loading && !motosLoading && items.length === 0;
+  const showFab = !motosLoading && !loading && motos.length > 0 && !empty;
   const dropdownBottomGap = 96 + insets.bottom;
 
   const confirmDeleteViaje = async (item: ViajeListNavItem) => {
@@ -112,14 +116,14 @@ export function ViajesListScreen() {
 
   const topBlock = (
     <>
-      <View style={styles.sectionHead}>
-        <Text style={[styles.pageTitle, { color: theme.text }]}>Viajes</Text>
-      </View>
-      <Text style={[styles.filterLabel, { color: theme.textMuted }]}>Filtrar por moto</Text>
+      <ScreenSectionHeader
+        title="Viajes"
+        subtitle="Planificá salidas con destino, km estimados y presupuesto."
+      />
       <Pressable
         ref={filterSelectWrapRef}
         style={[
-          styles.filterRow,
+          sectionStyles.filterRow,
           {
             backgroundColor: theme.surface,
             borderColor: filterOpen ? theme.primary : theme.border,
@@ -137,15 +141,23 @@ export function ViajesListScreen() {
           });
         }}
       >
-        <Text style={[styles.filterText, { color: theme.text }]}>{filtroDisplay}</Text>
-        <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
+        <Text style={[sectionStyles.filterInlineLabel, { color: theme.textMuted }]}>
+          Filtrar por moto
+        </Text>
+        <View style={sectionStyles.filterValueRow}>
+          <Text style={[styles.filterText, { color: theme.text }]} numberOfLines={1}>
+            {filtroDisplay}
+          </Text>
+          <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
+        </View>
       </Pressable>
     </>
   );
 
   return (
+    <ScreenRoot>
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
-      <AppHeader title="Viajes" />
+      <AppHeader />
 
       {motosLoading || loading ? (
         <View style={styles.flexCenter}>
@@ -183,13 +195,13 @@ export function ViajesListScreen() {
         </View>
       ) : (
         <View style={styles.listRoot}>
-          {topBlock}
           <FlatList
             data={items}
             keyExtractor={(v) => `${v.idViaje}-${v.idMoto}`}
+            ListHeaderComponent={topBlock}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             style={styles.list}
-            contentContainerStyle={{ paddingBottom: 120 + insets.bottom }}
+            contentContainerStyle={{ paddingBottom: FAB_SCROLL_PADDING }}
             renderItem={({ item }) => {
               const badge = getViajeEstadoBadge(item.estado, theme);
               return (
@@ -221,7 +233,7 @@ export function ViajesListScreen() {
                   }}
                 >
                   <View style={styles.cardTitleRow}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>
+                    <Text style={[sectionStyles.listCardTitle, { color: theme.text, flex: 1, marginRight: 10 }]} numberOfLines={2}>
                       {item.destino}
                     </Text>
                     <View style={styles.cardTopRight}>
@@ -266,13 +278,6 @@ export function ViajesListScreen() {
               </View>
             }
           />
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.fab, { bottom: 24 + insets.bottom, backgroundColor: theme.primary }]}
-            onPress={() => navigation.navigate('ViajesAdd', {})}
-          >
-            <Ionicons name="add" size={30} color={theme.onPrimary} />
-          </Pressable>
         </View>
       )}
 
@@ -359,45 +364,21 @@ export function ViajesListScreen() {
         </View>
       </Modal>
     </SafeAreaView>
+
+    <ScreenFab
+      visible={showFab}
+      onPress={() => navigation.navigate('ViajesAdd', {})}
+      backgroundColor={theme.primary}
+      iconColor={theme.onPrimary}
+    />
+    </ScreenRoot>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
-  sectionHead: {
-    paddingHorizontal: 18,
-    marginTop: 16,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.navy,
-  },
-  filterLabel: {
-    marginHorizontal: 18,
-    marginTop: 14,
-    marginBottom: 8,
-    fontSize: 13,
-    fontFamily: fontFamily.medium,
-    fontWeight: '500',
-    color: light.textMuted,
-  },
-  filterRow: {
-    marginHorizontal: 18,
-    marginBottom: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: light.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: light.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  filterRowOpen: { borderColor: light.primary },
   filterText: {
+    flex: 1,
     fontSize: 15,
     fontFamily: fontFamily.medium,
     fontWeight: '500',
@@ -459,14 +440,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'space-between',
-  },
-  cardTitle: {
-    flex: 1,
-    marginRight: 10,
-    fontSize: 16,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.navy,
   },
   cardDate: {
     marginTop: 6,
@@ -536,21 +509,6 @@ const styles = StyleSheet.create({
     color: light.textMuted,
     fontSize: 13,
     fontFamily: fontFamily.regular,
-  },
-  fab: {
-    position: 'absolute',
-    right: 22,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: light.navy,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
   },
   filterMenuOverlay: { flex: 1 },
   filterMenuBackdrop: {

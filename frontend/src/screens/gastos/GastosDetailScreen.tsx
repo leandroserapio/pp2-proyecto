@@ -57,7 +57,12 @@ export function GastosDetailScreen() {
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
-        <Pressable accessibilityRole="button" onPress={() => setActionsOpen(true)} hitSlop={12}>
+        <Pressable
+          accessibilityRole="button"
+          style={styles.headerMenuButton}
+          onPress={() => setActionsOpen(true)}
+          hitSlop={12}
+        >
           <Ionicons name="ellipsis-vertical" size={20} color={theme.primary} />
         </Pressable>
       ),
@@ -123,6 +128,10 @@ export function GastosDetailScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
   content: { padding: 18, paddingBottom: 32 },
+  headerMenuButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
   card: {
     backgroundColor: light.surface,
     borderRadius: 12,

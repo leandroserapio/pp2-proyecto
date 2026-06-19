@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { light } from '../../theme/mototrackerLight';
+import { sectionStyles } from '../../theme/sectionStyles';
 import { fontFamily } from '../../theme/fonts';
 import type { AuthStackParamList } from '../../navigation/types';
 import { useAuth } from '../../context/AuthContext';
@@ -161,7 +162,7 @@ export function LoginScreen() {
         <View style={styles.modalRoot}>
           <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => setRecoverOpen(false)} />
           <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Recuperar contrasena</Text>
+            <Text style={[sectionStyles.modalTitle, { color: theme.text }]}>Recuperar contrasena</Text>
             <AppTextInput
               label="Email"
               variant="light"
@@ -270,6 +271,5 @@ const styles = StyleSheet.create({
     borderColor: light.border,
     padding: 20,
   },
-  modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
   questionLabel: { color: light.navy, fontFamily: fontFamily.bold, fontWeight: '700', marginBottom: 12, lineHeight: 20 },
 });

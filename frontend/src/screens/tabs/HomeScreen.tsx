@@ -21,14 +21,20 @@ import { listarGastosPorMoto } from "../../api/gastos";
 import { listarMantenimientosPorMoto } from "../../api/mantenimientos";
 import { actualizarKilometraje } from "../../api/motos";
 import { AppHeader } from "../../components/AppHeader";
+import { ScreenSectionHeader } from "../../components/ScreenSectionHeader";
 import { AppTextInput } from "../../components/AppTextInput";
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { useAppSettings } from "../../context/AppSettingsContext";
 import { useMoto } from "../../context/MotoContext";
 import { formatArs, formatDisplayDate } from "../../gastos/format";
+import {
+  requestGastosAdd,
+  requestMantenimientoAdd,
+} from "../../navigation/pendingActions";
 import type { MainTabParamList } from "../../navigation/types";
 import { fontFamily } from "../../theme/fonts";
 import { light } from "../../theme/mototrackerLight";
+import { sectionStyles } from "../../theme/sectionStyles";
 import type { Gasto, Mantenimiento } from "../../types/models";
 
 const LAST_KM_STORAGE_PREFIX = "@mototracker/lastKmDelta/";
@@ -100,14 +106,13 @@ export function HomeScreen() {
   );
 
   const openAddService = () => {
-    navigation.navigate("Mantenimiento", { openAdd: true });
+    requestMantenimientoAdd();
+    navigation.navigate("Mantenimiento");
   };
 
   const openAddInsurance = () => {
-    navigation.navigate("GastosStack", {
-      screen: "GastosAdd",
-      params: selectedMotoId ? { idMoto: selectedMotoId } : undefined,
-    });
+    requestGastosAdd(selectedMotoId ?? undefined);
+    navigation.navigate("GastosStack", { screen: "GastosHome" });
   };
 
   const onActualizarKm = async () => {
@@ -167,9 +172,16 @@ export function HomeScreen() {
       style={[styles.safe, { backgroundColor: theme.bg }]}
       edges={["top"]}
     >
-      {!kmOpen ? <AppHeader title="Inicio" /> : null}
+      {!kmOpen ? <AppHeader /> : null}
 
       <ScrollView contentContainerStyle={styles.content}>
+        {!kmOpen ? (
+          <ScreenSectionHeader
+            title="Inicio"
+            subtitle="Consultá el estado de tu moto, services, seguro y kilometraje."
+          />
+        ) : null}
+
         {selectedMoto ? (
           <>
             <View
@@ -183,14 +195,12 @@ export function HomeScreen() {
             >
               <View style={styles.statusPanelHead}>
                 <View style={styles.statusHeaderCopy}>
-                  <Text style={[styles.eyebrow, { color: theme.textMuted }]}>
-                    ESTADO DE TU MOTO
-                  </Text>
-                  <Text style={[styles.statusHeading, { color: theme.text }]}>
+                  <Text style={[sectionStyles.panelTitle, { color: theme.text }]}>
                     {selectedMoto.marca} {selectedMoto.modelo}
+                    {selectedMoto.patente ? ` · ${selectedMoto.patente}` : ''}
                   </Text>
-                  <Text style={[styles.statusSubhead, { color: theme.textMuted }]}>
-                    {selectedMoto.patente || "Sin patente registrada"}
+                  <Text style={[sectionStyles.panelSubtitle, { color: theme.textMuted }]}>
+                    Revisá el último service, pago de seguro y kilómetros recorridos.
                   </Text>
                 </View>
 
@@ -254,8 +264,11 @@ export function HomeScreen() {
                 },
               ]}
             >
-              <Text style={[styles.eyebrow, { color: theme.textMuted }]}>
-                KILOMETRAJE
+              <Text style={[sectionStyles.panelTitle, { color: theme.text }]}>
+                Kilometraje
+              </Text>
+              <Text style={[sectionStyles.panelSubtitle, { color: theme.textMuted }]}>
+                Actualizá el odómetro y seguí cuánto recorrés desde el último registro.
               </Text>
 
               <View style={styles.infoGrid}>
@@ -480,34 +493,16 @@ const styles = StyleSheet.create({
     backgroundColor: light.bg,
   },
   content: {
-    padding: 18,
     paddingBottom: 32,
   },
   kmPanel: {
+    marginHorizontal: 18,
     marginTop: 14,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: light.border,
     backgroundColor: light.surface,
     padding: 18,
-  },
-  eyebrow: {
-    color: light.textMuted,
-    fontFamily: fontFamily.semiBold,
-    fontWeight: "600",
-    fontSize: 11,
-  },
-  statusHeading: {
-    marginTop: 8,
-    color: light.text,
-    fontFamily: fontFamily.bold,
-    fontWeight: "700",
-    fontSize: 26,
-  },
-  statusSubhead: {
-    marginTop: 4,
-    color: light.textMuted,
-    fontSize: 13,
   },
   infoGrid: {
     marginTop: 18,
@@ -555,6 +550,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusPanel: {
+    marginHorizontal: 18,
     borderRadius: 8,
     borderWidth: 1,
     padding: 16,

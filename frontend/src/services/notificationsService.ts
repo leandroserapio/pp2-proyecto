@@ -3,7 +3,9 @@ import { Platform } from 'react-native';
 
 const CHANNEL_ID = 'mototracker-reminders';
 export const KILOMETERS_REMINDER_ID = 'mototracker-kilometers-reminder';
-const DEFAULT_KILOMETERS_INTERVAL_DAYS = 7;
+const KILOMETERS_REMINDER_INTERVAL_HOURS = 48;
+const KILOMETERS_REMINDER_INTERVAL_SECONDS =
+  KILOMETERS_REMINDER_INTERVAL_HOURS * 60 * 60;
 
 export type RecordatorioMotoTipo =
   | 'cambio_aceite'
@@ -58,9 +60,7 @@ export async function solicitarPermisosNotificaciones(): Promise<boolean> {
   return permitido;
 }
 
-export async function programarRecordatorioKilometros(
-  intervaloDias = DEFAULT_KILOMETERS_INTERVAL_DAYS,
-): Promise<string | null> {
+export async function programarRecordatorioKilometros(): Promise<string | null> {
   const permitido = await solicitarPermisosNotificaciones();
   if (!permitido) return null;
 
@@ -77,11 +77,25 @@ export async function programarRecordatorioKilometros(
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: intervaloDias * 24 * 60 * 60,
-      repeats: false,
+      seconds: KILOMETERS_REMINDER_INTERVAL_SECONDS,
+      repeats: true,
       channelId: CHANNEL_ID,
     },
   });
+}
+
+export async function asegurarRecordatorioKilometros(): Promise<void> {
+  const permitido = await solicitarPermisosNotificaciones();
+  if (!permitido) return;
+
+  const programadas = await obtenerNotificacionesProgramadas();
+  const yaProgramada = programadas.some(
+    (notificacion) => notificacion.identifier === KILOMETERS_REMINDER_ID,
+  );
+
+  if (yaProgramada) return;
+
+  await programarRecordatorioKilometros();
 }
 
 export async function programarRecordatorioPorFecha({

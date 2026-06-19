@@ -8,8 +8,7 @@ export type AuthStackParamList = {
 };
 
 export type GastosStackParamList = {
-  GastosHome: undefined;
-  GastosAdd: { idMoto?: number } | undefined;
+  GastosHome: { openAdd?: boolean; idMoto?: number } | undefined;
   GastosDetail: { item: GastoListNavItem };
   GastosEdit: { item: GastoListNavItem };
 };
@@ -31,12 +30,18 @@ export type ViajeListNavItem = Viaje & {
   motoLabel: string;
 };
 
+export type HomeStackParamList = {
+  Home: undefined;
+  Cuenta: undefined;
+};
+
 export type MainTabParamList = {
-  Inicio: undefined;
-  Garage: { openAdd?: boolean } | undefined;
-  GastosStack: NavigatorScreenParams<GastosStackParamList> | undefined;
-  Mantenimiento: { openAdd?: boolean } | undefined;
+  Inicio: NavigatorScreenParams<HomeStackParamList> | undefined;
+  Garage: { openAdd?: boolean; hideTabBar?: boolean } | undefined;
+  GastosStack: { hideTabBar?: boolean } | NavigatorScreenParams<GastosStackParamList> | undefined;
+  Mantenimiento: { openAdd?: boolean; hideTabBar?: boolean } | undefined;
   ViajesStack: NavigatorScreenParams<ViajesStackParamList> | undefined;
+  Ajustes: undefined;
 };
 
 
@@ -44,16 +49,11 @@ export type RootStackParamList = {
 
   Auth: undefined;
 
-  Main: undefined;
-
-  Cuenta: undefined;
-
-  Ajustes: undefined;
+  Main: NavigatorScreenParams<MainTabParamList> | undefined;
 
 };
 
 export type GastosHomeProps = NativeStackScreenProps<GastosStackParamList, 'GastosHome'>;
-export type GastosAddProps = NativeStackScreenProps<GastosStackParamList, 'GastosAdd'>;
 export type GastosDetailProps = NativeStackScreenProps<GastosStackParamList, 'GastosDetail'>;
 export type GastosEditProps = NativeStackScreenProps<GastosStackParamList, 'GastosEdit'>;
 export type ViajesHomeProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesHome'>;

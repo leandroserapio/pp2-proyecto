@@ -1,6 +1,7 @@
 // src/screens/settings/SettingsScreen.tsx
 
 import {
+  ScrollView,
   StyleSheet,
   Switch,
   Text,
@@ -9,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '../../components/AppHeader';
+import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { fontFamily } from '../../theme/fonts';
 import { light } from '../../theme/mototrackerLight';
@@ -34,9 +36,14 @@ export function SettingsScreen() {
       ]}
       edges={['top']}
     >
-      <AppHeader title="Ajustes" />
+      <AppHeader />
 
-      <View style={styles.content}>
+      <ScrollView contentContainerStyle={styles.content}>
+        <ScreenSectionHeader
+          title="Ajustes"
+          subtitle="Personalizá la apariencia y preferencias de la app."
+        />
+
         <SettingRow
           label="Modo oscuro"
           value={darkMode}
@@ -54,7 +61,7 @@ export function SettingsScreen() {
           value={reminders}
           onValueChange={setReminders}
         />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -103,8 +110,9 @@ const styles = StyleSheet.create({
     backgroundColor: light.bg,
   },
   content: {
-    flex: 1,
-    padding: 20,
+    flexGrow: 1,
+    paddingHorizontal: 18,
+    paddingBottom: 20,
   },
   row: {
     backgroundColor: light.surface,

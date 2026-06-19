@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { light } from '../../theme/mototrackerLight';
+import { sectionStyles } from '../../theme/sectionStyles';
 import { fontFamily } from '../../theme/fonts';
 import { useAuth } from '../../context/AuthContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
@@ -95,7 +96,7 @@ export default function PerfilScreen() {
       </View>
 
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <Text style={[styles.cardTitle, { color: theme.text }]}>Resumen</Text>
+        <Text style={[sectionStyles.panelTitle, { color: theme.text }]}>Resumen</Text>
 
         {loadingSummary ? <Text style={[styles.summaryState, { color: theme.textMuted }]}>Cargando resumen...</Text> : null}
         {summaryError ? <Text style={[styles.errorText, { color: theme.danger }]}>{summaryError}</Text> : null}
@@ -169,13 +170,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 1,
     borderColor: light.border,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.text,
-    marginBottom: 12,
   },
   summaryState: {
     fontSize: 14,

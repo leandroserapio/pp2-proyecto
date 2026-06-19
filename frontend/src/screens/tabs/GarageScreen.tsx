@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Alert,
   FlatList,
-  Modal,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -19,6 +19,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useMoto } from '../../context/MotoContext';
 import { crearMoto } from '../../api/motos';
 import { AppHeader } from '../../components/AppHeader';
+import { BottomSheet, type BottomSheetRef } from '../../components/BottomSheet';
+import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ApiError } from '../../api/client';
@@ -43,6 +45,7 @@ export function GarageScreen() {
   const [patente, setPatente] = useState('');
   const [kmInicial, setKmInicial] = useState('');
   const [saving, setSaving] = useState(false);
+  const sheetRef = useRef<BottomSheetRef>(null);
 
   useEffect(() => {
     if (route.params?.openAdd) {
@@ -50,6 +53,13 @@ export function GarageScreen() {
       navigation.setParams({ openAdd: false });
     }
   }, [navigation, route.params?.openAdd]);
+
+  useEffect(() => {
+    navigation.setParams({ hideTabBar: addOpen });
+    return () => {
+      navigation.setParams({ hideTabBar: false });
+    };
+  }, [addOpen, navigation]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -63,6 +73,16 @@ export function GarageScreen() {
     setAnio('');
     setPatente('');
     setKmInicial('');
+  };
+
+  const openAddMotoSheet = () => {
+    resetForm();
+    setAddOpen(true);
+  };
+
+  const handleSheetClosed = () => {
+    setAddOpen(false);
+    resetForm();
   };
 
   const onAddMoto = async () => {
@@ -92,9 +112,8 @@ export function GarageScreen() {
         patente: patente.trim() || undefined,
         kilometrajeActual: parsedKm,
       });
-      resetForm();
-      setAddOpen(false);
       await refreshMotos();
+      sheetRef.current?.close();
     } catch (e) {
       const msg = e instanceof ApiError ? e.message : 'No se pudo agregar la moto';
       Alert.alert('Error', msg);
@@ -129,33 +148,53 @@ export function GarageScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
-      {!addOpen ? <AppHeader subtitle={`Hola, ${user?.nombre ?? 'usuario'}`} /> : null}
-
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: theme.text }]}>Mis motos</Text>
-        <Pressable
-          accessibilityRole="button"
-          style={[styles.addMotoButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
-          onPress={() => setAddOpen(true)}
-        >
-          <Ionicons name="add-circle" size={24} color={theme.primary} />
-          <Text style={[styles.addMotoText, { color: theme.primary }]}>Agregar moto</Text>
-        </Pressable>
-      </View>
+      <AppHeader />
 
       {motos.length === 0 && !loading ? (
-        <View style={styles.emptyWrap}>
-          <Ionicons name="bicycle-outline" size={64} color={theme.border} />
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>No tenes motos registradas</Text>
-          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Agrega tu primera moto para empezar a registrar gastos y mas.</Text>
-          <PrimaryButton title="Agregar moto" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
-        </View>
+        <ScrollView contentContainerStyle={styles.emptyScroll}>
+          <ScreenSectionHeader
+            title="Mis motos"
+            subtitle="Registrá, seleccioná y administrá tus motos."
+            action={
+              <Pressable
+                accessibilityRole="button"
+                style={[styles.addMotoButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                onPress={openAddMotoSheet}
+              >
+                <Ionicons name="add-circle" size={24} color={theme.primary} />
+                <Text style={[styles.addMotoText, { color: theme.primary }]}>Agregar moto</Text>
+              </Pressable>
+            }
+          />
+          <View style={styles.emptyWrap}>
+            <Ionicons name="bicycle-outline" size={64} color={theme.border} />
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>No tenes motos registradas</Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Agrega tu primera moto para empezar a registrar gastos y mas.</Text>
+            <PrimaryButton title="Agregar moto" variant="blue" onPress={openAddMotoSheet} style={styles.emptyBtn} />
+          </View>
+        </ScrollView>
       ) : (
         <FlatList
           data={motos}
           keyExtractor={(m) => String(m.idMoto)}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
           contentContainerStyle={styles.list}
+          ListHeaderComponent={
+            <ScreenSectionHeader
+              title="Mis motos"
+              subtitle="Registrá, seleccioná y administrá tus motos."
+              action={
+                <Pressable
+                  accessibilityRole="button"
+                  style={[styles.addMotoButton, { backgroundColor: theme.surface, borderColor: theme.border }]}
+                  onPress={openAddMotoSheet}
+                >
+                  <Ionicons name="add-circle" size={24} color={theme.primary} />
+                  <Text style={[styles.addMotoText, { color: theme.primary }]}>Agregar moto</Text>
+                </Pressable>
+              }
+            />
+          }
           renderItem={({ item }) => {
             const isSelected = item.idMoto === selectedMotoId;
             return (
@@ -196,35 +235,25 @@ export function GarageScreen() {
         />
       )}
 
-      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => setAddOpen(false)}>
-        <View style={styles.modalRoot}>
-          <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => setAddOpen(false)} />
-          <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>Agregar moto</Text>
-            <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marca} onChangeText={setMarca} />
-            <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modelo} onChangeText={setModelo} />
-            <AppTextInput label="Anio" variant="light" placeholder="Ej: 2023" keyboardType="number-pad" value={anio} onChangeText={setAnio} />
-            <AppTextInput label="Patente" variant="light" placeholder="Ej: A123BCD" value={patente} onChangeText={setPatente} />
-            <AppTextInput label="Kilometraje actual" variant="light" placeholder="0" keyboardType="number-pad" value={kmInicial} onChangeText={setKmInicial} />
-            <PrimaryButton title="Guardar" variant="blue" loading={saving} onPress={onAddMoto} style={styles.saveBtn} />
-          </View>
-        </View>
-      </Modal>
+      <BottomSheet
+        ref={sheetRef}
+        visible={addOpen}
+        title="Agregar moto"
+        onClose={handleSheetClosed}
+      >
+        <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marca} onChangeText={setMarca} />
+        <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modelo} onChangeText={setModelo} />
+        <AppTextInput label="Anio" variant="light" placeholder="Ej: 2023" keyboardType="number-pad" value={anio} onChangeText={setAnio} />
+        <AppTextInput label="Patente" variant="light" placeholder="Ej: A123BCD" value={patente} onChangeText={setPatente} />
+        <AppTextInput label="Kilometraje actual" variant="light" placeholder="0" keyboardType="number-pad" value={kmInicial} onChangeText={setKmInicial} />
+        <PrimaryButton title="Guardar" variant="blue" loading={saving} onPress={onAddMoto} style={styles.saveBtn} />
+      </BottomSheet>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-    paddingHorizontal: 18,
-    marginBottom: 8,
-  },
-  sectionTitle: { fontSize: 22, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
   addMotoButton: {
     minHeight: 40,
     flexDirection: 'row',
@@ -238,11 +267,13 @@ const styles = StyleSheet.create({
   },
   addMotoText: { color: light.primary, fontSize: 13, fontFamily: fontFamily.bold, fontWeight: '700' },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 },
+  emptyScroll: { flexGrow: 1 },
   emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
   emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
-  list: { paddingHorizontal: 18, paddingBottom: 30 },
+  list: { paddingBottom: 30 },
   motoCard: {
+    marginHorizontal: 18,
     backgroundColor: light.surface,
     borderRadius: 12,
     padding: 16,
@@ -258,16 +289,5 @@ const styles = StyleSheet.create({
   infoPill: { flex: 1, backgroundColor: light.bg, borderRadius: 10, padding: 10 },
   infoLabel: { fontSize: 10, fontFamily: fontFamily.bold, fontWeight: '700', color: light.textMuted },
   infoValue: { marginTop: 4, fontSize: 14, fontFamily: fontFamily.bold, fontWeight: '700', color: light.navy },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
-  modalSheet: {
-    backgroundColor: light.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: light.border,
-  },
-  modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
   saveBtn: { marginTop: 4 },
 });
