@@ -36,7 +36,6 @@ import { loadViajesItems, motoLabel } from '../../viajes/viajesLoader';
 import {
   CONTENT_MAX_WIDTH,
   getCenteredContentStyle,
-  getResponsiveFabRight,
 } from '../../theme/responsive';
 
 type Nav = NativeStackNavigationProp<ViajesStackParamList>;
@@ -48,7 +47,6 @@ export function ViajesListScreen() {
   const { motos, loading: motosLoading } = useMoto();
   const { theme } = useAppSettings();
   const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
-  const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
   const [items, setItems] = useState<ViajeListNavItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -124,19 +122,11 @@ export function ViajesListScreen() {
   };
 
   const topBlock = (
-<<<<<<< HEAD
     <>
       <ScreenSectionHeader
         title="Viajes"
         subtitle="Planificá salidas con destino, km estimados y presupuesto."
       />
-=======
-    <View style={contentFrame}>
-      <View style={styles.sectionHead}>
-        <Text style={[styles.pageTitle, { color: theme.text }]}>Viajes</Text>
-      </View>
-      <Text style={[styles.filterLabel, { color: theme.textMuted }]}>Filtrar por moto</Text>
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
       <Pressable
         ref={filterSelectWrapRef}
         style={[
@@ -158,7 +148,6 @@ export function ViajesListScreen() {
           });
         }}
       >
-<<<<<<< HEAD
         <Text style={[sectionStyles.filterInlineLabel, { color: theme.textMuted }]}>
           Filtrar por moto
         </Text>
@@ -168,12 +157,8 @@ export function ViajesListScreen() {
           </Text>
           <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
         </View>
-=======
-        <Text style={[styles.filterText, { color: theme.text }]} numberOfLines={1}>{filtroDisplay}</Text>
-        <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
       </Pressable>
-    </View>
+    </>
   );
 
   return (
@@ -225,11 +210,7 @@ export function ViajesListScreen() {
             ListHeaderComponent={topBlock}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             style={styles.list}
-<<<<<<< HEAD
             contentContainerStyle={{ paddingBottom: FAB_SCROLL_PADDING }}
-=======
-            contentContainerStyle={[contentFrame, { paddingBottom: 120 + insets.bottom }]}
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
             renderItem={({ item }) => {
               const badge = getViajeEstadoBadge(item.estado, theme);
               return (
@@ -306,16 +287,6 @@ export function ViajesListScreen() {
               </View>
             }
           />
-<<<<<<< HEAD
-=======
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.fab, { bottom: 24 + insets.bottom, right: fabRight, backgroundColor: theme.primary }]}
-            onPress={() => navigation.navigate('ViajesAdd', {})}
-          >
-            <Ionicons name="add" size={30} color={theme.onPrimary} />
-          </Pressable>
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
         </View>
       )}
 
@@ -417,10 +388,6 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
   filterText: {
     flex: 1,
-<<<<<<< HEAD
-=======
-    marginRight: 8,
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
     fontSize: 15,
     fontFamily: fontFamily.medium,
     fontWeight: '500',
@@ -553,23 +520,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontFamily: fontFamily.regular,
   },
-<<<<<<< HEAD
-=======
-  fab: {
-    position: 'absolute',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: light.navy,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
   filterMenuOverlay: { flex: 1 },
   filterMenuBackdrop: {
     ...StyleSheet.absoluteFillObject,

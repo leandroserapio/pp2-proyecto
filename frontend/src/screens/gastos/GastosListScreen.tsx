@@ -569,31 +569,6 @@ export function GastosListScreen() {
             }}
           />
 
-<<<<<<< HEAD
-=======
-          <Pressable
-            style={[
-              styles.fab,
-              {
-                bottom: 24 + insets.bottom,
-                right: fabRight,
-                backgroundColor: theme.primary,
-              }
-            ]}
-            onPress={() =>
-              navigation.navigate('GastosAdd', {})
-            }
-          >
-
-            <Ionicons
-              name="add"
-              size={30}
-              color={theme.onPrimary}
-            />
-
-          </Pressable>
-
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
         </View>
 
       )}
@@ -1012,7 +987,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-<<<<<<< HEAD
   saveBtn: { marginTop: 4 },
   formLabel: {
     fontSize: 13,
@@ -1024,14 +998,6 @@ const styles = StyleSheet.create({
   },
   formMotoSelector: {
     flexDirection: 'row',
-=======
-  fab: {
-    position: 'absolute',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: light.primary,
->>>>>>> 3cccd4841c4b236e5c91fdfaa79d5f36ddc538c7
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: light.bg,
