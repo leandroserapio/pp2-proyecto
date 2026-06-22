@@ -1,9 +1,12 @@
 // src/components/AppDrawerMenu.tsx
 
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useEffect, useRef } from 'react';
 import {
   Alert,
+  Animated,
+  Easing,
   Modal,
   Platform,
   Pressable,
@@ -17,20 +20,18 @@ import { useAuth } from '../context/AuthContext';
 import { useAppSettings } from '../context/AppSettingsContext';
 import { fontFamily } from '../theme/fonts';
 import { light } from '../theme/mototrackerLight';
-import { isTabletWidth } from '../theme/responsive';
 
 type Props = {
   visible: boolean;
   onClose: () => void;
 };
 
-type MenuRoute = 'Ajustes' | 'Garage' | 'Inicio';
+type MenuRoute = 'Ajustes' | 'Inicio' | 'Garage' | 'GastosStack' | 'Mantenimiento' | 'ViajesStack';
 
 const menuItems: Array<{
   icon: keyof typeof Ionicons.glyphMap;
   label: string;
   route: MenuRoute;
-  secondaryIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
 }> = [
   {
     icon: 'home-outline',
@@ -38,10 +39,24 @@ const menuItems: Array<{
     route: 'Inicio',
   },
   {
-    icon: 'add-circle-outline',
+    icon: 'bicycle-outline',
     label: 'Garage',
     route: 'Garage',
-    secondaryIcon: 'motorbike',
+  },
+  {
+    icon: 'cash-outline',
+    label: 'Gastos',
+    route: 'GastosStack',
+  },
+  {
+    icon: 'construct-outline',
+    label: 'Servicios',
+    route: 'Mantenimiento',
+  },
+  {
+    icon: 'map-outline',
+    label: 'Viajes',
+    route: 'ViajesStack',
   },
   {
     icon: 'settings-outline',
@@ -50,17 +65,78 @@ const menuItems: Array<{
   },
 ];
 
+const MENU_WIDTH_RATIO = 0.82;
+const OPEN_DURATION_MS = 260;
+const CLOSE_DURATION_MS = 220;
+
 export function AppDrawerMenu({ visible, onClose }: Props) {
   const navigation = useNavigation<any>();
   const { logout, user } = useAuth();
   const { theme } = useAppSettings();
-  const { width } = useWindowDimensions();
-  const tablet = isTabletWidth(width);
+  const { width: screenWidth } = useWindowDimensions();
+  const menuWidth = Math.round(screenWidth * MENU_WIDTH_RATIO);
+  const userName = user?.nombre?.trim() || 'Usuario';
+  const userInitial = userName.charAt(0).toUpperCase();
+  const slideAnim = useRef(new Animated.Value(-menuWidth)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const isClosingRef = useRef(false);
+
+  useEffect(() => {
+    if (!visible) {
+      isClosingRef.current = false;
+      slideAnim.setValue(-menuWidth);
+      fadeAnim.setValue(0);
+      return;
+    }
+
+    isClosingRef.current = false;
+    slideAnim.setValue(-menuWidth);
+    fadeAnim.setValue(0);
+
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: OPEN_DURATION_MS,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: OPEN_DURATION_MS,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [visible, menuWidth, slideAnim, fadeAnim]);
+
+  function closeWithAnimation(afterClose?: () => void) {
+    if (isClosingRef.current) {
+      return;
+    }
+
+    isClosingRef.current = true;
+
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: -menuWidth,
+        duration: CLOSE_DURATION_MS,
+        easing: Easing.in(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: CLOSE_DURATION_MS,
+        useNativeDriver: true,
+      }),
+    ]).start(({ finished }) => {
+      if (finished) {
+        onClose();
+        afterClose?.();
+      }
+    });
+  }
 
   function goTo(routeName: MenuRoute) {
-    onClose();
-
-    if (routeName === 'Inicio' || routeName === 'Garage') {
+    closeWithAnimation(() => {
       navigation.dispatch(
         CommonActions.navigate({
           name: 'Main',
@@ -70,14 +146,10 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
           },
         }),
       );
-      return;
-    }
-
-    navigation.dispatch(CommonActions.navigate(routeName));
+    });
   }
 
   async function doLogout() {
-    onClose();
     await logout();
   }
 
@@ -89,7 +161,9 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
           : true;
 
       if (confirmed) {
-        void doLogout();
+        closeWithAnimation(() => {
+          void doLogout();
+        });
       }
 
       return;
@@ -106,8 +180,10 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
         {
           text: 'Cerrar sesión',
           style: 'destructive',
-          onPress: async () => {
-            await doLogout();
+          onPress: () => {
+            closeWithAnimation(() => {
+              void doLogout();
+            });
           },
         },
       ],
@@ -118,82 +194,73 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
     <Modal
       visible={visible}
       transparent
-      animationType="slide"
-      onRequestClose={onClose}
+      animationType="none"
+      onRequestClose={() => closeWithAnimation()}
     >
-      <View style={[styles.overlay, { backgroundColor: theme.overlayStrong }]}>
-        <View style={[
-          styles.menu,
-          tablet && styles.menuTablet,
-          {
-            backgroundColor: theme.surface,
-          }
-        ]}>
-          <View style={styles.header}>
-            <View>
-              <Text
-                numberOfLines={1}
-                style={[
-                styles.title,
-                {
-                  color: theme.primary
-                }
-              ]}
-              >
-                MotoTracker
-              </Text>
-              <Text
-                numberOfLines={1}
-                style={[
-                styles.subtitle,
-                {
-                  color: theme.textMuted
-                }
-              ]}
-              >
-                {user?.nombre ?? 'Usuario'}
+      <View style={styles.overlay}>
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.backdrop,
+            {
+              backgroundColor: theme.overlayStrong,
+              opacity: fadeAnim,
+            },
+          ]}
+        />
+
+        <Pressable
+          accessibilityRole="button"
+          style={styles.backdropPressable}
+          onPress={() => closeWithAnimation()}
+        />
+
+        <Animated.View
+          style={[
+            styles.menu,
+            {
+              width: menuWidth,
+              backgroundColor: theme.surface,
+              transform: [{ translateX: slideAnim }],
+            },
+          ]}
+        >
+          <View style={[styles.profileCard, { backgroundColor: theme.primary }]}>
+            <View style={[styles.avatar, { backgroundColor: theme.surfaceMuted }]}>
+              <Text style={[styles.avatarText, { color: theme.text }]}>
+                {userInitial}
               </Text>
             </View>
-
-            <Pressable
-              accessibilityRole="button"
-              hitSlop={10}
-              onPress={onClose}
-            >
-              <Ionicons
-                name="close"
-                size={26}
-                color={theme.text}
-              />
-            </Pressable>
+            <View style={styles.profileTextWrap}>
+              <Text style={[styles.title, { color: theme.onPrimary }]}>
+                MotoTracker
+              </Text>
+              <Text style={[styles.subtitle, { color: theme.onPrimaryMuted }]}>
+                {userName}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.items}>
+            <Text style={[styles.sectionLabel, { color: theme.textMuted }]}>Navegación</Text>
             {menuItems.map((item) => (
               <Pressable
                 key={item.route}
                 style={({ pressed }) => [
                   styles.item,
                   {
-                    backgroundColor: pressed ? theme.bg : 'transparent',
+                    borderColor: theme.border,
+                    backgroundColor: pressed ? theme.primarySoft : theme.surface,
                   }
                 ]}
                 onPress={() => goTo(item.route)}
               >
                 <View style={styles.itemIconWrap}>
-                  {item.secondaryIcon ? (
-                    <MaterialCommunityIcons
-                      name={item.secondaryIcon}
-                      size={22}
-                      color={theme.primary}
-                    />
-                  ) : (
-                    <Ionicons
-                      name={item.icon}
-                      size={22}
-                      color={theme.primary}
-                    />
-                  )}
+                  <Ionicons
+                    name={item.icon}
+                    size={20}
+                    color={theme.primary}
+                  />
                 </View>
 
                 <Text style={[
@@ -208,20 +275,39 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
             ))}
           </View>
 
-          <Pressable
-            style={[styles.logoutButton, { backgroundColor: theme.danger }]}
-            onPress={cerrarSesion}
-          >
-            <Ionicons
-              name="log-out-outline"
-              size={22}
-              color={theme.onPrimary}
-            />
-            <Text style={[styles.logoutText, { color: theme.onPrimary }]}>
-              Cerrar sesión
-            </Text>
-          </Pressable>
-        </View>
+          <View style={[styles.footer, { borderTopColor: theme.border }]}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.logoutButton,
+                {
+                  borderColor: theme.danger,
+                  backgroundColor: pressed ? theme.danger : theme.dangerSoft,
+                },
+              ]}
+              onPress={cerrarSesion}
+            >
+              {({ pressed }) => (
+                <>
+                  <Ionicons
+                    name="log-out-outline"
+                    size={20}
+                    color={pressed ? theme.onPrimary : theme.danger}
+                  />
+                  <Text
+                    style={[
+                      styles.logoutText,
+                      {
+                        color: pressed ? theme.onPrimary : theme.danger,
+                      },
+                    ]}
+                  >
+                    Cerrar sesión
+                  </Text>
+                </>
+              )}
+            </Pressable>
+          </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -230,30 +316,60 @@ export function AppDrawerMenu({ visible, onClose }: Props) {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: light.overlayStrong,
+    overflow: 'hidden',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  backdropPressable: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1,
   },
   menu: {
-    width: '82%',
-    maxWidth: 360,
-    height: '100%',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
     backgroundColor: light.surface,
-    paddingTop: 60,
-    paddingHorizontal: 18,
-    paddingBottom: 24,
+    paddingTop: 52,
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    zIndex: 2,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
   },
-  menuTablet: {
-    width: 360,
-  },
-  header: {
+  profileCard: {
+    minHeight: 74,
+    marginBottom: 26,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 28,
+    alignItems: 'center',
+    gap: 10,
   },
-  title: {
-    fontSize: 24,
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 17,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
+  },
+  profileTextWrap: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
     color: light.primary,
   },
   subtitle: {
@@ -263,19 +379,28 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.regular,
   },
   items: {
-    gap: 4,
+    gap: 10,
+  },
+  sectionLabel: {
+    fontSize: 12,
+    letterSpacing: 0.3,
+    textTransform: 'uppercase',
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   item: {
     minHeight: 50,
-    borderRadius: 8,
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 12,
   },
   itemIconWrap: {
-    width: 34,
+    width: 30,
     alignItems: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   itemText: {
     flex: 1,
@@ -284,20 +409,24 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.semiBold,
     fontWeight: '600',
   },
+  footer: {
+    marginTop: 'auto',
+    paddingTop: 18,
+    borderTopWidth: 1,
+  },
   logoutButton: {
     minHeight: 50,
-    marginTop: 'auto',
-    borderRadius: 8,
-    backgroundColor: light.danger,
+    borderRadius: 12,
+    borderWidth: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   logoutText: {
-    color: light.onPrimary,
+    color: light.textMuted,
     fontSize: 15,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
   },
 });

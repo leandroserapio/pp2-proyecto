@@ -2,7 +2,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { fontFamily } from '../theme/fonts';
 import { useAppSettings } from '../context/AppSettingsContext';
 import type { GastosStackParamList } from './types';
-import { GastosAddScreen } from '../screens/gastos/GastosAddScreen';
 import { GastosDetailScreen } from '../screens/gastos/GastosDetailScreen';
 import { GastosEditScreen } from '../screens/gastos/GastosEditScreen';
 import { GastosListScreen } from '../screens/gastos/GastosListScreen';
@@ -26,11 +25,13 @@ export function GastosStackNavigator() {
           fontSize: 17,
           color: theme.primary,
         },
+        headerRightContainerStyle: {
+          paddingRight: 16,
+        },
         contentStyle: { backgroundColor: theme.bg },
       }}
     >
       <Stack.Screen name="GastosHome" component={GastosListScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="GastosAdd" component={GastosAddScreen} options={{ title: 'Agregar Gasto' }} />
       <Stack.Screen name="GastosDetail" component={GastosDetailScreen} options={{ title: 'Gastos' }} />
       <Stack.Screen name="GastosEdit" component={GastosEditScreen} options={{ title: 'Editar Gasto' }} />
     </Stack.Navigator>

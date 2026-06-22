@@ -11,19 +11,21 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
-import type { RouteProp } from '@react-navigation/native';
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
+import { BottomSheet, type BottomSheetRef } from '../../components/BottomSheet';
+import { FAB_SCROLL_PADDING, ScreenFab, ScreenRoot } from '../../components/ScreenFab';
+import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
+import { sectionStyles } from '../../theme/sectionStyles';
 import { AppTextInput } from '../../components/AppTextInput';
 import { DatePickerField, parseIsoDate, toIsoLocal } from '../../components/DatePickerField';
 import { PrimaryButton } from '../../components/PrimaryButton';
@@ -39,15 +41,10 @@ import { formatDisplayDate } from '../../gastos/format';
 import type { Mantenimiento, Moto } from '../../types/models';
 import type { MainTabParamList } from '../../navigation/types';
 import {
-  CONTENT_MAX_WIDTH,
-  FORM_MAX_WIDTH,
-  getCenteredContentStyle,
-  getResponsiveFabRight,
-  getResponsivePadding,
-} from '../../theme/responsive';
+  consumeMantenimientoAddRequest,
+} from '../../navigation/pendingActions';
 
 type Nav = BottomTabNavigationProp<MainTabParamList, 'Mantenimiento'>;
-type R = RouteProp<MainTabParamList, 'Mantenimiento'>;
 
 function formatMotoDisplayName(moto: Moto): string {
   return motoLabel(moto)
@@ -64,14 +61,10 @@ function formatMotoDisplayName(moto: Moto): string {
 
 export function MantenimientoTabScreen() {
   const navigation = useNavigation<Nav>();
-  const route = useRoute<R>();
   const { motos, selectedMoto, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
   const insets = useSafeAreaInsets();
-  const { width } = useWindowDimensions();
-  const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
-  const modalFrame = getCenteredContentStyle(width, FORM_MAX_WIDTH);
-  const pagePadding = getResponsivePadding(width);
+  const sheetRef = useRef<BottomSheetRef>(null);
   const [allItems, setAllItems] = useState<(Mantenimiento & { idMoto: number })[]>([]);
   const [filtro, setFiltro] = useState<number | 'todas'>('todas');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -125,8 +118,6 @@ export function MantenimientoTabScreen() {
   const motoIdParaGuardar = motoIdForm ?? selectedMotoId;
   const empty = items.length === 0 && !loading;
   const dropdownBottomGap = 112 + insets.bottom;
-  const fabBottom = 36 + insets.bottom;
-  const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
 
   useFocusEffect(
     useCallback(() => {
@@ -149,14 +140,37 @@ export function MantenimientoTabScreen() {
     setMotoIdForm(selectedMotoId ?? null);
   };
 
-  useEffect(() => {
-    if (!route.params?.openAdd) return;
+  const selectedMotoIdRef = useRef(selectedMotoId);
+  selectedMotoIdRef.current = selectedMotoId;
 
-    resetForm();
+  useFocusEffect(
+    useCallback(() => {
+      if (!consumeMantenimientoAddRequest()) return;
+
+      setTipo('');
+      setDescripcion('');
+      setFecha(new Date());
+      setKm('');
+      setCosto('');
+      setMotoIdForm(selectedMotoIdRef.current ?? null);
+      setEditItem(null);
+      setAddOpen(true);
+    }, []),
+  );
+
+  useEffect(() => {
+    navigation.setParams({ hideTabBar: addOpen });
+    return () => {
+      navigation.setParams({ hideTabBar: false });
+    };
+  }, [addOpen, navigation]);
+
+  const handleSheetClosed = useCallback(() => {
+    setAddOpen(false);
     setEditItem(null);
-    setAddOpen(true);
-    navigation.setParams({ openAdd: undefined });
-  }, [navigation, route.params?.openAdd, selectedMotoId]);
+    setMotoSelectorOpen(false);
+    resetForm();
+  }, [selectedMotoId]);
 
   const openEdit = (item: Mantenimiento & { idMoto: number }) => {
     setEditItem(item);
@@ -207,10 +221,8 @@ const onSave = async () => {
         costo: parsedCosto,
       });
     }
-    resetForm();
-    setEditItem(null);
-    setAddOpen(false);
     await reload();
+    sheetRef.current?.close();
   } catch (e) {
     const msg = e instanceof ApiError ? e.message : 'No se pudo guardar';
     Alert.alert('Error', msg);
@@ -245,74 +257,82 @@ const confirmDelete = async (m: Mantenimiento) => {
   if (!selectedMoto) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
-        {!addOpen ? <AppHeader title="Servicios" /> : null}
-        <View style={[styles.emptyWrap, contentFrame, { paddingHorizontal: pagePadding, paddingBottom: 28 + insets.bottom }]}>
-          <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
-              <Ionicons name="bicycle-outline" size={40} color={theme.textMuted} />
-            </View>
+        <AppHeader />
+        <ScrollView contentContainerStyle={styles.emptyScroll}>
+          <ScreenSectionHeader
+            title="Mantenimiento"
+            subtitle="Registrá services, cambios de aceite, frenos y más."
+          />
+          <View style={styles.emptyWrap}>
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin moto seleccionada</Text>
             <Text style={[styles.emptySub, { color: theme.textMuted }]}>Selecciona una moto desde Garage.</Text>
           </View>
-        </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
-      {!addOpen ? <AppHeader title="Servicios" /> : null}
-
-      <View style={contentFrame}>
-        <View style={[styles.sectionHead, { paddingHorizontal: pagePadding }]}>
-          <Text style={[styles.pageTitle, { color: theme.text }]}>Mantenimiento</Text>
+  const topBlock = (
+    <>
+      <ScreenSectionHeader
+        title="Mantenimiento"
+        subtitle="Registrá services, cambios de aceite, frenos y más."
+      />
+      <Pressable
+        ref={filterSelectWrapRef}
+        style={[
+          sectionStyles.filterRow,
+          filterOpen && styles.filterRowOpen,
+          { backgroundColor: theme.surface, borderColor: filterOpen ? theme.primary : theme.border },
+        ]}
+        onPress={() => {
+          if (filterOpen) { setFilterOpen(false); setFilterMenuRect(null); return; }
+          filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
+            setFilterMenuRect({ x, y, width, height });
+            setFilterOpen(true);
+          });
+        }}
+      >
+        <Text style={[sectionStyles.filterInlineLabel, { color: theme.textMuted }]}>
+          Filtrar por moto
+        </Text>
+        <View style={sectionStyles.filterValueRow}>
+          <Text style={[styles.filterText, { color: theme.text }]} numberOfLines={1}>
+            {filtroDisplay}
+          </Text>
+          <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={light.textMuted} />
         </View>
-        <Text style={[styles.filterLabel, { color: theme.textMuted, marginHorizontal: pagePadding }]}>Filtrar por moto</Text>
-        <Pressable
-          ref={filterSelectWrapRef}
-          style={[
-            styles.filterRow,
-            {
-              backgroundColor: theme.surface,
-              borderColor: filterOpen ? theme.primary : theme.border,
-              marginHorizontal: pagePadding,
-            },
-          ]}
-          onPress={() => {
-            if (filterOpen) { setFilterOpen(false); setFilterMenuRect(null); return; }
-            filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
-              setFilterMenuRect({ x, y, width, height });
-              setFilterOpen(true);
-            });
-          }}
-        >
-          <Text style={[styles.filterText, { color: theme.text }]} numberOfLines={1}>{filtroDisplay}</Text>
-          <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
-        </Pressable>
-      </View>
+      </Pressable>
+    </>
+  );
 
-      {empty ? (
-        <View style={[styles.emptyWrap, contentFrame, { paddingHorizontal: pagePadding, paddingBottom: 28 + insets.bottom }]}>
-          <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
-              <Ionicons name="construct-outline" size={40} color={theme.textMuted} />
-            </View>
+  return (
+    <ScreenRoot>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
+      <AppHeader />
+
+      {items.length === 0 && !loading ? (
+        <ScrollView contentContainerStyle={styles.emptyScroll}>
+          {topBlock}
+          <View style={styles.emptyWrap}>
+            <Ionicons name="construct-outline" size={64} color={theme.border} />
             <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin mantenimientos</Text>
             <Text style={[styles.emptySub, { color: theme.textMuted }]}>Registra services, cambios de aceite, frenos y mas.</Text>
             <PrimaryButton title="Agregar" variant="blue" onPress={() => { resetForm(); setAddOpen(true); }} style={styles.emptyBtn} />
           </View>
-        </View>
+        </ScrollView>
       ) : (
         <View style={styles.listWrap}>
           <FlatList
             data={items}
             keyExtractor={(m) => String(m.idMantenimiento)}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            contentContainerStyle={[contentFrame, { paddingBottom: 136 + insets.bottom, paddingTop: 2 }]}
+            contentContainerStyle={{ paddingBottom: FAB_SCROLL_PADDING }}
+            ListHeaderComponent={topBlock}
           renderItem={({ item }) => (
             <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
               <View style={styles.cardTopRow}>
-                <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>{item.tipo}</Text>
+                <Text style={[sectionStyles.listCardTitle, { color: theme.text, flex: 1 }]}>{item.tipo}</Text>
                 <View style={styles.cardIconActions}>
                   <Pressable onPress={() => openEdit(item)} hitSlop={8}>
                     <Ionicons name="create-outline" size={17} color={theme.textMuted} />
@@ -337,21 +357,15 @@ const confirmDelete = async (m: Mantenimiento) => {
             </View>
           )}
           />
-          <Pressable
-            accessibilityRole="button"
-            style={[styles.fab, { bottom: fabBottom, right: fabRight, backgroundColor: theme.primary }]}
-            onPress={() => { resetForm(); setAddOpen(true); }}
-          >
-            <Ionicons name="add" size={30} color={theme.onPrimary} />
-          </Pressable>
         </View>
       )}
 
-      <Modal visible={addOpen} transparent animationType="slide" onRequestClose={() => { setAddOpen(false); setEditItem(null); resetForm(); }}>
-        <View style={styles.modalRoot}>
-          <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => { setAddOpen(false); setEditItem(null); resetForm(); }} />
-          <View style={[styles.modalSheet, modalFrame, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>{editItem ? 'Editar Mantenimiento' : 'Agregar Mantenimiento'}</Text>
+      <BottomSheet
+        ref={sheetRef}
+        visible={addOpen}
+        title={editItem ? 'Editar Mantenimiento' : 'Agregar Mantenimiento'}
+        onClose={handleSheetClosed}
+      >
             <AppTextInput label="Tipo *" variant="light" placeholder="Ej: Aceite, Service, Frenos" value={tipo} onChangeText={setTipo} />
 
             <Text style={[styles.formLabel, { color: theme.text }]}>Moto</Text>
@@ -436,9 +450,7 @@ const confirmDelete = async (m: Mantenimiento) => {
             </View>
 
             <PrimaryButton title="Guardar Mantenimiento" variant="blue" loading={saving} onPress={onSave} style={styles.saveBtn} />
-          </View>
-        </View>
-      </Modal>
+      </BottomSheet>
 
       <Modal
         visible={filterOpen}
@@ -510,49 +522,24 @@ const confirmDelete = async (m: Mantenimiento) => {
       </View>
       </Modal>
     </SafeAreaView>
+
+    <ScreenFab
+      visible={items.length > 0 && !addOpen}
+      onPress={() => { resetForm(); setAddOpen(true); }}
+      backgroundColor={theme.primary}
+      iconColor={theme.onPrimary}
+    />
+    </ScreenRoot>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
-  header: { paddingHorizontal: 18, paddingBottom: 10 },
-  title: { fontSize: 24, fontFamily: fontFamily.bold, fontWeight: '800', color: light.text, marginTop: 12 },
-  subtitle: { fontSize: 14, color: light.textMuted, marginTop: 4 },
-  sectionHead: {
-    paddingHorizontal: 18,
-    marginTop: 16,
-  },
-  pageTitle: {
-    fontSize: 28,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.navy,
-  },
-  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 },
-  emptyCard: {
-    flex: 1,
-    width: '100%',
-    marginTop: 8,
-    marginBottom: 24,
-    backgroundColor: light.surfaceMuted,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 48,
-  },
-  emptyIconCircle: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: light.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: { marginTop: 20, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
-  emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22, marginBottom: 22, fontSize: 15 },
-  emptyBtn: { alignSelf: 'stretch', marginHorizontal: 18 },
+  emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  emptyScroll: { flexGrow: 1 },
+  emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
+  emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
+  emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
   listWrap: { flex: 1 },
   card: {
     marginHorizontal: 18,
@@ -565,43 +552,13 @@ const styles = StyleSheet.create({
   },
   cardTopRow: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 2 },
   cardIconActions: { flexDirection: 'row', gap: 12, marginLeft: 8 },
-  cardTitle: { fontSize: 17, fontFamily: fontFamily.bold, fontWeight: '700', color: light.navy, flex: 1 },
   cardDesc: { fontSize: 14, fontFamily: fontFamily.regular, color: light.textMuted, marginBottom: 6, lineHeight: 20 },
   cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: light.border, paddingTop: 8 },
   cardFooterLeft: { flexDirection: 'column', gap: 2 },
   cardDate: { fontSize: 13, fontFamily: fontFamily.regular, color: light.textMuted },
   cardKm: { fontSize: 16, fontFamily: fontFamily.bold, fontWeight: '700', color: light.navy },
   cardCosto: { fontSize: 16, fontFamily: fontFamily.bold, fontWeight: '700', color: light.primary },
-  fab: {
-    position: 'absolute',
-    right: 22,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: light.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 4,
-    shadowColor: light.navy,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-  },
-  modalRoot: { flex: 1, justifyContent: 'flex-end' },
-  modalBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: light.overlay },
-  modalSheet: {
-    backgroundColor: light.surface,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    maxHeight: '80%',
-    borderWidth: 1,
-    borderColor: light.border,
-  },
-  modalTitle: { fontSize: 18, fontWeight: '800', color: light.text, marginBottom: 14, fontFamily: fontFamily.bold },
   saveBtn: { marginTop: 4 },
-  filterLabel: { fontSize: 13, fontFamily: fontFamily.medium, fontWeight: '500', color: light.textMuted, marginHorizontal: 18, marginBottom: 8, marginTop: 14 },
-  filterRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, backgroundColor: light.surface, borderRadius: 12, borderWidth: 1, borderColor: light.border, paddingHorizontal: 14, paddingVertical: 12, marginHorizontal: 18, marginBottom: 14 },
   filterRowOpen: { borderColor: light.primary },
   filterText: { flex: 1, fontSize: 15, fontFamily: fontFamily.medium, fontWeight: '500', color: light.textMuted },
   filterMenuOverlay: { flex: 1 },

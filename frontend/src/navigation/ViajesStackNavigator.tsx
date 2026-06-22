@@ -26,6 +26,9 @@ export function ViajesStackNavigator() {
           fontSize: 17,
           color: theme.primary,
         },
+        headerRightContainerStyle: {
+          paddingRight: 16,
+        },
         contentStyle: { backgroundColor: theme.bg },
       }}
     >

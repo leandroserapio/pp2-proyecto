@@ -41,6 +41,7 @@ export function ViajesDetailScreen() {
       headerRight: () => (
         <Pressable
           accessibilityRole="button"
+          style={styles.headerMenuButton}
           onPress={() => {
             Alert.alert('Viaje', '¿Qué querés hacer?', [
               { text: 'Cancelar', style: 'cancel' },
@@ -191,7 +192,11 @@ export function ViajesDetailScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
-  content: { paddingTop: 18 },
+  content: { padding: 18, paddingBottom: 32 },
+  headerMenuButton: {
+    paddingHorizontal: 4,
+    paddingVertical: 4,
+  },
   card: {
     backgroundColor: light.surface,
     borderRadius: 12,

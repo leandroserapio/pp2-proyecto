@@ -14,13 +14,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   useWindowDimensions,
   View,
 } from 'react-native';
 
 import {
   useFocusEffect,
-  useNavigation
+  useNavigation,
 } from '@react-navigation/native';
 
 import type {
@@ -51,12 +52,19 @@ import { useAppSettings } from '../../context/AppSettingsContext';
 
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { AppHeader } from '../../components/AppHeader';
-import { eliminarGasto } from '../../api/gastos';
+import { AppTextInput } from '../../components/AppTextInput';
+import { BottomSheet, type BottomSheetRef } from '../../components/BottomSheet';
+import { DatePickerField, toIsoLocal } from '../../components/DatePickerField';
+import { FAB_SCROLL_PADDING, ScreenFab, ScreenRoot } from '../../components/ScreenFab';
+import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
+import { sectionStyles } from '../../theme/sectionStyles';
+import { crearGasto, eliminarGasto } from '../../api/gastos';
 import { ApiError } from '../../api/client';
 
 import {
   formatArs,
-  formatDisplayDate
+  formatDisplayDate,
+  parseAmountInput,
 } from '../../gastos/format';
 
 import {
@@ -74,6 +82,10 @@ import {
   getCenteredContentStyle,
   getResponsiveFabRight,
 } from '../../theme/responsive';
+
+import {
+  consumeGastosAddRequest,
+} from '../../navigation/pendingActions';
 
 type Nav = NativeStackNavigationProp<GastosStackParamList>;
 
@@ -110,8 +122,9 @@ export function GastosListScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
-  const { motos, loading: motosLoading } = useMoto();
+  const { motos, loading: motosLoading, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
+  const sheetRef = useRef<BottomSheetRef>(null);
   const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
   const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
 
@@ -123,6 +136,15 @@ export function GastosListScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
 
+  const [addOpen, setAddOpen] = useState(false);
+  const [tipo, setTipo] = useState('');
+  const [montoStr, setMontoStr] = useState('');
+  const [idMoto, setIdMoto] = useState<number | null>(null);
+  const [descripcion, setDescripcion] = useState('');
+  const [fecha, setFecha] = useState(() => new Date());
+  const [motoSelectorOpen, setMotoSelectorOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const [filterOpen, setFilterOpen] = useState(false);
 
   const [filterMenuRect, setFilterMenuRect] = useState<{
@@ -133,6 +155,57 @@ export function GastosListScreen() {
   } | null>(null);
 
   const filterSelectWrapRef = useRef<View>(null);
+
+  const tabNavigation = navigation.getParent();
+
+  const resetForm = useCallback(() => {
+    setTipo('');
+    setMontoStr('');
+    setDescripcion('');
+    setFecha(new Date());
+    setMotoSelectorOpen(false);
+    setIdMoto(selectedMotoId ?? motos[0]?.idMoto ?? null);
+  }, [motos, selectedMotoId]);
+
+  const openAddSheet = useCallback(() => {
+    resetForm();
+    setAddOpen(true);
+  }, [resetForm]);
+
+  const handleSheetClosed = useCallback(() => {
+    setAddOpen(false);
+    setMotoSelectorOpen(false);
+    resetForm();
+  }, [resetForm]);
+
+  const motosRef = useRef(motos);
+  const selectedMotoIdRef = useRef(selectedMotoId);
+  motosRef.current = motos;
+  selectedMotoIdRef.current = selectedMotoId;
+
+  useEffect(() => {
+    tabNavigation?.setParams({ hideTabBar: addOpen });
+    return () => {
+      tabNavigation?.setParams({ hideTabBar: false });
+    };
+  }, [addOpen, tabNavigation]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const request = consumeGastosAddRequest();
+      if (!request) return;
+
+      setTipo('');
+      setMontoStr('');
+      setDescripcion('');
+      setFecha(new Date());
+      setMotoSelectorOpen(false);
+      setIdMoto(
+        request.idMoto ?? selectedMotoIdRef.current ?? motosRef.current[0]?.idMoto ?? null,
+      );
+      setAddOpen(true);
+    }, []),
+  );
 
   const reload = useCallback(async () => {
 
@@ -192,6 +265,39 @@ export function GastosListScreen() {
   }, [filtro, motos]);
 
   const empty = !loading && !motosLoading && items.length === 0;
+  const showFab = !motosLoading && !loading && motos.length > 0 && !empty && !addOpen;
+
+  const onSaveGasto = async () => {
+    if (!idMoto) {
+      Alert.alert('Falta la moto', 'Seleccioná una moto.');
+      return;
+    }
+    const monto = parseAmountInput(montoStr);
+    if (!tipo.trim()) {
+      Alert.alert('Datos incompletos', 'El tipo de gasto es obligatorio.');
+      return;
+    }
+    if (monto == null || monto <= 0) {
+      Alert.alert('Datos incompletos', 'Ingresá un monto válido.');
+      return;
+    }
+    setSaving(true);
+    try {
+      await crearGasto(idMoto, {
+        tipo: tipo.trim(),
+        descripcion: descripcion.trim() || null,
+        monto,
+        fecha: toIsoLocal(fecha),
+      });
+      await reload();
+      sheetRef.current?.close();
+    } catch (e) {
+      const msg = e instanceof ApiError ? e.message : 'No se pudo guardar';
+      Alert.alert('Error', msg);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const confirmDeleteGasto = async (item: GastoListNavItem) => {
     if (!item.idGasto) return;
@@ -238,23 +344,30 @@ export function GastosListScreen() {
 
     <View style={contentFrame}>
 
-      <View style={styles.sectionHead}>
+      <ScreenSectionHeader
+        title="Gastos"
+        subtitle="Controlá seguros, combustible y otros gastos de tu moto."
+      />
 
-        <Text style={[styles.summaryEyebrow, { color: theme.textMuted }]}>
-          RESUMEN DE GASTOS
-        </Text>
+      <View
+        style={[
+          styles.totalCard,
+          { backgroundColor: theme.surface, borderColor: theme.border },
+        ]}
+      >
 
-        <Text style={[styles.summaryTitle, { color: theme.text }]}>
-          Gastos
-        </Text>
-
-      </View>
-
-      <View style={[styles.totalCard, { backgroundColor: theme.primarySoft }]}>
-
-        <Text style={[styles.totalLabel, { color: theme.primary }]}>
-          TOTAL
-        </Text>
+        <View style={styles.totalHeader}>
+          <View style={[styles.totalIconWrap, { backgroundColor: theme.primarySoft }]}>
+            <Ionicons
+              name="wallet-outline"
+              size={16}
+              color={theme.primary}
+            />
+          </View>
+          <Text style={[styles.totalLabel, { color: theme.textMuted }]}>
+            Total en gastos
+          </Text>
+        </View>
 
         <Text style={[styles.totalAmount, { color: theme.text }]}>
           {formatArs(total)}
@@ -264,15 +377,22 @@ export function GastosListScreen() {
 
       <Pressable
         ref={filterSelectWrapRef}
-        style={[styles.filterRow, { backgroundColor: theme.surface, borderColor: theme.border }]}
+        style={[
+          sectionStyles.filterRow,
+          styles.filterRowAfterTotal,
+          {
+            backgroundColor: theme.surface,
+            borderColor: filterOpen ? theme.primary : theme.border,
+          },
+        ]}
         onPress={openFilter}
       >
 
-        <Text style={[styles.filterLabel, { color: theme.textMuted }]}>
+        <Text style={[sectionStyles.filterInlineLabel, { color: theme.textMuted }]}>
           Filtrar por moto
         </Text>
 
-        <View style={styles.filterValueRow}>
+        <View style={sectionStyles.filterValueRow}>
 
           <Text
             style={[styles.filterText, { color: theme.text }]}
@@ -297,6 +417,8 @@ export function GastosListScreen() {
 
   return (
 
+    <ScreenRoot>
+
     <SafeAreaView
       style={[
         styles.safe,
@@ -313,7 +435,11 @@ export function GastosListScreen() {
 
       {motosLoading || loading ? (
 
-        <View style={styles.flexCenter}>
+        <ScrollView
+          style={styles.flexCenter}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
 
           {topBlock}
 
@@ -323,11 +449,15 @@ export function GastosListScreen() {
 
           </View>
 
-        </View>
+        </ScrollView>
 
       ) : motos.length === 0 ? (
 
-        <View style={styles.flexCenter}>
+        <ScrollView
+          style={styles.flexCenter}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
 
           {topBlock}
 
@@ -343,11 +473,15 @@ export function GastosListScreen() {
 
           </View>
 
-        </View>
+        </ScrollView>
 
       ) : empty ? (
 
-        <View style={styles.flexCenter}>
+        <ScrollView
+          style={styles.flexCenter}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
 
           {topBlock}
 
@@ -376,7 +510,7 @@ export function GastosListScreen() {
             <PrimaryButton
               title="Agregar Gasto"
               variant="blue"
-              onPress={() => navigation.navigate('GastosAdd', {})}
+              onPress={openAddSheet}
               style={styles.cta}
             />
 
@@ -384,17 +518,16 @@ export function GastosListScreen() {
 
           </View>
 
-        </View>
+        </ScrollView>
 
       ) : (
 
         <View style={styles.listRoot}>
 
-          {topBlock}
-
           <FlatList
             data={items}
             keyExtractor={(g) => `${g.idGasto}-${g.idMoto}`}
+            ListHeaderComponent={topBlock}
             refreshControl={
               <RefreshControl
                 refreshing={refreshing}
@@ -402,8 +535,7 @@ export function GastosListScreen() {
               />
             }
             contentContainerStyle={{
-              ...contentFrame,
-              paddingBottom: 120 + insets.bottom
+              paddingBottom: FAB_SCROLL_PADDING
             }}
             renderItem={({ item }) => {
 
@@ -413,7 +545,7 @@ export function GastosListScreen() {
 
                 <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
                   <Pressable style={styles.cardMain} onPress={() => navigation.navigate('GastosDetail', { item })}>
-                    <Text style={[styles.cardTitle, { color: theme.text }]} numberOfLines={2}>{item.tipo}</Text>
+                    <Text style={[sectionStyles.listCardTitle, { color: theme.text }]}>{item.tipo}</Text>
                     <Text style={[styles.cardSub, { color: theme.textMuted }]}>
                       {item.motoLabel} - {formatDisplayDate(item.fecha)}
                     </Text>
@@ -437,31 +569,98 @@ export function GastosListScreen() {
             }}
           />
 
-          <Pressable
-            style={[
-              styles.fab,
-              {
-                bottom: 24 + insets.bottom,
-                right: fabRight,
-                backgroundColor: theme.primary,
-              }
-            ]}
-            onPress={() =>
-              navigation.navigate('GastosAdd', {})
-            }
-          >
-
-            <Ionicons
-              name="add"
-              size={30}
-              color={theme.onPrimary}
-            />
-
-          </Pressable>
-
         </View>
 
       )}
+
+      <BottomSheet
+        ref={sheetRef}
+        visible={addOpen}
+        title="Agregar Gasto"
+        onClose={handleSheetClosed}
+      >
+        <AppTextInput
+          label="Tipo *"
+          variant="light"
+          placeholder="Ej: Seguro Mensual, Nafta"
+          value={tipo}
+          onChangeText={setTipo}
+        />
+
+        <Text style={[styles.formLabel, { color: theme.text }]}>Monto</Text>
+        <View style={[styles.costoRow, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+          <Text style={[styles.costoPrefixText, { color: theme.textMuted }]}>$</Text>
+          <TextInput
+            style={[styles.costoTextInput, { color: theme.text }]}
+            placeholder="15.000,00"
+            keyboardType="decimal-pad"
+            value={montoStr}
+            onChangeText={setMontoStr}
+            placeholderTextColor={theme.textMuted}
+            onStartShouldSetResponder={() => true}
+          />
+        </View>
+
+        <Text style={[styles.formLabel, { color: theme.text }]}>Moto</Text>
+        <Pressable
+          style={[
+            styles.formMotoSelector,
+            {
+              backgroundColor: theme.bg,
+              borderColor: motoSelectorOpen ? theme.primary : theme.border,
+            },
+          ]}
+          onPress={() => setMotoSelectorOpen((v) => !v)}
+        >
+          <Text style={[styles.formMotoSelectorText, { color: theme.text }]}>
+            {idMoto
+              ? motoLabel(motos.find((m) => m.idMoto === idMoto)!)
+              : 'Seleccioná una moto'}
+          </Text>
+          <Ionicons name={motoSelectorOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
+        </Pressable>
+
+        {motoSelectorOpen ? (
+          <View style={[styles.inlineDropdown, { backgroundColor: theme.surface, borderColor: theme.primary }]}>
+            {motos.map((m, i) => (
+              <Pressable
+                key={m.idMoto}
+                style={({ pressed }) => [
+                  styles.filterMenuRow,
+                  i > 0 && styles.filterMenuRowBorder,
+                  i > 0 && { borderTopColor: theme.border },
+                  pressed && { backgroundColor: theme.bg },
+                ]}
+                onPress={() => {
+                  if (m.idMoto != null) setIdMoto(m.idMoto);
+                  setMotoSelectorOpen(false);
+                }}
+              >
+                <Text style={[styles.filterMenuRowText, { color: theme.text }]}>{motoLabel(m)}</Text>
+                {idMoto === m.idMoto ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+
+        <AppTextInput
+          label="Descripción"
+          variant="light"
+          placeholder="Ej: Nafta Shell, Service anual"
+          value={descripcion}
+          onChangeText={setDescripcion}
+        />
+
+        <DatePickerField label="Fecha" value={fecha} onChange={setFecha} />
+
+        <PrimaryButton
+          title="Guardar Gasto"
+          variant="blue"
+          loading={saving}
+          onPress={onSaveGasto}
+          style={styles.saveBtn}
+        />
+      </BottomSheet>
 
       {/* MENU HAMBURGUESA */}
 
@@ -565,6 +764,15 @@ export function GastosListScreen() {
 
     </SafeAreaView>
 
+    <ScreenFab
+      visible={showFab}
+      onPress={openAddSheet}
+      backgroundColor={theme.primary}
+      iconColor={theme.onPrimary}
+    />
+
+    </ScreenRoot>
+
   );
 }
 
@@ -575,72 +783,54 @@ const styles = StyleSheet.create({
     backgroundColor: light.bg
   },
 
-  sectionHead: {
-    paddingHorizontal: 18,
-    marginTop: 16,
-  },
-
-  summaryEyebrow: {
-    fontSize: 11,
-    color: light.textMuted,
-  },
-
-  summaryTitle: {
-    marginTop: 6,
-    fontSize: 28,
-    color: light.navy,
-    fontWeight: '700',
-  },
-
   totalCard: {
     marginHorizontal: 18,
     marginTop: 14,
-    backgroundColor: light.primarySoft,
-    borderRadius: 12,
-    padding: 16,
-  },
-
-  totalLabel: {
-    fontSize: 11,
-    color: light.primary,
-  },
-
-  totalAmount: {
-    marginTop: 8,
-    fontSize: 30,
-    fontWeight: '700',
-    color: light.navy,
-  },
-
-  filterRow: {
-    marginHorizontal: 18,
-    marginTop: 14,
-    backgroundColor: light.surface,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: light.border,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
 
-  filterLabel: {
+  totalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  totalIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  totalLabel: {
     fontSize: 12,
-    fontFamily: fontFamily.medium,
-    fontWeight: '500',
+    fontFamily: fontFamily.semiBold,
+    fontWeight: '600',
+    letterSpacing: 0.4,
     color: light.textMuted,
   },
 
-  filterValueRow: {
-    marginTop: 4,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
+  totalAmount: {
+    marginTop: 6,
+    fontSize: 34,
+    fontFamily: fontFamily.bold,
+    fontWeight: '700',
+    color: light.text,
+  },
+
+  filterRowAfterTotal: {
+    marginTop: 14,
   },
 
   filterText: {
     flex: 1,
-    color: light.navy,
+    fontSize: 15,
+    color: light.text,
     fontFamily: fontFamily.medium,
     fontWeight: '500',
   },
@@ -694,14 +884,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
+  },
+
   centerGrow: {
-    flex: 1,
+    flexGrow: 1,
+    minHeight: 160,
     alignItems: 'center',
     justifyContent: 'center',
   },
 
   emptyWrap: {
-    flex: 1,
+    flexGrow: 1,
+    minHeight: 280,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 18,
@@ -712,8 +909,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 12,
     borderWidth: 1,
-    paddingHorizontal: 28,
-    paddingVertical: 36,
+    paddingHorizontal: 24,
+    paddingTop: 36,
+    paddingBottom: 32,
   },
 
   emptyIconCircle: {
@@ -730,15 +928,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: light.navy,
+    textAlign: 'center',
   },
 
   emptySub: {
     marginTop: 8,
+    marginBottom: 24,
+    fontSize: 15,
+    lineHeight: 22,
+    textAlign: 'center',
     color: light.textMuted,
   },
 
   cta: {
-    marginTop: 20,
+    alignSelf: 'stretch',
+    marginTop: 4,
   },
 
   listRoot: {
@@ -762,12 +966,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: light.navy,
-  },
-
   cardSub: {
     marginTop: 6,
     fontSize: 13,
@@ -789,14 +987,85 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  fab: {
-    position: 'absolute',
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: light.primary,
+  saveBtn: { marginTop: 4 },
+  formLabel: {
+    fontSize: 13,
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    color: light.text,
+    marginBottom: 6,
+    marginTop: 12,
+  },
+  formMotoSelector: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: light.bg,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: light.border,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 4,
+  },
+  formMotoSelectorText: {
+    fontSize: 15,
+    fontFamily: fontFamily.medium,
+    color: light.text,
+    flex: 1,
+  },
+  inlineDropdown: {
+    borderWidth: 1,
+    borderTopWidth: 0,
+    borderColor: light.primary,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+    backgroundColor: light.surface,
+    marginBottom: 4,
+    overflow: 'hidden',
+  },
+  filterMenuRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+  },
+  filterMenuRowBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: light.border,
+  },
+  filterMenuRowText: {
+    fontSize: 15,
+    color: light.text,
+    fontFamily: fontFamily.medium,
+    fontWeight: '500',
+    flex: 1,
+    marginRight: 8,
+  },
+  costoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: light.border,
+    backgroundColor: light.surface,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 12,
+  },
+  costoPrefixText: {
+    fontSize: 15,
+    fontFamily: fontFamily.bold,
+    color: light.textMuted,
+    marginRight: 8,
+  },
+  costoTextInput: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: fontFamily.regular,
+    color: light.text,
+    padding: 0,
   },
   cardRight: {
   alignItems: 'center',

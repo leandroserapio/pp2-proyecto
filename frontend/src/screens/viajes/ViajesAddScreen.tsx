@@ -21,6 +21,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { light } from '../../theme/mototrackerLight';
+import { sectionStyles } from '../../theme/sectionStyles';
 import { fontFamily } from '../../theme/fonts';
 import type { ViajesStackParamList } from '../../navigation/types';
 import { useMoto } from '../../context/MotoContext';
@@ -189,14 +190,8 @@ export function ViajesAddScreen() {
   return (
     <KeyboardAvoidingView style={[styles.root, { backgroundColor: theme.bg }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
-        contentContainerStyle={[
-          styles.scroll,
-          contentFrame,
-          {
-            paddingHorizontal: pagePadding,
-            paddingBottom: 100 + insets.bottom,
-          },
-        ]}
+        style={styles.scrollView}
+        contentContainerStyle={styles.scroll}
         keyboardShouldPersistTaps="handled"
       >
         <View style={styles.bannerWrap}>
@@ -268,7 +263,7 @@ export function ViajesAddScreen() {
         </Pressable>
 
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>Destinos</Text>
+          <Text style={[sectionStyles.formCardTitle, { color: theme.text }]}>Destinos</Text>
           <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>SALIDA</Text>
           <View style={[styles.inputWithIcon, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <Ionicons name="location-outline" size={20} color={theme.textMuted} style={styles.inputIcon} />
@@ -296,7 +291,7 @@ export function ViajesAddScreen() {
           </View>
           <PrimaryButton
             title="Calcular ruta gratis"
-            variant="blue"
+            variant="ghost"
             loading={estimatingRoute}
             onPress={calculateRouteEstimate}
             style={styles.mapsButton}
@@ -304,7 +299,7 @@ export function ViajesAddScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text style={[styles.cardTitle, { color: theme.text }]}>Detalles del Viaje</Text>
+          <Text style={[sectionStyles.formCardTitle, { color: theme.text }]}>Detalles del Viaje</Text>
 
           <Text style={[styles.fieldEyebrowInCard, { color: theme.textMuted }]}>KILÓMETROS ESTIMADOS</Text>
           <TextInput
@@ -408,8 +403,8 @@ export function ViajesAddScreen() {
         </View>
       </ScrollView>
 
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 12), backgroundColor: theme.surface, borderTopColor: theme.border }]}>
-        <PrimaryButton title="Agregar Viaje" variant="blue" loading={saving} onPress={onSave} style={contentFrame} />
+      <View style={[styles.footer, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
+        <PrimaryButton title="Agregar Viaje" variant="blue" loading={saving} onPress={onSave} />
       </View>
 
       <DropdownModal
@@ -580,7 +575,8 @@ function DropdownModal({
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: light.bg },
-  scroll: { paddingTop: 12 },
+  scrollView: { flex: 1 },
+  scroll: { padding: 18, paddingTop: 12, paddingBottom: 16 },
   bannerWrap: { marginBottom: 18 },
   banner: { height: 160, borderRadius: 12, overflow: 'hidden' },
   bannerImage: { borderRadius: 12 },
@@ -655,13 +651,6 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 16,
   },
-  cardTitle: {
-    fontSize: 16,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.navy,
-    marginBottom: 12,
-  },
   inputWithIcon: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -724,6 +713,7 @@ const styles = StyleSheet.create({
   footer: {
     paddingHorizontal: 18,
     paddingTop: 12,
+    paddingBottom: 12,
     borderTopWidth: 1,
     borderTopColor: light.border,
     backgroundColor: light.surface,

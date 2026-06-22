@@ -18,6 +18,8 @@ import { fontFamily } from '../../theme/fonts';
 import { useAppSettings } from '../../context/AppSettingsContext';
 import { useMoto } from '../../context/MotoContext';
 import { AppHeader } from '../../components/AppHeader';
+import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
+import { sectionStyles } from '../../theme/sectionStyles';
 import { AppTextInput } from '../../components/AppTextInput';
 import { DatePickerField, toIsoLocal } from '../../components/DatePickerField';
 import { PrimaryButton } from '../../components/PrimaryButton';
@@ -138,10 +140,16 @@ export function ViajesTabScreen() {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
         {!addOpen ? <AppHeader /> : null}
-        <View style={styles.emptyWrap}>
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin moto seleccionada</Text>
-          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Seleccioná una moto desde Garage.</Text>
-        </View>
+        <ScrollView contentContainerStyle={styles.emptyScroll}>
+          <ScreenSectionHeader
+            title="Viajes"
+            subtitle="Planificá salidas con destino, km estimados y presupuesto."
+          />
+          <View style={styles.emptyWrap}>
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin moto seleccionada</Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Seleccioná una moto desde Garage.</Text>
+          </View>
+        </ScrollView>
       </SafeAreaView>
     );
   }
@@ -150,18 +158,19 @@ export function ViajesTabScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={['top']}>
       {!addOpen ? <AppHeader /> : null}
 
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.text }]}>Viajes</Text>
-        <Text style={[styles.subtitle, { color: theme.textMuted }]}>{selectedMoto.marca} {selectedMoto.modelo}</Text>
-      </View>
-
       {items.length === 0 && !loading ? (
-        <View style={styles.emptyWrap}>
-          <Ionicons name="map-outline" size={64} color={theme.border} />
-          <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin viajes programados</Text>
-          <Text style={[styles.emptySub, { color: theme.textMuted }]}>Planificá tus salidas indicando destino, km estimados y presupuesto.</Text>
-          <PrimaryButton title="Agregar viaje" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
-        </View>
+        <ScrollView contentContainerStyle={styles.emptyScroll}>
+          <ScreenSectionHeader
+            title="Viajes"
+            subtitle="Planificá salidas con destino, km estimados y presupuesto."
+          />
+          <View style={styles.emptyWrap}>
+            <Ionicons name="map-outline" size={64} color={theme.border} />
+            <Text style={[styles.emptyTitle, { color: theme.text }]}>Sin viajes programados</Text>
+            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Planificá tus salidas indicando destino, km estimados y presupuesto.</Text>
+            <PrimaryButton title="Agregar viaje" variant="blue" onPress={() => setAddOpen(true)} style={styles.emptyBtn} />
+          </View>
+        </ScrollView>
       ) : (
         <View style={styles.listWrap}>
           <FlatList
@@ -169,10 +178,16 @@ export function ViajesTabScreen() {
             keyExtractor={(v) => String(v.idViaje)}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             contentContainerStyle={{ paddingBottom: 100 + insets.bottom }}
+            ListHeaderComponent={
+              <ScreenSectionHeader
+                title="Viajes"
+                subtitle="Planificá salidas con destino, km estimados y presupuesto."
+              />
+            }
             renderItem={({ item }) => (
               <Pressable style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]} onLongPress={() => confirmDelete(item)}>
                 <View style={styles.cardHeader}>
-                  <Text style={[styles.cardTitle, { color: theme.text }]}>{item.destino}</Text>
+                  <Text style={[sectionStyles.listCardTitle, { color: theme.text }]}>{item.destino}</Text>
                   <Text style={[styles.cardEstado, { color: estadoColor(item.estado) }]}>
                     {item.estado ?? 'Programado'}
                   </Text>
@@ -203,7 +218,7 @@ export function ViajesTabScreen() {
           <Pressable style={[styles.modalBackdrop, { backgroundColor: theme.overlay }]} onPress={() => setAddOpen(false)} />
           <View style={[styles.modalSheet, { backgroundColor: theme.surface, borderColor: theme.border }]}>
             <ScrollView keyboardShouldPersistTaps="handled">
-              <Text style={[styles.modalTitle, { color: theme.text }]}>Agregar viaje</Text>
+              <Text style={[sectionStyles.modalTitle, { color: theme.text }]}>Agregar viaje</Text>
               <AppTextInput label="Destino *" variant="light" placeholder="Ej: Chascomús" value={destino} onChangeText={setDestino} />
               <DatePickerField label="Fecha de salida" value={fechaSalida} onChange={setFechaSalida} />
               <AppTextInput label="Km estimados" variant="light" placeholder="Ej: 220" keyboardType="number-pad" value={kmEst} onChangeText={setKmEst} />
@@ -220,10 +235,8 @@ export function ViajesTabScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: light.bg },
-  header: { paddingHorizontal: 18, paddingBottom: 10 },
-  title: { fontSize: 24, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
-  subtitle: { fontSize: 14, fontFamily: fontFamily.regular, color: light.textMuted, marginTop: 4 },
   emptyWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  emptyScroll: { flexGrow: 1 },
   emptyTitle: { marginTop: 14, fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, textAlign: 'center' },
   emptySub: { marginTop: 8, color: light.textMuted, fontFamily: fontFamily.regular, textAlign: 'center', lineHeight: 22 },
   emptyBtn: { marginTop: 18, alignSelf: 'stretch' },
@@ -238,7 +251,6 @@ const styles = StyleSheet.create({
     borderColor: light.border,
   },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontSize: 16, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },
   cardEstado: { fontSize: 13, fontFamily: fontFamily.bold, fontWeight: '700' },
   cardFooter: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
   cardDate: { fontSize: 13, fontFamily: fontFamily.regular, color: light.textMuted, marginRight: 16 },
@@ -271,6 +283,5 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: light.border,
   },
-  modalTitle: { fontSize: 18, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text, marginBottom: 14 },
   saveBtn: { marginTop: 4 },
 });

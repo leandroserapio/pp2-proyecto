@@ -12,7 +12,6 @@ import {
 
 import {
   ActivityIndicator,
-  AppState,
   StyleSheet,
   View
 } from 'react-native';
@@ -56,8 +55,8 @@ import {
 
 import {
   KILOMETERS_REMINDER_ID,
+  asegurarRecordatorioKilometros,
   cancelarNotificacion,
-  programarRecordatorioKilometros
 } from '../services/notificationsService';
 
 import type {
@@ -70,10 +69,6 @@ import { MainTabs } from './MainTabs';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 
 import { RegisterScreen } from '../screens/auth/RegisterScreen';
-
-import { AccountScreen } from '../screens/account/AccountScreen';
-
-import { SettingsScreen } from '../screens/settings/SettingsScreen';
 
 const RootStack = createNativeStackNavigator<RootStackParamList>();
 
@@ -183,22 +178,6 @@ function RootNavigator() {
             component={MainGate}
           />
 
-          <RootStack.Screen
-            name="Cuenta"
-            component={AccountScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-
-          <RootStack.Screen
-            name="Ajustes"
-            component={SettingsScreen}
-            options={{
-              headerShown: false,
-            }}
-          />
-
         </>
 
       ) : (
@@ -277,26 +256,12 @@ function AppNavigationContent() {
   } = useAppSettings();
 
   useEffect(() => {
-    const sincronizarRecordatorioKilometros = () => {
-      if (!notifications || !reminders) {
-        void cancelarNotificacion(KILOMETERS_REMINDER_ID);
-        return;
-      }
+    if (!notifications || !reminders) {
+      void cancelarNotificacion(KILOMETERS_REMINDER_ID);
+      return;
+    }
 
-      void programarRecordatorioKilometros();
-    };
-
-    sincronizarRecordatorioKilometros();
-
-    const subscription = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        sincronizarRecordatorioKilometros();
-      }
-    });
-
-    return () => {
-      subscription.remove();
-    };
+    void asegurarRecordatorioKilometros();
   }, [notifications, reminders]);
 
   const navTheme = {

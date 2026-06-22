@@ -2,7 +2,12 @@
 
 import { Ionicons } from '@expo/vector-icons';
 
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  BottomTabBar,
+  createBottomTabNavigator,
+  type BottomTabBarProps,
+} from '@react-navigation/bottom-tabs';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 
 import { Platform, StyleSheet, useWindowDimensions } from 'react-native';
 
@@ -14,18 +19,43 @@ import { isTabletWidth, TAB_BAR_MAX_WIDTH } from '../theme/responsive';
 import type { MainTabParamList } from './types';
 
 import { GastosStackNavigator } from './GastosStackNavigator';
-
-import { HomeScreen } from '../screens/tabs/HomeScreen';
+import { HomeStackNavigator } from './HomeStackNavigator';
 
 import { GarageScreen } from '../screens/tabs/GarageScreen';
 
 import { MantenimientoTabScreen } from '../screens/tabs/MantenimientoTabScreen';
 import { ViajesStackNavigator } from './ViajesStackNavigator';
+import { SettingsScreen } from '../screens/settings/SettingsScreen';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+const hiddenTabItemStyle = {
+  width: 0,
+  minWidth: 0,
+  maxWidth: 0,
+  flex: 0,
+  flexGrow: 0,
+  overflow: 'hidden' as const,
+  ...(Platform.OS === 'web' ? { display: 'none' as const } : {}),
+};
+
+function WebBottomTabBar(props: BottomTabBarProps) {
+  return (
+    <BottomTabBar
+      {...props}
+      style={{
+        width: '100%',
+        left: 0,
+        right: 0,
+        alignSelf: 'stretch',
+      }}
+    />
+  );
+}
+
 export function MainTabs() {
   const { theme } = useAppSettings();
+  const hiddenTabBarStyle = { display: 'none' as const };
   const { width } = useWindowDimensions();
   const tablet = isTabletWidth(width);
   const tabletTabFrame = tablet
@@ -38,6 +68,33 @@ export function MainTabs() {
         overflow: 'hidden' as const,
       }
     : {};
+  const androidBaseTabBarStyle = {
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.border,
+    elevation: 0,
+    ...tabletTabFrame,
+  };
+  const iosWebBaseTabBarStyle = {
+    backgroundColor: theme.surface,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.border,
+    elevation: 0,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 8,
+    width: '100%' as const,
+    ...tabletTabFrame,
+    ...(Platform.OS === 'web'
+      ? {
+          boxShadow: 'none',
+          height: 'auto' as const,
+          left: 0,
+          right: 0,
+          alignSelf: 'stretch',
+        }
+      : {}),
+  };
 
   const androidTabScreenOptions = {
 
@@ -49,13 +106,7 @@ export function MainTabs() {
 
     tabBarShowLabel: true,
 
-    tabBarStyle: {
-      backgroundColor: theme.surface,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.border,
-      elevation: 0,
-      ...tabletTabFrame,
-    },
+    tabBarStyle: androidBaseTabBarStyle,
 
     tabBarLabelStyle: {
       fontSize: 11,
@@ -81,36 +132,30 @@ export function MainTabs() {
 
     tabBarLabelPosition: 'below-icon' as const,
 
-    tabBarStyle: {
-      backgroundColor: theme.surface,
-      borderTopWidth: StyleSheet.hairlineWidth,
-      borderTopColor: theme.border,
-      elevation: 0,
-      padding: 8,
-      paddingHorizontal: 8,
-      ...tabletTabFrame,
-      ...(Platform.OS === 'web'
-        ? {
-            boxShadow: 'none',
-            height: 'auto' as const
-          }
-        : {}),
-    },
+    tabBarStyle: iosWebBaseTabBarStyle,
 
     tabBarItemStyle: {
+      flex: 1,
+      flexGrow: 1,
+      ...(Platform.OS === 'web'
+        ? { flexBasis: 0, minWidth: 0 }
+        : {}),
       borderRadius: 16,
-      overflow: 'hidden' as const,
+      minHeight: 58,
+      paddingTop: 4,
+      paddingBottom: 4,
     },
 
     tabBarLabelStyle: {
       fontSize: 11,
       fontFamily: fontFamily.medium,
       fontWeight: '500' as const,
-      marginTop: 4,
+      lineHeight: 14,
+      marginTop: 2,
     },
 
     tabBarIconStyle: {
-      marginBottom: 2,
+      marginBottom: 0,
     },
 
   } as const;
@@ -118,6 +163,7 @@ export function MainTabs() {
   return (
 
     <Tab.Navigator
+      tabBar={Platform.OS === 'web' ? WebBottomTabBar : undefined}
       screenOptions={
         Platform.OS === 'android'
           ? androidTabScreenOptions
@@ -129,7 +175,7 @@ export function MainTabs() {
 
       <Tab.Screen
         name="Inicio"
-        component={HomeScreen}
+        component={HomeStackNavigator}
         options={{
           title: 'Inicio',
           tabBarIcon: ({ color, size }) => (
@@ -149,8 +195,11 @@ export function MainTabs() {
       <Tab.Screen
         name="Garage"
         component={GarageScreen}
-        options={{
+        options={({ route }) => ({
           title: 'Garage',
+          tabBarStyle: route.params?.hideTabBar
+            ? hiddenTabBarStyle
+            : (Platform.OS === 'android' ? androidBaseTabBarStyle : iosWebBaseTabBarStyle),
           tabBarIcon: ({ color, size }) => (
 
             <Ionicons
@@ -160,7 +209,7 @@ export function MainTabs() {
             />
 
           ),
-        }}
+        })}
       />
 
       {/* GASTOS */}
@@ -168,8 +217,11 @@ export function MainTabs() {
       <Tab.Screen
         name="GastosStack"
         component={GastosStackNavigator}
-        options={{
+        options={({ route }) => ({
           title: 'Gastos',
+          tabBarStyle: route.params?.hideTabBar
+            ? hiddenTabBarStyle
+            : (Platform.OS === 'android' ? androidBaseTabBarStyle : iosWebBaseTabBarStyle),
           tabBarIcon: ({ color, size }) => (
 
             <Ionicons
@@ -179,7 +231,7 @@ export function MainTabs() {
             />
 
           ),
-        }}
+        })}
       />
 
       {/* MANTENIMIENTO */}
@@ -187,9 +239,12 @@ export function MainTabs() {
       <Tab.Screen
         name="Mantenimiento"
         component={MantenimientoTabScreen}
-        options={{
+        options={({ route }) => ({
           title: 'Servicios',
           tabBarLabel: 'Servicios',
+          tabBarStyle: route.params?.hideTabBar
+            ? hiddenTabBarStyle
+            : (Platform.OS === 'android' ? androidBaseTabBarStyle : iosWebBaseTabBarStyle),
           tabBarIcon: ({ color, size }) => (
 
             <Ionicons
@@ -199,7 +254,7 @@ export function MainTabs() {
             />
 
           ),
-        }}
+        })}
       />
 
       {/* VIAJES */}
@@ -207,8 +262,11 @@ export function MainTabs() {
       <Tab.Screen
         name="ViajesStack"
         component={ViajesStackNavigator}
-        options={{
+        options={({ route }) => ({
           title: 'Viajes',
+          tabBarStyle: getFocusedRouteNameFromRoute(route) === 'ViajesAdd'
+            ? hiddenTabBarStyle
+            : (Platform.OS === 'android' ? androidBaseTabBarStyle : iosWebBaseTabBarStyle),
           tabBarIcon: ({ color, size }) => (
 
             <Ionicons
@@ -218,6 +276,16 @@ export function MainTabs() {
             />
 
           ),
+        })}
+      />
+
+      <Tab.Screen
+        name="Ajustes"
+        component={SettingsScreen}
+        options={{
+          title: 'Ajustes',
+          tabBarButton: () => null,
+          tabBarItemStyle: hiddenTabItemStyle,
         }}
       />
 

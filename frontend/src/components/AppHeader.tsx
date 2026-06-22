@@ -1,7 +1,7 @@
 // src/components/AppHeader.tsx
 
 import { Ionicons } from '@expo/vector-icons';
-import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import {
   Pressable,
@@ -16,22 +16,16 @@ import { fontFamily } from '../theme/fonts';
 import { light } from '../theme/mototrackerLight';
 import { AppDrawerMenu } from './AppDrawerMenu';
 
-type Props = {
-  subtitle?: string;
-  title?: string;
-};
+const SIDE_SLOT_WIDTH = 44;
 
-export function AppHeader({
-  subtitle,
-  title = 'MotoTracker',
-}: Props) {
+export function AppHeader() {
   const { user } = useAuth();
   const { theme } = useAppSettings();
   const navigation = useNavigation<any>();
   const [menuVisible, setMenuVisible] = useState(false);
 
   const goToAccount = () => {
-    navigation.dispatch(CommonActions.navigate('Cuenta'));
+    navigation.navigate('Inicio', { screen: 'Cuenta' });
   };
 
   return (
@@ -43,64 +37,53 @@ export function AppHeader({
           borderBottomColor: theme.border,
         }
       ]}>
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={10}
-          onPress={() => setMenuVisible(true)}
-        >
-          <Ionicons
-            name="menu"
-            size={30}
-            color={theme.primary}
-          />
-        </Pressable>
+        <View style={styles.sideSlot}>
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={() => setMenuVisible(true)}
+          >
+            <Ionicons
+              name="menu"
+              size={28}
+              color={theme.primary}
+            />
+          </Pressable>
+        </View>
 
-        <View style={styles.titleWrap}>
+        <View style={styles.centerSlot}>
           <Text style={[
             styles.brand,
             {
               color: theme.primary
             }
           ]}>
-            {title}
+            MotoTracker
           </Text>
-
-          {subtitle ? (
-            <Text
-              style={[
-                styles.subtitle,
-                {
-                  color: theme.textMuted
-                }
-              ]}
-              numberOfLines={1}
-            >
-              {subtitle}
-            </Text>
-          ) : null}
         </View>
 
-        <Pressable
-          accessibilityRole="button"
-          hitSlop={10}
-          onPress={goToAccount}
-          style={[
-            styles.avatar,
-            {
-              backgroundColor: theme.primarySoft,
-              borderColor: theme.border,
-            }
-          ]}
-        >
-          <Text style={[
-            styles.avatarText,
-            {
-              color: theme.primaryDark
-            }
-          ]}>
-            {user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M'}
-          </Text>
-        </Pressable>
+        <View style={[styles.sideSlot, styles.sideSlotRight]}>
+          <Pressable
+            accessibilityRole="button"
+            hitSlop={10}
+            onPress={goToAccount}
+            style={[
+              styles.avatar,
+              {
+                backgroundColor: theme.surfaceMuted,
+              }
+            ]}
+          >
+            <Text style={[
+              styles.avatarText,
+              {
+                color: theme.text
+              }
+            ]}>
+              {user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M'}
+            </Text>
+          </Pressable>
+        </View>
       </View>
 
       <AppDrawerMenu
@@ -113,21 +96,26 @@ export function AppHeader({
 
 const styles = StyleSheet.create({
   header: {
-    minHeight: 64,
+    height: 56,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: light.surface,
     borderBottomWidth: 1,
     borderBottomColor: light.border,
   },
-  titleWrap: {
+  sideSlot: {
+    width: SIDE_SLOT_WIDTH,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  sideSlotRight: {
+    alignItems: 'flex-end',
+  },
+  centerSlot: {
     flex: 1,
-    minWidth: 0,
     alignItems: 'center',
-    paddingHorizontal: 14,
+    justifyContent: 'center',
   },
   brand: {
     fontFamily: fontFamily.bold,
@@ -135,26 +123,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: light.primary,
   },
-  subtitle: {
-    marginTop: 2,
-    maxWidth: '100%',
-    color: light.textMuted,
-    fontFamily: fontFamily.regular,
-    fontSize: 12,
-  },
   avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: light.primarySoft,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: light.surfaceMuted,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: light.border,
   },
   avatarText: {
-    color: light.primaryDark,
+    color: light.text,
     fontFamily: fontFamily.bold,
     fontWeight: '700',
+    fontSize: 15,
   },
 });
