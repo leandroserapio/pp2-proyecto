@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import { useAuth } from '../../context/AuthContext';
@@ -8,6 +7,8 @@ import { useAppSettings } from '../../context/AppSettingsContext';
 import { AppTextInput } from '../../components/AppTextInput';
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { ApiError } from '../../api/client';
+
+const LOGO_MOTOTRACKER = require('../../../assets/logo_mototracker.png');
 
 export function RegisterScreen() {
   const { register } = useAuth();
@@ -85,9 +86,12 @@ export function RegisterScreen() {
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.header}>
-            <View style={[styles.logo, { backgroundColor: theme.primary }]}>
-              <Ionicons name="bicycle-outline" size={24} color={theme.onPrimary} />
-            </View>
+            <Image
+              accessibilityLabel="Logo MotoTracker"
+              source={LOGO_MOTOTRACKER}
+              style={styles.logo}
+              resizeMode="contain"
+            />
             <Text style={[styles.title, { color: theme.text }]}>Crear cuenta</Text>
             <Text style={[styles.subtitle, { color: theme.textMuted }]}>Configura tu perfil y tu primera moto</Text>
           </View>
@@ -124,7 +128,7 @@ export function RegisterScreen() {
           <Text style={[styles.sectionTitle, { color: theme.primary }]}>Tu primera moto</Text>
           <AppTextInput label="Marca *" variant="light" placeholder="Ej: Honda" value={marcaMoto} onChangeText={setMarcaMoto} />
           <AppTextInput label="Modelo *" variant="light" placeholder="Ej: Wave 110" value={modeloMoto} onChangeText={setModeloMoto} />
-          <AppTextInput label="Anio" variant="light" keyboardType="number-pad" value={anioMoto} onChangeText={setAnioMoto} />
+          <AppTextInput label="Año" variant="light" keyboardType="number-pad" value={anioMoto} onChangeText={setAnioMoto} />
           <AppTextInput label="Patente" variant="light" autoCapitalize="characters" value={patenteMoto} onChangeText={setPatenteMoto} />
           <AppTextInput
             label="Kilometraje actual"
@@ -156,11 +160,8 @@ const styles = StyleSheet.create({
   },
   header: { alignItems: 'center', marginBottom: 14 },
   logo: {
-    width: 54,
-    height: 46,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 110,
+    height: 44,
     marginBottom: 10,
   },
   title: { fontSize: 24, fontFamily: fontFamily.bold, fontWeight: '700', color: light.text },

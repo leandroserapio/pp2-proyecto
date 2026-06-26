@@ -1,14 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   FlatList,
-  Modal,
   Platform,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   useWindowDimensions,
@@ -17,14 +14,14 @@ import {
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { light } from '../../theme/mototrackerLight';
 import { fontFamily } from '../../theme/fonts';
 import type { ViajeListNavItem, ViajesStackParamList } from '../../navigation/types';
 import { useMoto } from '../../context/MotoContext';
 import { useAppSettings } from '../../context/AppSettingsContext';
-import { PrimaryButton } from '../../components/PrimaryButton';
 import { AppHeader } from '../../components/AppHeader';
+import { EmptyState } from '../../components/EmptyState';
 import { FAB_SCROLL_PADDING, ScreenFab, ScreenRoot } from '../../components/ScreenFab';
 import { ScreenSectionHeader } from '../../components/ScreenSectionHeader';
 import { sectionStyles } from '../../theme/sectionStyles';
@@ -32,7 +29,7 @@ import { eliminarViaje } from '../../api/viajes';
 import { ApiError } from '../../api/client';
 import { formatArs, formatKmViaje, formatViajeListDate } from '../../viajes/format';
 import { getViajeEstadoBadge } from '../../viajes/viajeEstado';
-import { loadViajesItems, motoLabel } from '../../viajes/viajesLoader';
+import { loadViajesItems } from '../../viajes/viajesLoader';
 import {
   CONTENT_MAX_WIDTH,
   getCenteredContentStyle,
@@ -42,33 +39,26 @@ type Nav = NativeStackNavigationProp<ViajesStackParamList>;
 
 export function ViajesListScreen() {
   const navigation = useNavigation<Nav>();
-  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const { motos, loading: motosLoading } = useMoto();
+  const { motos, loading: motosLoading, selectedMoto, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
   const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
-  const [filtro, setFiltro] = useState<number | 'todas'>('todas');
   const [items, setItems] = useState<ViajeListNavItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [filterMenuRect, setFilterMenuRect] = useState<{ x: number; y: number; width: number; height: number } | null>(
-    null,
-  );
-  const filterSelectWrapRef = useRef<View>(null);
 
   const reload = useCallback(async () => {
-    if (motos.length === 0) {
+    if (!selectedMotoId) {
       setItems([]);
       return;
     }
     setLoading(true);
     try {
-      setItems(await loadViajesItems(motos, filtro));
+      setItems(await loadViajesItems(motos, selectedMotoId));
     } finally {
       setLoading(false);
     }
-  }, [motos, filtro]);
+  }, [motos, selectedMotoId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -78,26 +68,19 @@ export function ViajesListScreen() {
 
   useEffect(() => {
     void reload();
-  }, [filtro, motos, reload]);
+  }, [selectedMotoId, motos, reload]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      setItems(await loadViajesItems(motos, filtro));
+      setItems(await loadViajesItems(motos, selectedMotoId!));
     } finally {
       setRefreshing(false);
     }
-  }, [motos, filtro]);
-
-  const filtroDisplay = useMemo(() => {
-    if (filtro === 'todas') return 'Todas las motos';
-    const m = motos.find((x) => x.idMoto === filtro);
-    return m ? motoLabel(m) : 'Todas las motos';
-  }, [filtro, motos]);
+  }, [motos, selectedMotoId]);
 
   const empty = !loading && !motosLoading && items.length === 0;
-  const showFab = !motosLoading && !loading && motos.length > 0 && !empty;
-  const dropdownBottomGap = 96 + insets.bottom;
+  const showFab = !motosLoading && !loading && selectedMoto != null && !empty;
 
   const confirmDeleteViaje = async (item: ViajeListNavItem) => {
     if (!item.idViaje) return;
@@ -122,43 +105,10 @@ export function ViajesListScreen() {
   };
 
   const topBlock = (
-    <>
-      <ScreenSectionHeader
-        title="Viajes"
-        subtitle="Planificá salidas con destino, km estimados y presupuesto."
-      />
-      <Pressable
-        ref={filterSelectWrapRef}
-        style={[
-          sectionStyles.filterRow,
-          {
-            backgroundColor: theme.surface,
-            borderColor: filterOpen ? theme.primary : theme.border,
-          },
-        ]}
-        onPress={() => {
-          if (filterOpen) {
-            setFilterOpen(false);
-            setFilterMenuRect(null);
-            return;
-          }
-          filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
-            setFilterMenuRect({ x, y, width, height });
-            setFilterOpen(true);
-          });
-        }}
-      >
-        <Text style={[sectionStyles.filterInlineLabel, { color: theme.textMuted }]}>
-          Filtrar por moto
-        </Text>
-        <View style={sectionStyles.filterValueRow}>
-          <Text style={[styles.filterText, { color: theme.text }]} numberOfLines={1}>
-            {filtroDisplay}
-          </Text>
-          <Ionicons name={filterOpen ? 'chevron-up' : 'chevron-down'} size={18} color={theme.textMuted} />
-        </View>
-      </Pressable>
-    </>
+    <ScreenSectionHeader
+      title="Viajes"
+      subtitle="Planificá salidas con destino, km estimados y presupuesto."
+    />
   );
 
   return (
@@ -173,34 +123,26 @@ export function ViajesListScreen() {
             <ActivityIndicator color={theme.primary} />
           </View>
         </View>
-      ) : motos.length === 0 ? (
+      ) : !selectedMoto ? (
         <View style={styles.flexCenter}>
           {topBlock}
-          <View style={styles.centerGrow}>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>Necesitás una moto</Text>
-            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
-              Registrá al menos una moto desde Garage para planificar viajes.
-            </Text>
-          </View>
+          <EmptyState
+            variant="plain"
+            title="Sin moto seleccionada"
+            subtitle="Seleccioná una moto desde el menú superior para planificar viajes."
+          />
         </View>
       ) : empty ? (
         <View style={styles.flexCenter}>
           {topBlock}
-          <View style={[styles.emptyFrame, contentFrame]}>
-          <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
-              <MaterialCommunityIcons name="map-marker-path" size={40} color={theme.textMuted} />
-            </View>
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>No hay viajes registrados</Text>
-            <Text style={[styles.emptySub, { color: theme.textMuted }]}>Planificá tu primer viaje</Text>
-            <PrimaryButton
-              title="Agregar Viaje"
-              variant="blue"
-              onPress={() => navigation.navigate('ViajesAdd', {})}
-              style={styles.cta}
-            />
-          </View>
-          </View>
+          <EmptyState
+            frameStyle={contentFrame}
+            icon={<MaterialCommunityIcons name="map-marker-path" size={40} color={theme.textMuted} />}
+            title="No hay viajes registrados"
+            subtitle="Planificá tu primer viaje con destino, km estimados y presupuesto."
+            actionLabel="Agregar Viaje"
+            onAction={() => navigation.navigate('ViajesAdd', {})}
+          />
         </View>
       ) : (
         <View style={styles.listRoot}>
@@ -290,88 +232,6 @@ export function ViajesListScreen() {
         </View>
       )}
 
-      <Modal
-        visible={filterOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => {
-          setFilterOpen(false);
-          setFilterMenuRect(null);
-        }}
-      >
-        <View style={styles.filterMenuOverlay}>
-          <Pressable
-            style={[styles.filterMenuBackdrop, { backgroundColor: theme.overlaySoft }]}
-            onPress={() => {
-              setFilterOpen(false);
-              setFilterMenuRect(null);
-            }}
-          />
-          {filterMenuRect ? (
-            <View
-              style={[
-                styles.filterMenuDropdown,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-                {
-                  left: filterMenuRect.x,
-                  top: filterMenuRect.y + filterMenuRect.height + 4,
-                  width: filterMenuRect.width,
-                  maxHeight: Math.max(
-                    160,
-                    Dimensions.get('window').height
-                      - (filterMenuRect.y + filterMenuRect.height)
-                      - dropdownBottomGap,
-                  ),
-                },
-              ]}
-            >
-              <Text style={[styles.filterMenuTitle, { color: theme.textMuted }]}>Filtrar por moto</Text>
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                nestedScrollEnabled
-                style={styles.filterMenuScroll}
-                bounces={false}
-              >
-                <Pressable
-                  style={({ pressed }) => [styles.filterMenuRow, pressed && { backgroundColor: theme.bg }]}
-                  onPress={() => {
-                    setFiltro('todas');
-                    setFilterOpen(false);
-                    setFilterMenuRect(null);
-                  }}
-                >
-                  <Text style={[styles.filterMenuRowText, { color: theme.text }]}>Todas las motos</Text>
-                  {filtro === 'todas' ? <Ionicons name="checkmark" color={theme.primary} size={20} /> : null}
-                </Pressable>
-                {motos.map((m) => (
-                  <Pressable
-                    key={m.idMoto}
-                    style={({ pressed }) => [
-                      styles.filterMenuRow,
-                      styles.filterMenuRowBorder,
-                      { borderTopColor: theme.border },
-                      pressed && { backgroundColor: theme.bg },
-                    ]}
-                    onPress={() => {
-                      if (m.idMoto != null) setFiltro(m.idMoto);
-                      setFilterOpen(false);
-                      setFilterMenuRect(null);
-                    }}
-                  >
-                    <Text style={[styles.filterMenuRowText, { color: theme.text }]}>{motoLabel(m)}</Text>
-                    {filtro !== 'todas' && filtro === m.idMoto ? (
-                      <Ionicons name="checkmark" color={theme.primary} size={20} />
-                    ) : null}
-                  </Pressable>
-                ))}
-              </ScrollView>
-            </View>
-          ) : null}
-        </View>
-      </Modal>
     </SafeAreaView>
 
     <ScreenFab
@@ -394,47 +254,6 @@ const styles = StyleSheet.create({
     color: light.textMuted,
   },
   flexCenter: { flex: 1 },
-  centerGrow: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  emptyFrame: { flex: 1 },
-  emptyCard: {
-    flex: 1,
-    marginHorizontal: 18,
-    marginTop: 8,
-    marginBottom: 24,
-    backgroundColor: light.surfaceMuted,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 28,
-    paddingVertical: 48,
-  },
-  emptyIconCircle: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: light.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyTitle: {
-    marginTop: 20,
-    fontSize: 18,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    color: light.navy,
-    textAlign: 'center',
-  },
-  emptySub: {
-    marginTop: 8,
-    fontFamily: fontFamily.regular,
-    color: light.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 22,
-    fontSize: 15,
-  },
-  cta: { alignSelf: 'stretch', marginHorizontal: 18 },
   listRoot: { flex: 1 },
   list: { flex: 1 },
   card: {

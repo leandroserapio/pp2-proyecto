@@ -1,140 +1,79 @@
 // src/components/AppHeader.tsx
 
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { useState } from 'react';
 import {
+  Image,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 
-import { useAuth } from '../context/AuthContext';
 import { useAppSettings } from '../context/AppSettingsContext';
-import { fontFamily } from '../theme/fonts';
 import { light } from '../theme/mototrackerLight';
+import { headerBarStyles } from '../theme/headerStyles';
 import { AppDrawerMenu } from './AppDrawerMenu';
+import { MotoSelectorDropdown } from './MotoSelectorDropdown';
 
-const SIDE_SLOT_WIDTH = 44;
+const LOGO_MOTOTRACKER = require('../../assets/logo_mototracker.png');
 
 export function AppHeader() {
-  const { user } = useAuth();
   const { theme } = useAppSettings();
-  const navigation = useNavigation<any>();
   const [menuVisible, setMenuVisible] = useState(false);
-
-  const goToAccount = () => {
-    navigation.navigate('Inicio', { screen: 'Cuenta' });
-  };
 
   return (
     <>
-      <View style={[
-        styles.header,
-        {
-          backgroundColor: theme.surface,
-          borderBottomColor: theme.border,
-        }
-      ]}>
-        <View style={styles.sideSlot}>
+      <View
+        style={[
+          headerBarStyles.bar,
+          headerBarStyles.barShadow,
+          {
+            backgroundColor: theme.surface,
+            borderBottomColor: theme.border,
+          },
+        ]}
+      >
+        <View style={styles.leftSlot}>
           <Pressable
             accessibilityRole="button"
             hitSlop={10}
             onPress={() => setMenuVisible(true)}
           >
-            <Ionicons
-              name="menu"
-              size={28}
-              color={theme.primary}
-            />
+            <Ionicons name="menu" size={28} color={theme.primary} />
           </Pressable>
+
+          <Image
+            accessibilityLabel="Logo MotoTracker"
+            source={LOGO_MOTOTRACKER}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
-        <View style={styles.centerSlot}>
-          <Text style={[
-            styles.brand,
-            {
-              color: theme.primary
-            }
-          ]}>
-            MotoTracker
-          </Text>
-        </View>
-
-        <View style={[styles.sideSlot, styles.sideSlotRight]}>
-          <Pressable
-            accessibilityRole="button"
-            hitSlop={10}
-            onPress={goToAccount}
-            style={[
-              styles.avatar,
-              {
-                backgroundColor: theme.surfaceMuted,
-              }
-            ]}
-          >
-            <Text style={[
-              styles.avatarText,
-              {
-                color: theme.text
-              }
-            ]}>
-              {user?.nombre?.trim()?.charAt(0)?.toUpperCase() ?? 'M'}
-            </Text>
-          </Pressable>
+        <View style={styles.rightSlot}>
+          <MotoSelectorDropdown />
         </View>
       </View>
 
-      <AppDrawerMenu
-        visible={menuVisible}
-        onClose={() => setMenuVisible(false)}
-      />
+      <AppDrawerMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 56,
+  leftSlot: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    backgroundColor: light.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: light.border,
+    gap: 10,
+    flexShrink: 0,
   },
-  sideSlot: {
-    width: SIDE_SLOT_WIDTH,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  sideSlotRight: {
-    alignItems: 'flex-end',
-  },
-  centerSlot: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  brand: {
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    fontSize: 20,
-    color: light.primary,
-  },
-  avatar: {
+  logo: {
     width: 36,
     height: 36,
-    borderRadius: 18,
-    backgroundColor: light.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  avatarText: {
-    color: light.text,
-    fontFamily: fontFamily.bold,
-    fontWeight: '700',
-    fontSize: 15,
+  rightSlot: {
+    flex: 1,
+    alignItems: 'flex-end',
+    marginLeft: 12,
   },
 });

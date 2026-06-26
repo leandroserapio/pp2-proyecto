@@ -52,6 +52,7 @@ import { useAppSettings } from '../../context/AppSettingsContext';
 
 import { PrimaryButton } from '../../components/PrimaryButton';
 import { AppHeader } from '../../components/AppHeader';
+import { EmptyState } from '../../components/EmptyState';
 import { AppTextInput } from '../../components/AppTextInput';
 import { BottomSheet, type BottomSheetRef } from '../../components/BottomSheet';
 import { DatePickerField, toIsoLocal } from '../../components/DatePickerField';
@@ -122,13 +123,12 @@ export function GastosListScreen() {
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
-  const { motos, loading: motosLoading, selectedMotoId } = useMoto();
+  const { motos, loading: motosLoading, selectedMoto, selectedMotoId } = useMoto();
   const { theme } = useAppSettings();
   const sheetRef = useRef<BottomSheetRef>(null);
   const contentFrame = getCenteredContentStyle(width, CONTENT_MAX_WIDTH);
   const fabRight = getResponsiveFabRight(width, CONTENT_MAX_WIDTH);
 
-  const [filtro, setFiltro] = useState<number | 'todas'>('todas');
 
   const [items, setItems] = useState<GastoListNavItem[]>([]);
 
@@ -145,16 +145,6 @@ export function GastosListScreen() {
   const [motoSelectorOpen, setMotoSelectorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [filterOpen, setFilterOpen] = useState(false);
-
-  const [filterMenuRect, setFilterMenuRect] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  } | null>(null);
-
-  const filterSelectWrapRef = useRef<View>(null);
 
   const tabNavigation = navigation.getParent();
 
@@ -209,7 +199,7 @@ export function GastosListScreen() {
 
   const reload = useCallback(async () => {
 
-    if (motos.length === 0) {
+    if (!selectedMotoId) {
       setItems([]);
       return;
     }
@@ -218,7 +208,7 @@ export function GastosListScreen() {
 
     try {
 
-      setItems(await loadGastosItems(motos, filtro));
+      setItems(await loadGastosItems(motos, selectedMotoId));
 
     } finally {
 
@@ -226,7 +216,7 @@ export function GastosListScreen() {
 
     }
 
-  }, [motos, filtro]);
+  }, [motos, selectedMotoId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -239,33 +229,19 @@ export function GastosListScreen() {
   }, [reload]);
 
   const onRefresh = useCallback(async () => {
-
+    if (!selectedMotoId) return;
     setRefreshing(true);
-
     try {
-
-      setItems(await loadGastosItems(motos, filtro));
-
+      setItems(await loadGastosItems(motos, selectedMotoId));
     } finally {
-
       setRefreshing(false);
-
     }
-
-  }, [motos, filtro]);
+  }, [motos, selectedMotoId]);
 
   const total = useMemo(() => sumMontos(items), [items]);
-  const dropdownBottomGap = 96 + insets.bottom;
-
-  const selectedMotoLabel = useMemo(() => {
-    if (filtro === 'todas') return 'Todas las motos';
-
-    const selected = motos.find((moto) => moto.idMoto === filtro);
-    return selected ? motoLabel(selected) : 'Moto seleccionada';
-  }, [filtro, motos]);
 
   const empty = !loading && !motosLoading && items.length === 0;
-  const showFab = !motosLoading && !loading && motos.length > 0 && !empty && !addOpen;
+  const showFab = !motosLoading && !loading && selectedMoto != null && !empty && !addOpen;
 
   const onSaveGasto = async () => {
     if (!idMoto) {
@@ -321,25 +297,6 @@ export function GastosListScreen() {
     }
   };
 
-  const openFilter = useCallback(() => {
-    filterSelectWrapRef.current?.measureInWindow((x, y, width, height) => {
-      setFilterMenuRect({ x, y, width, height });
-      setFilterOpen(true);
-    });
-
-    if (!filterSelectWrapRef.current) {
-      const fallbackWidth = Math.min(width, CONTENT_MAX_WIDTH) - 36;
-      const fallbackX = Math.max(18, (width - Math.min(width, CONTENT_MAX_WIDTH)) / 2 + 18);
-      setFilterMenuRect({ x: fallbackX, y: 190, width: fallbackWidth, height: 48 });
-      setFilterOpen(true);
-    }
-  }, [width]);
-
-  const selectFilter = useCallback((next: number | 'todas') => {
-    setFiltro(next);
-    setFilterOpen(false);
-  }, []);
-
   const topBlock = (
 
     <View style={contentFrame}>
@@ -374,42 +331,6 @@ export function GastosListScreen() {
         </Text>
 
       </View>
-
-      <Pressable
-        ref={filterSelectWrapRef}
-        style={[
-          sectionStyles.filterRow,
-          styles.filterRowAfterTotal,
-          {
-            backgroundColor: theme.surface,
-            borderColor: filterOpen ? theme.primary : theme.border,
-          },
-        ]}
-        onPress={openFilter}
-      >
-
-        <Text style={[sectionStyles.filterInlineLabel, { color: theme.textMuted }]}>
-          Filtrar por moto
-        </Text>
-
-        <View style={sectionStyles.filterValueRow}>
-
-          <Text
-            style={[styles.filterText, { color: theme.text }]}
-            numberOfLines={1}
-          >
-            {selectedMotoLabel}
-          </Text>
-
-          <Ionicons
-            name={filterOpen ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={theme.textMuted}
-          />
-
-        </View>
-
-      </Pressable>
 
     </View>
 
@@ -451,7 +372,7 @@ export function GastosListScreen() {
 
         </ScrollView>
 
-      ) : motos.length === 0 ? (
+      ) : !selectedMoto ? (
 
         <ScrollView
           style={styles.flexCenter}
@@ -461,17 +382,11 @@ export function GastosListScreen() {
 
           {topBlock}
 
-          <View style={styles.centerGrow}>
-
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              Necesitás una moto
-            </Text>
-
-            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
-              Registrá una moto para comenzar.
-            </Text>
-
-          </View>
+          <EmptyState
+            variant="plain"
+            title="Sin moto seleccionada"
+            subtitle="Seleccioná una moto desde el menú superior."
+          />
 
         </ScrollView>
 
@@ -485,38 +400,20 @@ export function GastosListScreen() {
 
           {topBlock}
 
-          <View style={[styles.emptyWrap, contentFrame]}>
-
-            <View style={[styles.emptyCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-
-            <View style={[styles.emptyIconCircle, { backgroundColor: theme.bg }]}>
-
+          <EmptyState
+            frameStyle={contentFrame}
+            icon={
               <MaterialCommunityIcons
                 name="gas-station-outline"
                 size={40}
                 color={theme.textMuted}
               />
-
-            </View>
-
-            <Text style={[styles.emptyTitle, { color: theme.text }]}>
-              No hay gastos registrados
-            </Text>
-
-            <Text style={[styles.emptySub, { color: theme.textMuted }]}>
-              Registrá tus primeros gastos.
-            </Text>
-
-            <PrimaryButton
-              title="Agregar Gasto"
-              variant="blue"
-              onPress={openAddSheet}
-              style={styles.cta}
-            />
-
-            </View>
-
-          </View>
+            }
+            title="No hay gastos registrados"
+            subtitle="Registrá combustible, peajes, seguros y otros gastos de tu moto."
+            actionLabel="Agregar Gasto"
+            onAction={openAddSheet}
+          />
 
         </ScrollView>
 
@@ -662,106 +559,6 @@ export function GastosListScreen() {
         />
       </BottomSheet>
 
-      {/* MENU HAMBURGUESA */}
-
-      <Modal
-        visible={filterOpen}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setFilterOpen(false)}
-      >
-
-        <Pressable
-          style={styles.filterBackdrop}
-          onPress={() => setFilterOpen(false)}
-        >
-
-          <View
-            style={[
-              styles.filterMenu,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-              },
-              filterMenuRect
-                ? {
-                    left: filterMenuRect.x,
-                    top: filterMenuRect.y + filterMenuRect.height + 6,
-                    width: filterMenuRect.width,
-                    maxHeight: Math.max(
-                      120,
-                      Dimensions.get('window').height
-                        - filterMenuRect.y
-                        - filterMenuRect.height
-                        - dropdownBottomGap,
-                    ),
-                  }
-                : null,
-            ]}
-          >
-
-            <ScrollView>
-
-              <Pressable
-                style={[
-                  styles.filterOption,
-                  filtro === 'todas' && { backgroundColor: theme.primarySoft },
-                ]}
-                onPress={() => selectFilter('todas')}
-              >
-
-                <Text style={[styles.filterOptionText, { color: theme.text }]}>
-                  Todas las motos
-                </Text>
-
-                {filtro === 'todas' ? (
-                  <Ionicons
-                    name="checkmark"
-                    size={20}
-                    color={theme.primary}
-                  />
-                ) : null}
-
-              </Pressable>
-
-              {motos.map((moto) => (
-                <Pressable
-                  key={String(moto.idMoto)}
-                  style={[
-                    styles.filterOption,
-                    filtro === moto.idMoto && { backgroundColor: theme.primarySoft },
-                  ]}
-                  onPress={() => {
-                    if (moto.idMoto != null) selectFilter(moto.idMoto);
-                  }}
-                >
-
-                  <Text
-                    style={[styles.filterOptionText, { color: theme.text }]}
-                    numberOfLines={1}
-                  >
-                    {motoLabel(moto)}
-                  </Text>
-
-                  {filtro === moto.idMoto ? (
-                    <Ionicons
-                      name="checkmark"
-                      size={20}
-                      color={theme.primary}
-                    />
-                  ) : null}
-
-                </Pressable>
-              ))}
-
-            </ScrollView>
-
-          </View>
-
-        </Pressable>
-
-      </Modal>
-
     </SafeAreaView>
 
     <ScreenFab
@@ -785,7 +582,8 @@ const styles = StyleSheet.create({
 
   totalCard: {
     marginHorizontal: 18,
-    marginTop: 14,
+    marginTop: 6,
+    marginBottom: 14,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: light.border,
@@ -887,62 +685,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 24,
-  },
-
-  centerGrow: {
-    flexGrow: 1,
-    minHeight: 160,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  emptyWrap: {
-    flexGrow: 1,
-    minHeight: 280,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-  },
-
-  emptyCard: {
-    width: '100%',
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    paddingHorizontal: 24,
-    paddingTop: 36,
-    paddingBottom: 32,
-  },
-
-  emptyIconCircle: {
-    width: 112,
-    height: 112,
-    borderRadius: 56,
-    backgroundColor: light.surfaceMuted,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  emptyTitle: {
-    marginTop: 20,
-    fontSize: 18,
-    fontWeight: '700',
-    color: light.navy,
-    textAlign: 'center',
-  },
-
-  emptySub: {
-    marginTop: 8,
-    marginBottom: 24,
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-    color: light.textMuted,
-  },
-
-  cta: {
-    alignSelf: 'stretch',
-    marginTop: 4,
   },
 
   listRoot: {

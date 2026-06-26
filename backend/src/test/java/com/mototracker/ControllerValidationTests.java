@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -115,21 +116,32 @@ class ControllerValidationTests {
     }
 
     @Test
-    void crearRecordatorioRechazaTituloVacio() throws Exception {
+    void inicializarRecordatoriosCreaSeisPresets() throws Exception {
         Moto moto = seedMoto(1500);
 
-        mockMvc.perform(post("/api/recordatorios/moto/{idMoto}", moto.getIdMoto())
+        mockMvc.perform(post("/api/recordatorios/moto/{idMoto}/inicializar", moto.getIdMoto()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(6));
+    }
+
+    @Test
+    void actualizarRecordatorioRechazaModoInvalido() throws Exception {
+        Moto moto = seedMoto(1500);
+
+        mockMvc.perform(post("/api/recordatorios/moto/{idMoto}/inicializar", moto.getIdMoto()))
+                .andExpect(status().isOk());
+
+        Long idRecordatorio = recordatorioRepository.findByMotoIdMoto(moto.getIdMoto()).get(0).getIdRecordatorio();
+
+        mockMvc.perform(put("/api/recordatorios/{idRecordatorio}", idRecordatorio)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "titulo": "",
-                                  "descripcion": "Control",
-                                  "fecha": "2026-06-20",
-                                  "kilometraje": 2000
+                                  "modoAlerta": "INVALIDO"
                                 }
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", containsString("titulo")));
+                .andExpect(jsonPath("$.message", containsString("modo")));
     }
 
     private Moto seedMoto(Integer kilometrajeActual) {

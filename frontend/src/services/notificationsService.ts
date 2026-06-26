@@ -1,5 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { buildMensajeNotificacionRecordatorio } from '../recordatorios/recordatorioPresets';
+import type { Moto, Recordatorio } from '../types/models';
 
 const CHANNEL_ID = 'mototracker-reminders';
 export const KILOMETERS_REMINDER_ID = 'mototracker-kilometers-reminder';
@@ -21,6 +23,10 @@ export type RecordatorioPorFecha = {
   titulo?: string;
   tipo?: RecordatorioMotoTipo;
 };
+
+export function recordatorioNotificationId(idMoto: number, tipo: string): string {
+  return `recordatorio-${idMoto}-${tipo}`;
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -140,4 +146,101 @@ export async function obtenerNotificacionesProgramadas(): Promise<Notifications.
 export async function cancelarTodasLasNotificaciones(): Promise<void> {
   if (Platform.OS === 'web') return;
   await Notifications.cancelAllScheduledNotificationsAsync();
+}
+
+export async function programarRecordatorioMantenimiento(
+  recordatorio: Recordatorio,
+  moto: Moto,
+): Promise<string | null> {
+  if (!recordatorio.activo || recordatorio.modoAlerta !== 'TIEMPO') return null;
+  if (recordatorio.idRecordatorio == null || moto.idMoto == null) return null;
+
+  const permitido = await solicitarPermisosNotificaciones();
+  if (!permitido) return null;
+
+  const { title, body } = buildMensajeNotificacionRecordatorio(recordatorio, moto);
+  const id = recordatorioNotificationId(moto.idMoto, recordatorio.tipoRecordatorio);
+  const intervaloDias = recordatorio.intervaloDias ?? 7;
+  const seconds = Math.max(intervaloDias * 24 * 60 * 60, 60);
+
+  await cancelarNotificacion(id);
+
+  return Notifications.scheduleNotificationAsync({
+    identifier: id,
+    content: {
+      title,
+      body,
+      data: {
+        type: 'recordatorio_mantenimiento',
+        tipoRecordatorio: recordatorio.tipoRecordatorio,
+        idMoto: moto.idMoto,
+      },
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds,
+      repeats: true,
+      channelId: CHANNEL_ID,
+    },
+  });
+}
+
+export async function sincronizarNotificacionesRecordatorios(
+  recordatorios: Recordatorio[],
+  moto: Moto,
+): Promise<void> {
+  if (Platform.OS === 'web' || moto.idMoto == null) return;
+
+  for (const recordatorio of recordatorios) {
+    const id = recordatorioNotificationId(moto.idMoto, recordatorio.tipoRecordatorio);
+    if (!recordatorio.activo || recordatorio.modoAlerta !== 'TIEMPO') {
+      await cancelarNotificacion(id);
+      continue;
+    }
+    await programarRecordatorioMantenimiento(recordatorio, moto);
+  }
+}
+
+export async function verificarRecordatoriosPorKm(
+  recordatorios: Recordatorio[],
+  kmAnterior: number,
+  kmNuevo: number,
+  moto: Moto,
+): Promise<void> {
+  if (Platform.OS === 'web' || kmNuevo <= kmAnterior) return;
+
+  const permitido = await solicitarPermisosNotificaciones();
+  if (!permitido) return;
+
+  for (const recordatorio of recordatorios) {
+    if (!recordatorio.activo || recordatorio.modoAlerta !== 'KILOMETRAJE') continue;
+
+    const kmInicio = recordatorio.kmInicio ?? 0;
+    const intervalo = recordatorio.intervaloKm ?? 500;
+    if (intervalo <= 0) continue;
+
+    const umbralAnterior = Math.floor((kmAnterior - kmInicio) / intervalo);
+    const umbralNuevo = Math.floor((kmNuevo - kmInicio) / intervalo);
+
+    if (umbralNuevo <= umbralAnterior) continue;
+
+    const { title, body } = buildMensajeNotificacionRecordatorio(recordatorio, moto);
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: {
+          type: 'recordatorio_mantenimiento_km',
+          tipoRecordatorio: recordatorio.tipoRecordatorio,
+          idMoto: moto.idMoto,
+        },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 1,
+        channelId: CHANNEL_ID,
+      },
+    });
+  }
 }

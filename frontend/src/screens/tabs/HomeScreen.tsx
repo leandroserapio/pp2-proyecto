@@ -20,6 +20,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { ApiError } from "../../api/client";
 import { listarGastosPorMoto } from "../../api/gastos";
 import { listarMantenimientosPorMoto } from "../../api/mantenimientos";
+import { listarRecordatoriosPorMoto } from "../../api/recordatorios";
 import { actualizarKilometraje } from "../../api/motos";
 import { AppHeader } from "../../components/AppHeader";
 import { ScreenSectionHeader } from "../../components/ScreenSectionHeader";
@@ -32,10 +33,10 @@ import {
   requestGastosAdd,
   requestMantenimientoAdd,
 } from "../../navigation/pendingActions";
+import { verificarRecordatoriosPorKm } from "../../services/notificationsService";
 import type { MainTabParamList } from "../../navigation/types";
 import { fontFamily } from "../../theme/fonts";
 import { light } from "../../theme/mototrackerLight";
-import { sectionStyles } from "../../theme/sectionStyles";
 import {
   CONTENT_MAX_WIDTH,
   getCenteredContentStyle,
@@ -115,7 +116,7 @@ export function HomeScreen() {
 
   const openAddService = () => {
     requestMantenimientoAdd();
-    navigation.navigate("Mantenimiento");
+    navigation.navigate("MantenimientoStack", { screen: "MantenimientoHome" });
   };
 
   const openAddInsurance = () => {
@@ -142,6 +143,8 @@ export function HomeScreen() {
 
     setSaving(true);
 
+    const kmAnterior = selectedMoto?.kilometrajeActual ?? 0;
+
     try {
       const response = await actualizarKilometraje(
         selectedMotoId,
@@ -158,6 +161,20 @@ export function HomeScreen() {
       setLastKmDelta(response.kilometrosRecorridos);
 
       await refreshMotos();
+
+      if (selectedMoto) {
+        try {
+          const recordatorios = await listarRecordatoriosPorMoto(selectedMotoId);
+          await verificarRecordatoriosPorKm(
+            recordatorios,
+            kmAnterior,
+            kilometrajeActual,
+            { ...selectedMoto, kilometrajeActual },
+          );
+        } catch {
+          // No bloqueamos la actualización de km si falla la verificación de recordatorios.
+        }
+      }
 
       Alert.alert(
         "Kilometraje actualizado",
@@ -180,89 +197,16 @@ export function HomeScreen() {
       style={[styles.safe, { backgroundColor: theme.bg }]}
       edges={["top"]}
     >
-      {!kmOpen ? <AppHeader /> : null}
+      <AppHeader />
 
       <ScrollView contentContainerStyle={[styles.content, contentFrame, { paddingBottom: 96 + insets.bottom }]}>
-        {!kmOpen ? (
-          <ScreenSectionHeader
-            title="Inicio"
-            subtitle="Consultá el estado de tu moto, services, seguro y kilometraje."
-          />
-        ) : null}
+        <ScreenSectionHeader
+          title="Inicio"
+          subtitle="Consultá el estado de tu moto, services, seguro y kilometraje."
+        />
 
         {selectedMoto ? (
           <>
-            <View
-              style={[
-                styles.statusPanel,
-                {
-                  backgroundColor: theme.surface,
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <View style={styles.statusPanelHead}>
-                <View style={styles.statusHeaderCopy}>
-                  <Text style={[sectionStyles.panelTitle, { color: theme.text }]}>
-                    {selectedMoto.marca} {selectedMoto.modelo}
-                    {selectedMoto.patente ? ` · ${selectedMoto.patente}` : ''}
-                  </Text>
-                  <Text style={[sectionStyles.panelSubtitle, { color: theme.textMuted }]}>
-                    Revisá el último service, pago de seguro y kilómetros recorridos.
-                  </Text>
-                </View>
-
-                {statusLoading ? (
-                  <ActivityIndicator color={theme.primary} size="small" />
-                ) : null}
-              </View>
-
-              {statusError ? (
-                <Text style={[styles.statusError, { color: theme.danger }]}>
-                  {statusError}
-                </Text>
-              ) : null}
-
-              <StatusCard
-                icon="construct-outline"
-                title="Service más reciente"
-                value={
-                  status.lastService
-                    ? formatDisplayDate(status.lastService.fecha)
-                    : "Sin service registrado"
-                }
-                detail={buildServiceDetail(status.lastService)}
-                onAdd={openAddService}
-              />
-
-              <StatusCard
-                icon="shield-checkmark-outline"
-                title="Último pago del seguro"
-                value={
-                  status.lastInsurance
-                    ? formatDisplayDate(status.lastInsurance.fecha)
-                    : "Sin pagos registrados"
-                }
-                detail={buildInsuranceDetail(status.lastInsurance)}
-                onAdd={openAddInsurance}
-              />
-
-              <StatusCard
-                icon="refresh-outline"
-                title="Kilómetros desde el último registro"
-                value={
-                  lastKmDelta == null
-                    ? "Sin datos aún"
-                    : `${lastKmDelta.toLocaleString("es-AR")} km`
-                }
-                detail={
-                  lastKmDelta == null
-                    ? "Actualizá el kilometraje para ver cuánto recorriste."
-                    : "Calculado con tu última actualización de kilometraje."
-                }
-              />
-            </View>
-
             <View
               style={[
                 styles.kmPanel,
@@ -272,28 +216,24 @@ export function HomeScreen() {
                 },
               ]}
             >
-              <Text style={[sectionStyles.panelTitle, { color: theme.text }]}>
-                Kilometraje
-              </Text>
-              <Text style={[sectionStyles.panelSubtitle, { color: theme.textMuted }]}>
-                Actualizá el odómetro y seguí cuánto recorrés desde el último registro.
-              </Text>
-
-              <View style={styles.infoGrid}>
-                <InfoTile
-                  label="Kilometraje actual"
-                  value={`${selectedMoto.kilometrajeActual ?? 0} km`}
-                />
-                <InfoTile
-                  label="Última actualización"
-                  value={lastKmUpdateLabel}
-                />
-              </View>
-
               {kmOpen ? (
                 <View style={styles.kmForm}>
+                  <View style={styles.kmFormHead}>
+                    <View style={[styles.kmIconWrap, { backgroundColor: theme.primarySoft }]}>
+                      <Ionicons name="speedometer-outline" size={24} color={theme.primary} />
+                    </View>
+                    <View style={styles.kmFormHeadCopy}>
+                      <Text style={[styles.kmFormTitle, { color: theme.text }]}>
+                        Actualizar kilometraje
+                      </Text>
+                      <Text style={[styles.kmFormHint, { color: theme.textMuted }]}>
+                        Actual: {(selectedMoto.kilometrajeActual ?? 0).toLocaleString("es-AR")} km
+                      </Text>
+                    </View>
+                  </View>
+
                   <AppTextInput
-                    label="Kilometraje actual"
+                    label="Nuevo kilometraje"
                     variant="light"
                     placeholder="Ej: 50000"
                     keyboardType="number-pad"
@@ -336,13 +276,95 @@ export function HomeScreen() {
                   </View>
                 </View>
               ) : (
-                <PrimaryButton
-                  title="Actualizar kilometraje"
-                  variant="blue"
-                  onPress={() => setKmOpen(true)}
-                  style={styles.cta}
-                />
+                <>
+                  <View style={styles.kmHero}>
+                    <View style={[styles.kmIconWrap, { backgroundColor: theme.primarySoft }]}>
+                      <Ionicons name="speedometer-outline" size={28} color={theme.primary} />
+                    </View>
+
+                    <View style={styles.kmHeroCopy}>
+                      <Text style={[styles.kmLabel, { color: theme.textMuted }]}>
+                        Kilometraje actual
+                      </Text>
+                      <Text style={[styles.kmValue, { color: theme.text }]}>
+                        {(selectedMoto.kilometrajeActual ?? 0).toLocaleString("es-AR")}
+                        <Text style={[styles.kmUnit, { color: theme.textMuted }]}> km</Text>
+                      </Text>
+                      <Text style={[styles.kmMeta, { color: theme.textMuted }]}>
+                        {lastKmUpdateLabel === "Sin actualizaciones"
+                          ? "Sin actualizaciones registradas"
+                          : `Actualizado el ${lastKmUpdateLabel}`}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <PrimaryButton
+                    title="Actualizar kilometraje"
+                    variant="blue"
+                    onPress={() => setKmOpen(true)}
+                    style={styles.cta}
+                  />
+                </>
               )}
+            </View>
+
+            <View
+              style={[
+                styles.statusPanel,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              {statusLoading ? (
+                <ActivityIndicator color={theme.primary} size="small" />
+              ) : null}
+
+              {statusError ? (
+                <Text style={[styles.statusError, { color: theme.danger }]}>
+                  {statusError}
+                </Text>
+              ) : null}
+
+              <StatusCard
+                icon="construct-outline"
+                title="Service más reciente"
+                value={
+                  status.lastService
+                    ? formatDisplayDate(status.lastService.fecha)
+                    : "Sin service registrado"
+                }
+                detail={buildServiceDetail(status.lastService)}
+                onAdd={openAddService}
+              />
+
+              <StatusCard
+                icon="shield-checkmark-outline"
+                title="Último pago del seguro"
+                value={
+                  status.lastInsurance
+                    ? formatDisplayDate(status.lastInsurance.fecha)
+                    : "Sin gastos registrados"
+                }
+                detail={buildInsuranceDetail(status.lastInsurance)}
+                onAdd={openAddInsurance}
+              />
+
+              <StatusCard
+                icon="refresh-outline"
+                title="Kilómetros desde el último registro"
+                value={
+                  lastKmDelta == null
+                    ? "Sin datos aún"
+                    : `${lastKmDelta.toLocaleString("es-AR")} km`
+                }
+                detail={
+                  lastKmDelta == null
+                    ? "Actualizá el kilometraje para ver cuánto recorriste."
+                    : "Calculado con tu última actualización de kilometraje."
+                }
+              />
             </View>
           </>
         ) : (
@@ -356,7 +378,7 @@ export function HomeScreen() {
               Todavía no hay una moto activa
             </Text>
             <Text style={[styles.emptySub, { color: theme.textMuted }]}>
-              Registrá o seleccioná una moto desde Garage para ver su estado.
+              Registrá o seleccioná una moto desde el menú superior para ver su estado.
             </Text>
           </View>
         )}
@@ -414,29 +436,6 @@ function formatDateTime(value: string | null): string {
 
   const [date] = value.split("T");
   return formatDisplayDate(date);
-}
-
-function InfoTile({ label, value }: { label: string; value: string }) {
-  const { theme } = useAppSettings();
-
-  return (
-    <View
-      style={[
-        styles.infoTile,
-        {
-          backgroundColor: theme.bg,
-          borderColor: theme.border,
-        },
-      ]}
-    >
-      <Text style={[styles.infoLabel, { color: theme.textMuted }]}>
-        {label}
-      </Text>
-      <Text style={[styles.infoValue, { color: theme.text }]}>
-        {value}
-      </Text>
-    </View>
-  );
 }
 
 function StatusCard({
@@ -505,39 +504,71 @@ const styles = StyleSheet.create({
   },
   kmPanel: {
     marginHorizontal: 18,
-    marginTop: 14,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: light.border,
     backgroundColor: light.surface,
-    padding: 18,
+    padding: 20,
   },
-  infoGrid: {
-    marginTop: 18,
-    gap: 10,
+  kmHero: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
   },
-  infoTile: {
-    borderRadius: 8,
-    borderWidth: 1,
-    padding: 14,
+  kmIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  infoLabel: {
-    color: light.textMuted,
-    fontSize: 12,
+  kmHeroCopy: {
+    flex: 1,
   },
-  infoValue: {
-    marginTop: 6,
-    color: light.text,
+  kmLabel: {
+    fontSize: 13,
+    fontFamily: fontFamily.medium,
+    fontWeight: "500",
+  },
+  kmValue: {
+    marginTop: 2,
     fontFamily: fontFamily.bold,
     fontWeight: "700",
-    fontSize: 18,
+    fontSize: 34,
+    letterSpacing: -0.5,
+  },
+  kmUnit: {
+    fontSize: 20,
+    fontFamily: fontFamily.semiBold,
+    fontWeight: "600",
+  },
+  kmMeta: {
+    marginTop: 4,
+    fontSize: 12,
+    lineHeight: 16,
+  },
+  kmFormHead: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    marginBottom: 18,
+  },
+  kmFormHeadCopy: {
+    flex: 1,
+  },
+  kmFormTitle: {
+    fontFamily: fontFamily.semiBold,
+    fontWeight: "600",
+    fontSize: 17,
+  },
+  kmFormHint: {
+    marginTop: 2,
+    fontSize: 13,
   },
   cta: {
-    marginTop: 18,
+    marginTop: 20,
   },
-  kmForm: {
-    marginTop: 18,
-  },
+  kmForm: {},
   formActions: {
     flexDirection: "row",
     gap: 12,
@@ -559,20 +590,11 @@ const styles = StyleSheet.create({
   },
   statusPanel: {
     marginHorizontal: 18,
+    marginTop: 14,
     borderRadius: 8,
     borderWidth: 1,
     padding: 16,
     gap: 10,
-  },
-  statusPanelHead: {
-    minHeight: 42,
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12,
-  },
-  statusHeaderCopy: {
-    flex: 1,
   },
   statusError: {
     color: light.danger,

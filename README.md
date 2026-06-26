@@ -1,13 +1,18 @@
 # MotoTracker
 
-MotoTracker es una aplicacion movil pensada para usuarios de motos. Permite registrar una o varias motos y llevar un control organizado del kilometraje, los gastos, los mantenimientos y los viajes asociados a cada vehiculo.
+MotoTracker es una aplicacion movil pensada para usuarios de motos. Su objetivo principal es **recordarle al usuario cuando debe hacer el mantenimiento de su moto**: cambio de aceite, lubricacion y tension de cadena, service, control de neumaticos, filtro de aire y otras tareas habituales.
 
-El sistema busca centralizar la informacion principal de la moto en una sola aplicacion, ayudando al usuario a conocer el estado general de su vehiculo, evitar olvidos de mantenimiento y registrar cuanto dinero invierte en su uso diario.
+Para eso, la app permite registrar una o varias motos, configurar recordatorios por **tiempo** o **kilometraje**, recibir alertas y llevar un historial de cada control realizado. Ademas, complementa ese control con el registro de gastos, mantenimientos y viajes asociados a cada vehiculo.
+
+El sistema busca centralizar la informacion principal de la moto en una sola aplicacion, ayudando al usuario a no olvidar tareas importantes y a conocer el estado general y el costo de uso de su moto.
 
 ## Funcionalidades principales
 
 - Registro e inicio de sesion de usuarios.
 - Registro de una o varias motos por usuario.
+- **Recordatorios de mantenimiento** por tiempo o kilometraje (aceite, cadena, service, neumaticos, filtro de aire, etc.).
+- **Alertas y notificaciones** cuando un recordatorio esta proximo o vencido.
+- **Registro del historial** de recordatorios completados por moto.
 - Visualizacion de datos principales de la moto, como marca, modelo, patente y kilometraje.
 - Actualizacion del kilometraje actual.
 - Registro, edicion y consulta de gastos.
@@ -25,6 +30,7 @@ El sistema busca centralizar la informacion principal de la moto en una sola apl
 - TypeScript
 - React Navigation
 - Async Storage
+- Expo Notifications
 
 ### Backend
 
@@ -49,18 +55,22 @@ pp2-proyecto/
 
 ## Instalacion y ejecucion local
 
+Para clonar, configurar y ejecutar el proyecto en otra computadora, seguir la guia detallada en [docs/INSTALACION-PROYECTO.md](docs/INSTALACION-PROYECTO.md).
+
 ### Requisitos previos
 
 Para correr el proyecto localmente es necesario tener instalado:
 
+- Git
 - Node.js
 - npm
 - Java 21
-- Maven
 - MySQL
 - Expo Go, en caso de probar la app desde un celular
 
-## Configuracion de la base de datos
+El proyecto incluye Maven Wrapper, por lo que **no es obligatorio instalar Maven** de forma global.
+
+### Configuracion de la base de datos
 
 Crear una base de datos en MySQL con el nombre:
 
@@ -68,7 +78,7 @@ Crear una base de datos en MySQL con el nombre:
 CREATE DATABASE mototracker;
 ```
 
-Luego configurar las credenciales de conexion en el archivo:
+Luego crear o configurar las credenciales de conexion en el archivo (no se versiona en el repositorio):
 
 ```text
 backend/src/main/resources/application.properties
@@ -91,7 +101,7 @@ spring.jpa.show-sql=true
 spring.jpa.properties.hibernate.format_sql=true
 ```
 
-## Ejecucion del backend
+### Ejecucion del backend
 
 Desde la carpeta del backend:
 
@@ -113,7 +123,7 @@ El backend se ejecuta por defecto en:
 http://localhost:8080
 ```
 
-## Ejecucion del frontend
+### Ejecucion del frontend
 
 Desde la carpeta del frontend:
 
@@ -139,18 +149,22 @@ npm run android
 
 Tambien se puede escanear el codigo QR generado por Expo usando la aplicacion Expo Go desde el celular.
 
+Si se prueba desde un celular fisico, puede ser necesario configurar la URL del backend con la IP local de la PC. Ver la seccion correspondiente en [docs/INSTALACION-PROYECTO.md](docs/INSTALACION-PROYECTO.md).
+
 ## Relacion entre entidades principales
 
 ```text
 Usuario 1 ---- N Moto
 
+Moto 1 ---- N Recordatorio
 Moto 1 ---- N Gasto
 Moto 1 ---- N Mantenimiento
 Moto 1 ---- N Viaje
 ```
 
 Un usuario puede registrar una o varias motos.
-Cada moto puede tener muchos gastos, mantenimientos y viajes asociados.
+Cada moto puede tener muchos recordatorios, gastos, mantenimientos y viajes asociados.
+Los recordatorios se configuran por moto y alertan segun tiempo transcurrido o kilometraje recorrido.
 
 ## Endpoints principales
 
@@ -158,6 +172,7 @@ El backend expone una API REST para gestionar las entidades principales del sist
 
 - Usuarios
 - Motos
+- Recordatorios
 - Gastos
 - Mantenimientos
 - Viajes
@@ -165,9 +180,9 @@ El backend expone una API REST para gestionar las entidades principales del sist
 
 ## Justificacion del proyecto
 
-Muchas personas que usan moto no llevan un control ordenado del kilometraje, los gastos o los mantenimientos realizados. Esto puede generar olvidos importantes, como no hacer un service a tiempo, no controlar el cambio de aceite o no saber cuanto dinero se gasta realmente en la moto.
+Muchas personas que usan moto no llevan un control ordenado del mantenimiento preventivo. Eso puede generar olvidos importantes: no cambiar el aceite a tiempo, no lubricar o revisar la cadena, postergar un service o no saber cuando fue la ultima revision de neumaticos.
 
-MotoTracker busca resolver este problema ofreciendo una herramienta simple y accesible para registrar y consultar la informacion principal de la moto desde el celular.
+MotoTracker busca resolver ese problema con recordatorios configurables y alertas desde el celular, junto con un registro simple del historial, los gastos y el kilometraje de cada moto.
 
 ## Integrantes del grupo
 

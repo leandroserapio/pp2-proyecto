@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import {
   Alert,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -11,7 +12,6 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { light } from '../../theme/mototrackerLight';
@@ -26,6 +26,8 @@ import { ApiError } from '../../api/client';
 import { obtenerPreguntaSecreta, recuperarPassword } from '../../api/usuarios';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList>;
+
+const LOGO_MOTOTRACKER = require('../../../assets/logo_mototracker.png');
 
 export function LoginScreen() {
   const navigation = useNavigation<Nav>();
@@ -117,9 +119,12 @@ export function LoginScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={[styles.shell, compact && styles.shellCompact]}>
-          <View style={[styles.logo, { backgroundColor: theme.primary }]}>
-            <Ionicons name="bicycle-outline" size={28} color={theme.onPrimary} />
-          </View>
+          <Image
+            accessibilityLabel="Logo MotoTracker"
+            source={LOGO_MOTOTRACKER}
+            style={styles.logo}
+            resizeMode="contain"
+          />
           <Text style={[styles.brand, { color: theme.primary }]}>MotoTracker</Text>
           <Text style={[styles.sub, compact && styles.subCompact, { color: theme.textMuted }]}>
             Gestion profesional de tu moto
@@ -213,11 +218,8 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   logo: {
-    width: 58,
-    height: 50,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 120,
+    height: 48,
     marginBottom: 12,
   },
   brand: {

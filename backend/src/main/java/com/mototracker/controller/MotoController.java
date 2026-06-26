@@ -9,6 +9,7 @@ import com.mototracker.model.Usuario;
 import com.mototracker.repository.GastoRepository;
 import com.mototracker.repository.MantenimientoRepository;
 import com.mototracker.repository.MotoRepository;
+import com.mototracker.repository.RecordatorioRepository;
 import com.mototracker.repository.UsuarioRepository;
 import com.mototracker.repository.ViajeRepository;
 
@@ -27,19 +28,22 @@ public class MotoController {
     private final GastoRepository gastoRepository;
     private final MantenimientoRepository mantenimientoRepository;
     private final ViajeRepository viajeRepository;
+    private final RecordatorioRepository recordatorioRepository;
 
     public MotoController(
             MotoRepository motoRepository,
             UsuarioRepository usuarioRepository,
             GastoRepository gastoRepository,
             MantenimientoRepository mantenimientoRepository,
-            ViajeRepository viajeRepository
+            ViajeRepository viajeRepository,
+            RecordatorioRepository recordatorioRepository
     ) {
         this.motoRepository = motoRepository;
         this.usuarioRepository = usuarioRepository;
         this.gastoRepository = gastoRepository;
         this.mantenimientoRepository = mantenimientoRepository;
         this.viajeRepository = viajeRepository;
+        this.recordatorioRepository = recordatorioRepository;
     }
 
     @GetMapping
@@ -173,6 +177,8 @@ public class MotoController {
 
         viajeRepository.deleteAll(
                 viajeRepository.findByMotoIdMoto(idMoto));
+
+        recordatorioRepository.deleteByMotoIdMoto(idMoto);
 
         motoRepository.delete(moto);
 

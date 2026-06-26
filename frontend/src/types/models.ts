@@ -71,3 +71,34 @@ export interface Viaje {
   estado?: string | null;
   moto?: unknown;
 }
+
+export type TipoRecordatorio =
+  | 'PRESION_NEUMATICOS'
+  | 'NIVEL_ACEITE'
+  | 'LUBRICACION_CADENA'
+  | 'TENSION_CADENA'
+  | 'CAMBIO_ACEITE'
+  | 'FILTRO_AIRE';
+
+export type ModoAlerta = 'TIEMPO' | 'KILOMETRAJE';
+
+export interface Recordatorio {
+  idRecordatorio?: number;
+  tipoRecordatorio: TipoRecordatorio;
+  modoAlerta: ModoAlerta;
+  intervaloKm?: number | null;
+  intervaloDias?: number | null;
+  fechaInicio?: string | null;
+  kmInicio?: number | null;
+  activo?: boolean;
+  moto?: unknown;
+}
+
+export interface RecordatorioUpdate {
+  modoAlerta?: ModoAlerta;
+  intervaloKm?: number | null;
+  intervaloDias?: number | null;
+  fechaInicio?: string | null;
+  kmInicio?: number | null;
+  activo?: boolean;
+}

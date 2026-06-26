@@ -5,24 +5,31 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "recordatorios")
 public class Recordatorio {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idRecordatorio;
 
-    private String titulo;
+    @Column(nullable = false, length = 50)
+    private String tipoRecordatorio;
 
-    private String descripcion;
+    @Column(nullable = false, length = 20)
+    private String modoAlerta;
 
-    private LocalDate fecha;
+    private Integer intervaloKm;
 
-    private Integer kilometraje;
+    private Integer intervaloDias;
 
-    private Boolean completado = false;
+    private LocalDate fechaInicio;
+
+    private Integer kmInicio;
+
+    private Boolean activo = true;
 
     @ManyToOne
-    @JoinColumn(name = "id_moto")
+    @JoinColumn(name = "id_moto", nullable = false)
     private Moto moto;
 
     public Long getIdRecordatorio() {
@@ -33,44 +40,60 @@ public class Recordatorio {
         this.idRecordatorio = idRecordatorio;
     }
 
-    public String getTitulo() {
-        return titulo;
+    public String getTipoRecordatorio() {
+        return tipoRecordatorio;
     }
 
-    public void setTitulo(String titulo) {
-        this.titulo = titulo;
+    public void setTipoRecordatorio(String tipoRecordatorio) {
+        this.tipoRecordatorio = tipoRecordatorio;
     }
 
-    public String getDescripcion() {
-        return descripcion;
+    public String getModoAlerta() {
+        return modoAlerta;
     }
 
-    public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
+    public void setModoAlerta(String modoAlerta) {
+        this.modoAlerta = modoAlerta;
     }
 
-    public LocalDate getFecha() {
-        return fecha;
+    public Integer getIntervaloKm() {
+        return intervaloKm;
     }
 
-    public void setFecha(LocalDate fecha) {
-        this.fecha = fecha;
+    public void setIntervaloKm(Integer intervaloKm) {
+        this.intervaloKm = intervaloKm;
     }
 
-    public Integer getKilometraje() {
-        return kilometraje;
+    public Integer getIntervaloDias() {
+        return intervaloDias;
     }
 
-    public void setKilometraje(Integer kilometraje) {
-        this.kilometraje = kilometraje;
+    public void setIntervaloDias(Integer intervaloDias) {
+        this.intervaloDias = intervaloDias;
     }
 
-    public Boolean getCompletado() {
-        return completado;
+    public LocalDate getFechaInicio() {
+        return fechaInicio;
     }
 
-    public void setCompletado(Boolean completado) {
-        this.completado = completado;
+    public void setFechaInicio(LocalDate fechaInicio) {
+        this.fechaInicio = fechaInicio;
+    }
+
+    public Integer getKmInicio() {
+        return kmInicio;
+    }
+
+    public void setKmInicio(Integer kmInicio) {
+        this.kmInicio = kmInicio;
+    }
+
+    public Boolean getActivo() {
+        return activo;
+    }
+
+    public void setActivo(Boolean activo) {
+        this.activo = activo;
     }
 
     public Moto getMoto() {

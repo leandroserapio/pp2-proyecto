@@ -12,7 +12,7 @@ type MotoContextValue = {
   selectedMoto: Moto | null;
   loading: boolean;
   error: string | null;
-  refreshMotos: () => Promise<void>;
+  refreshMotos: () => Promise<Moto[]>;
   setSelectedMotoId: (id: number) => Promise<void>;
   eliminarMoto: (idMoto: number) => Promise<void>;
 };
@@ -27,7 +27,7 @@ export function MotoProvider({ idUsuario, children }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const refreshMotos = useCallback(async () => {
+  const refreshMotos = useCallback(async (): Promise<Moto[]> => {
     setLoading(true);
     setError(null);
     try {
@@ -36,7 +36,7 @@ export function MotoProvider({ idUsuario, children }: Props) {
       if (list.length === 0) {
         await AsyncStorage.removeItem(STORAGE_SELECTED_MOTO);
         setSelectedMotoIdState(null);
-        return;
+        return [];
       }
       const raw = await AsyncStorage.getItem(STORAGE_SELECTED_MOTO);
       const storedId = raw ? Number(raw) : NaN;
@@ -44,8 +44,10 @@ export function MotoProvider({ idUsuario, children }: Props) {
       const nextId = storedOk ? storedId : (list[0].idMoto as number);
       setSelectedMotoIdState(nextId);
       await AsyncStorage.setItem(STORAGE_SELECTED_MOTO, String(nextId));
+      return list;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'No se pudieron cargar las motos');
+      return [];
     } finally {
       setLoading(false);
     }

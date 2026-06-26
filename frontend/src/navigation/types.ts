@@ -1,6 +1,6 @@
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { NavigatorScreenParams } from '@react-navigation/native';
-import type { Gasto, Viaje } from '../types/models';
+import type { Gasto, Mantenimiento, Viaje } from '../types/models';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -35,12 +35,27 @@ export type HomeStackParamList = {
   Cuenta: undefined;
 };
 
+export type MotosStackParamList = {
+  MisMotosHome: undefined;
+  MisMotosEdit: { idMoto: number };
+};
+
+export type MantenimientoListNavItem = Mantenimiento & {
+  idMoto: number;
+};
+
+export type MantenimientoStackParamList = {
+  MantenimientoHome: { openAdd?: boolean } | undefined;
+  MantenimientoEdit: { item: MantenimientoListNavItem };
+};
+
 export type MainTabParamList = {
   Inicio: NavigatorScreenParams<HomeStackParamList> | undefined;
-  Garage: { openAdd?: boolean; hideTabBar?: boolean } | undefined;
+  Recordatorios: { hideTabBar?: boolean } | undefined;
   GastosStack: { hideTabBar?: boolean } | NavigatorScreenParams<GastosStackParamList> | undefined;
-  Mantenimiento: { openAdd?: boolean; hideTabBar?: boolean } | undefined;
+  MantenimientoStack: { hideTabBar?: boolean } | NavigatorScreenParams<MantenimientoStackParamList> | undefined;
   ViajesStack: NavigatorScreenParams<ViajesStackParamList> | undefined;
+  MotosStack: NavigatorScreenParams<MotosStackParamList> | undefined;
   Ajustes: undefined;
 };
 
@@ -60,3 +75,7 @@ export type ViajesHomeProps = NativeStackScreenProps<ViajesStackParamList, 'Viaj
 export type ViajesAddProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesAdd'>;
 export type ViajesDetailProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesDetail'>;
 export type ViajesEditProps = NativeStackScreenProps<ViajesStackParamList, 'ViajesEdit'>;
+export type MisMotosHomeProps = NativeStackScreenProps<MotosStackParamList, 'MisMotosHome'>;
+export type MisMotosEditProps = NativeStackScreenProps<MotosStackParamList, 'MisMotosEdit'>;
+export type MantenimientoHomeProps = NativeStackScreenProps<MantenimientoStackParamList, 'MantenimientoHome'>;
+export type MantenimientoEditProps = NativeStackScreenProps<MantenimientoStackParamList, 'MantenimientoEdit'>;

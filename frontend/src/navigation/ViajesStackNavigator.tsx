@@ -1,6 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { fontFamily } from '../theme/fonts';
 import { useAppSettings } from '../context/AppSettingsContext';
+import { getStackScreenOptions } from './stackScreenOptions';
 import type { ViajesStackParamList } from './types';
 import { ViajesAddScreen } from '../screens/viajes/ViajesAddScreen';
 import { ViajesDetailScreen } from '../screens/viajes/ViajesDetailScreen';
@@ -13,25 +13,7 @@ export function ViajesStackNavigator() {
   const { theme } = useAppSettings();
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShadowVisible: false,
-        headerStyle: {
-          backgroundColor: theme.surface,
-        },
-        headerTintColor: theme.primary,
-        headerTitleStyle: {
-          fontFamily: fontFamily.bold,
-          fontWeight: '700',
-          fontSize: 17,
-          color: theme.primary,
-        },
-        headerRightContainerStyle: {
-          paddingRight: 16,
-        },
-        contentStyle: { backgroundColor: theme.bg },
-      }}
-    >
+    <Stack.Navigator screenOptions={getStackScreenOptions(theme)}>
       <Stack.Screen name="ViajesHome" component={ViajesListScreen} options={{ headerShown: false }} />
       <Stack.Screen name="ViajesAdd" component={ViajesAddScreen} options={{ title: 'Agregar Viaje' }} />
       <Stack.Screen name="ViajesDetail" component={ViajesDetailScreen} options={{ title: 'Viajes' }} />
